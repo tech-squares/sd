@@ -35,7 +35,7 @@
     General Public License if you distribute the file.
 */
 
-version "30.7"
+version "30.73"
 
 call "(nothing)" mainstream tag nullcall
             dont_use_in_resolve is_tag_call
@@ -424,17 +424,49 @@ call "reshape the triangle" c2
 call "turn the star 1/4" dontshow tag turnstar1
             dont_use_in_resolve is_star_call
    setup star star
-      array [R1E 0 L1W 0]
+      array [CR1E 0 AL1W 0]
    setup dmd dmd rotate
-      array [R0N 0 L0S 0]
+      array [CR0N 0 AL0S 0]
    setup pmd dmd rotate
-      array [0 R1N 0 L1S]
-   setup 2x2 2x2
+      array [0 CR1N 0 AL1S]
+   setup 2x2 2x2   /* We don't encode stability for this -- it's flaky. */
       array [R1S L0S M1N M0N]
+
+call "turn the star 1/2" dontshow tag turnstar2
+            dont_use_in_resolve is_star_call
+   setup star star
+      array [CR2S 0 AL0S 0]
+   setup dmd dmd
+      array [CR2S 0 AL0S 0]
+   setup pmd dmd
+      array [0 CR3S 0 AL1S]
+   setup 2x2 2x2
+      array [C2S A3S A0S C1S]
 
 call "turn the star @b" a2 tag turnstarn
             dont_use_in_resolve is_star_call neednumber
    seq turnstar1 [repeat_n]
+
+call "turn the star @9-1" dontshow tag turnstarnm1
+            dont_use_in_resolve is_star_call neednumber
+   /* This allows facing stars to be turned 2 spots.  Perhaps we should
+      fix "turnstarn" to do a similar thing. */
+   setup star star qualifier n_is_2
+      array [CR1E 0 AL1W 0]
+   setup dmd dmd rotate qualifier n_is_2
+      array [CR0N 0 AL0S 0]
+   setup pmd dmd rotate qualifier n_is_2
+      array [0 CR1N 0 AL1S]
+   setup 2x2 2x2 qualifier n_is_2
+      array [R1S L0S M1N M0N]
+   setup star star qualifier n_is_3
+      array [CR2S 0 AL0S 0]
+   setup dmd dmd qualifier n_is_3
+      array [CR2S 0 AL0S 0]
+   setup pmd dmd qualifier n_is_3
+      array [0 CR3S 0 AL1S]
+   setup 2x2 2x2 qualifier n_is_3
+      array [C2S A3S A0S C1S]
 
 call "turn the star @b, interrupt first with @0" c1
             dont_use_in_resolve is_star_call neednumber
@@ -450,24 +482,13 @@ call "turn the star @b, interrupt after 1/4 with @0" c1
             dont_use_in_resolve is_star_call neednumber
    seq turnstar1 []
    seq nullcall [mandatory_anycall]
-   seq turnstar1 [repeat_nm1]
+   seq turnstarnm1 []
 
 call "turn the star 3/4, interrupt after 1/2 with @0" c1
             dont_use_in_resolve is_star_call
    seq turnstar2 []
    seq nullcall [mandatory_anycall]
    seq turnstar1 []
-
-call "turn the star 1/2" dontshow tag turnstar2
-            dont_use_in_resolve is_star_call
-   setup star star
-      array [CR2S 0 AL0S 0]
-   setup dmd dmd
-      array [CR2S 0 AL0S 0]
-   setup pmd dmd
-      array [0 CR3S 0 AL1S]
-   setup 2x2 2x2
-      array [C2S A3S A0S C1S]
 
 /* We use this in cases in which we know the "star" must not be a box of four, such as
    "alter the diamond".  If we allowed boxes to circulate, then someone could accidentally
@@ -1390,7 +1411,8 @@ call "separate, around 2 to a line" mainstream
       array [0 AL4N CR3S 0 0 0 0 0]
 
 call "pass thru" mainstream tag passthru
-            rear_back_from_r_wave no_cutting_through
+            rear_back_from_r_wave left_means_mirror no_cutting_through
+   simple_funny
    setup 2x1 1x2
       array [ZM1N 0]
    /* We put in this next definition to allow it from T-boned boxes
@@ -1851,28 +1873,34 @@ call "vertical tag" c1 tag verticaltag
 call "tag the star 1/4" c4a
             left_means_mirror
    setup 2x2 dmd rotate restriction forbidden not_tboned
-      array [0 0 0E 1E]
+      array [0 0 ACR0E CR1E]
+            alternate_definition [singlefile] c4
+   setup 4x1 dmd
+      array [ACR2S CR3S 0 0]
 
 call "tag the star@c 1/2@d" c4a
             left_means_mirror is_tag_call
    setup 2x2 2x2 restriction forbidden not_tboned
-      array [0 0 1S 2S]
+      array [0 0 ACR1S CR2S]
             alternate_definition [singlefile] c4
    setup 4x1 2x2
-      array [2S 3S 0 0]
+      array [ACR2S CR3S 0 0]
 
 call "tag the star 3/4" c4a
             left_means_mirror
    setup 2x2 dmd rotate restriction forbidden not_tboned
-      array [0 0 1E 2E]
+      array [0 0 ACR1E CR2E]
+            alternate_definition [singlefile] c4
+   setup 4x1 dmd
+      array [ACR3S CR0S 0 0]
 
 call "tag the star" c4a
             left_means_mirror
    setup 2x2 1x4 rotate restriction forbidden not_tboned
-      array [0 0 3E 2E]
+      array [0 0 ACR3E CR2E]
             alternate_definition [singlefile] c4
    setup 4x1 1x4
-      array [1S 0S 0 0]
+      array [ACR1S CR0S 0 0]
 
 call "loop and 1/4 tag" c3
             left_means_mirror
@@ -3061,11 +3089,11 @@ call "swap the top" c3a
 
 call "star to a wave" c4a
             left_means_mirror
-   setup 2x2 1x4 rotate
-      array [0 0 R1S R2S]
+   setup 2x2 1x4 rotate restriction forbidden not_tboned
+      array [0 0 ACR1S CR2S]
             alternate_definition [singlefile] c4
    setup 4x1 1x4
-      array [R3W R0W 0 0]
+      array [ACR3W CR0W 0 0]
 
 call "travel thru" c3a
             rear_back_from_r_wave left_means_mirror
@@ -3406,6 +3434,7 @@ call "flare the star" c4a
       array [0 0 L2N L1S]
 
 call "bingo" c3 tag bingo
+            no_elongation_allowed
    simple_funny
    setup 2x2 2x2 restriction wave_only
       array [AL0E CR1W AL0W CR1E]
@@ -3599,12 +3628,27 @@ call "box counter rotate" a2 tag boxctrrot
       array [CR1E AL0W AL1W CR0E]
 
 call "split counter rotate" a2 tag splitctrrot
+   /* This does the trick, and does it the RIGHT WAY!  The old way, if we had
+      a 2x6, if we did "triple boxes working together split counter rotate",
+      the warning about setups not interacting with each other won't be raised,
+      because it was an 8 person call. */
+   splitseq ctr_rot []
+
+
+/*
+call "split counter rotate" a2 tag splitctrrot
    simple_funny
-   setup 2x4 2x4  /* Need these two to force division into 2x2's instead of
-                     1x4's.  Someday we may be able to force that more gracefully. */
+   * Note that there is a bug in this call:  In a 2x6, if we do "triple boxes working
+      together split counter rotate", the warning about setups not interacting with
+      each other won't be raised, because this is an 8 person call.  Sigh.  Maybe the stuff
+      being referred to in the comment immediately below will save us. *
+
+   setup 2x4 2x4  * Need these two to force division into 2x2's instead of
+                     1x4's.  Someday we may be able to force that more gracefully. *
       array [CR1E AL0W CR3E AL2W AL3W CR2E AL1W CR0E]
    setup 4x2 2x4
       array [CR1E CR6E CR3E CR4E AL3W AL4W AL1W AL6W]
+
    setup 2x2 2x2
       array [CR1E AL0W AL1W CR0E]
    setup 1x4 1x4 rotate
@@ -3613,6 +3657,7 @@ call "split counter rotate" a2 tag splitctrrot
       array [CR0N 0 AL0S 0]
    setup pmd dmd rotate
       array [0 CR1N 0 AL1S]
+*/
 
 call "_counter rotate the star" dontshow tag ctrrotstar
    setup dmd dmd rotate
@@ -4343,7 +4388,7 @@ call "_finish relay the deucey" dontshow tag fin_relay_deucey
    setup 2x4 2x4 restriction wave_only
    array [5N 4N 7N 6N 1N 0N 3N 2N]
 
-call "twin orbit circulate" c3a
+call "twin orbit circulate" c3x
    setup 2x4 2x4 restriction wave_only
       array [AL6N AL7N CR4N CR5N ZM2N ZM3N ZM0N ZM1N]
 
@@ -4388,7 +4433,7 @@ call "line to line" c3
 call "plan ahead" c3a
             rear_back_from_r_wave left_means_mirror
    setup 2x4 2x4
-   array [0 0 0 0 ACR2W R0E 3W CR5W]
+   array [0 0 0 0 ACR2W CCR0E CAL3W CR5W]
 
 call "take @9" c3
             left_means_mirror neednumber
@@ -6155,7 +6200,7 @@ call "hoop-de-do, new centers @0" c4
    crossconc nullcall [mandatory_anycall] hoopdedo [conc_demand_columns conc_force_columns]
 
 call "acey deucey" plus tag aceydeucey
-   conc trade [] circulate []
+   conc trade [] circulate [endscando]
 
 call "mix the deucey" c4a
    seq mix []
@@ -7417,10 +7462,7 @@ call "little, ends go as you are" c1 tag little_ends_as_are
 call "_finish plenty" dontshow tag finishplenty
             dont_use_in_resolve
    setup 2x4 qtag
-      array [1S 6S 2S 0S 1S 3N 7N 0S]
-            alternate_definition [interlocked] c3a
-   setup 2x4 qtag
-      array [1S 6S 2S 0S 1S 3N 7N 0S]
+      array [CR1S AL6S CR2S AL0S AL1S ZM3N ZM7N CR0S]
 
 call "plenty" c1 tag plenty
             left_means_mirror intlk_is_inherited

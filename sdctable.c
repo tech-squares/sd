@@ -846,7 +846,7 @@ int *concept_size_tables[] = {
    misc_c_sizes,
    0};
 
-char *concept_menu_strings[] = {
+Const char *concept_menu_strings[] = {
    "PHANTOM SETUP concepts",
    "COUPLES/TANDEM concepts",
    "DISTORTED SETUP concepts",

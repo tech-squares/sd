@@ -35,10 +35,10 @@ and the following external variables:
 #include "sd.h"
 extern map_thing map_inner_box;
 
-int global_tbonetest;
-int global_livemask;
-int global_selectmask;
-int global_tboneselect;
+unsigned int global_tbonetest;
+unsigned int global_livemask;
+unsigned int global_selectmask;
+unsigned int global_tboneselect;
 
 
 
@@ -343,8 +343,8 @@ Private void do_concept_single_diagonal(
    parse_block *parseptr,
    setup *result)
 {
-   int i;
-   int rot, tbonetest;
+   int i, rot;
+   unsigned int tbonetest;
    diag_map *map_ptr;
    setup a1;
    setup res1;
@@ -422,7 +422,7 @@ Private void do_concept_double_diagonal(
    than through global_tbonetest. */
 
 {
-   int tbonetest;
+   unsigned int tbonetest;
    map_thing *map_ptr;
 
    tbonetest = global_tbonetest;
@@ -1183,6 +1183,15 @@ Private void do_concept_do_divided_qtags(
 }
 
 
+Private void do_concept_distorted(
+   setup *ss,
+   parse_block *parseptr,
+   setup *result)
+{
+   distorted_move(ss, parseptr, (disttest_kind) parseptr->concept->value.arg2, result);
+}
+
+
 Private void do_concept_do_phantom_2x3(
    setup *ss,
    parse_block *parseptr,
@@ -1394,23 +1403,25 @@ Private void do_concept_new_stretch(
    parse_block *parseptr,
    setup *result)
 {
-   setup tempsetup;
+   map_thing *maps;
+   setup tempsetup = *ss;
 
-   tempsetup = *ss;
+   tempsetup.cmd.cmd_misc_flags |= CMD_MISC__DISTORTED;
 
    if (tempsetup.kind == s2x4) {
       swap_people(&tempsetup, 1, 2);
       swap_people(&tempsetup, 5, 6);
+      maps = (*map_lists[s2x2][1])[MPKIND__SPLIT][0];
    }
    else if (tempsetup.kind == s1x8) {
       swap_people(&tempsetup, 3, 6);
       swap_people(&tempsetup, 2, 7);
+      maps = (*map_lists[s1x4][1])[MPKIND__SPLIT][0];
    }
    else
       fail("Stretched setup call didn't start in 2x4 or 1x8 setup.");
 
-   tempsetup.cmd.cmd_misc_flags |= CMD_MISC__DISTORTED;
-   move(&tempsetup, FALSE, result);
+   divided_setup_move(&tempsetup, maps, phantest_ok, TRUE, result);
 }
 
 Private void do_concept_mirror(
@@ -1901,6 +1912,7 @@ Private void do_concept_sequential(
       }
 
       result->cmd.prior_elongation_bits = save_elongation;
+      update_id_bits(result);
       do_call_in_series(result, FALSE, TRUE, FALSE);
    }
 }
@@ -3402,7 +3414,7 @@ extern long_boolean do_big_concept(
 
       ss->cmd.parseptr = substandard_concptptr->next;
       (concept_table[substandard_concptptr->concept->kind].concept_action)(ss, substandard_concptptr, result);
-      canonicalize_rotation(result);
+      /* Beware -- result is not necessarily canonicalized. */
       result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_MASK;  /* **** For now. */
       return TRUE;
    }
@@ -3426,7 +3438,8 @@ extern long_boolean do_big_concept(
       only the standard people. */
 
    if (this_table_item->concept_prop & (CONCPROP__STANDARD | CONCPROP__GET_MASK)) {
-      int i, j;
+      int i;
+      unsigned int j;
       long_boolean doing_select;
       selector_kind saved_selector = current_selector;
 
@@ -3443,7 +3456,7 @@ extern long_boolean do_big_concept(
       }
 
       for (i=0, j=1; i<=setup_limits[ss->kind]; i++, j<<=1) {
-         int p = ss->people[i].id1;
+         unsigned int p = ss->people[i].id1;
          global_tbonetest |= p;
          if (p) {
             global_livemask |= j;
@@ -3463,7 +3476,7 @@ extern long_boolean do_big_concept(
    }
 
    (*concept_func)(ss, this_concept_parse_block, result);
-   canonicalize_rotation(result);
+   /* Beware -- result is not necessarily canonicalized. */
    if (!(this_table_item->concept_prop & CONCPROP__SHOW_SPLIT))
       result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_MASK;
    return TRUE;
@@ -3535,7 +3548,7 @@ concept_table_item concept_table[] = {
    /* concept_divided_2x3 */              {CONCPROP__NEED_2X6 | CONCPROP__NO_STEP | Standard_matrix_phantom,                       do_concept_divided_2x3},
    /* concept_do_divided_diamonds */      {CONCPROP__NEED_4X6 | CONCPROP__NO_STEP | Nostandard_matrix_phantom,                     do_concept_do_divided_diamonds},
    /* concept_do_divided_qtags */         {CONCPROP__NEED_4X6 | CONCPROP__NO_STEP | Standard_matrix_phantom,                       do_concept_do_divided_qtags},
-   /* concept_distorted */                {CONCPROP__NO_STEP | CONCPROP__STANDARD,                                                 distorted_move},
+   /* concept_distorted */                {CONCPROP__NO_STEP | CONCPROP__STANDARD,                                                 do_concept_distorted},
    /* concept_single_diagonal */          {CONCPROP__NO_STEP | CONCPROP__GET_MASK | CONCPROP__USE_SELECTOR,                        do_concept_single_diagonal},
    /* concept_double_diagonal */          {CONCPROP__NO_STEP | CONCPROP__STANDARD,                                                 do_concept_double_diagonal},
    /* concept_parallelogram */            {CONCPROP__NO_STEP | CONCPROP__GET_MASK,                                                 do_concept_parallelogram},
