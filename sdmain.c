@@ -21,8 +21,8 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "31.84"
-#define TIME_STAMP "wba@apollo.hp.com  09 Feb 97 $"
+#define VERSION_STRING "31.85"
+#define TIME_STAMP "wba@apollo.hp.com  31 Mar 97 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -1438,8 +1438,8 @@ void main(int argc, char *argv[])
    /* We need to take away the "zig-zag" directions if the level is below A2. */
 
    if (calling_level < zig_zag_level) {
-      last_direction_kind = direction_out;
-      direction_names[direction_out+1] = (Cstring) 0;
+      last_direction_kind = direction_zigzag-1;
+      direction_names[direction_zigzag] = (Cstring) 0;
    }
 
    if (glob_call_list_mode == call_list_mode_none || glob_call_list_mode == call_list_mode_abridging)
