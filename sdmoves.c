@@ -1801,6 +1801,8 @@ that probably need to be put in. */
 
                   result->cmd = ss->cmd;
                   result->cmd.cmd_frac_flags = 0;
+                  /* We don't supply these; they get filled in by the call. */
+                  result->cmd.cmd_misc_flags &= ~DFM1_CONCENTRICITY_FLAG_MASK;
                   if (!first_call) result->cmd.cmd_misc_flags |= CMD_MISC__NO_CHK_ELONG;
                   result->cmd.parseptr = cp1;
                   result->cmd.callspec = call1;
@@ -1827,7 +1829,10 @@ that probably need to be put in. */
                   part, we would be OR'ing the bits from multiple parts.  What would it mean?  The bits
                   we are interested in are the "demand_lines" and "force_lines" stuff.  I guess we should
                   take the "demand" bits from the first part and the "force" bits from the last part.  Yuck! */
-               ss->cmd.cmd_misc_flags |= result->cmd.cmd_misc_flags;
+
+               /* The claim is that the following code removes the above problem.  The test is "ends 2/3 chisel thru". */
+
+               ss->cmd.cmd_misc_flags |= result->cmd.cmd_misc_flags & ~DFM1_CONCENTRICITY_FLAG_MASK;
 
                current_number_fields = saved_number_fields;
 

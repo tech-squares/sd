@@ -1586,7 +1586,7 @@ case that needs to be addressed.
 @enumerate
 @item
 If the people who finished on the outside in a 2x2 started
-in a 2x2, they use the ``line-to-lines/columns-to-columns'' rule,
+in a 2x2, they use the ``lines-to-lines/columns-to-columns'' rule,
 relative to what setup @i{they} thought they were in.
 
 If the concept was @i{concentric}, so these people started on
@@ -1770,7 +1770,7 @@ the call "trade" is a special case, not because calls in general can be
 done from that setup.  To see this, consider the call @code{roll away}.
 It, and two-person calls in general, are @i{not} legal unless the people are
 adjacent.  The special property of the call @code{trade}, that it can be done
-by designated people who are not adjacent, is simply an idiosyncracy that
+by designated people who are not adjacent, is simply an idiosyncrasy that
 everyone knows.  The Sd program recognizes this by having a call in its database
 @code{<anyone> trade} as well as the call @code{trade}.  Use that call, not
 the @code{<anyone> only} concept, to get the appropriate people to trade

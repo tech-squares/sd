@@ -1843,7 +1843,7 @@ extern void merge_setups(setup *ss, merge_action action, setup *result)
          t1 |= copy_rot(result, 14, res1, 7^offs, rot);
 
          /* See if we have a "classical" C1 phantom setup, and give the appropriate warning. */
-         if (action == merge_c1_phantom) {
+         if (action != merge_c1_phantom_nowarn) {
             if (t1 == 0 || t2 == 0)
                warn(warn__check_c1_phan);
             else
@@ -2741,7 +2741,8 @@ extern void so_and_so_only_move(
 
    merge_setups(
       &the_results[0],
-      indicator == 2 ? merge_strict_matrix : merge_c1_phantom,
+      indicator == 2 ? merge_strict_matrix :
+         (indicator == 6 ? merge_without_gaps : merge_c1_phantom),
       result);
 
    return;

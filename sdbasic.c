@@ -21,11 +21,12 @@
 /* This defines the following functions:
    mirror_this
    do_stability
+   check_line_restriction
+   check_column_restriction
    basic_move
 */
 
 #include "sd.h"
-extern map_thing map_tgl4_1;
 
 
 /* This file uses a few bogus setups.  They are never allowed to escape:
