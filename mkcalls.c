@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 /* ***  This next test used to be
     ifdef _POSIX_SOURCE
@@ -55,7 +56,7 @@ extern void exit(int code);
 #define SEEK_SET 0
 #endif
 
-/* This table is a copy of the one in sdtables.c .
+/* This table is a copy of the one in sdtables.c . */
 
 /* BEWARE!!  This list is keyed to the definition of "begin_kind" in sd.h . */
 /*   It must also match the similar table in the sdtables.c. */

@@ -3,6 +3,8 @@
 @c See the file INSTALL for how to format and view.
 @setfilename sd_doc.info
 @settitle Sd
+@set sd-version 30 (beta1)
+@set Time-stamp: Nov 30, 1993
 @c %**end of header
 @iftex
 @finalout
@@ -23,9 +25,9 @@
 @sp 10
 @center William B. Ackerman and Stephen Gildea
 @sp 7
-@center Nov 10, 1993
+@center @value{Time-stamp:}
 @sp 1
-@center for Sd version 30
+@center for Sd version @value{sd-version}
 @c
 @page    @c end of title page
 @iftex
@@ -58,11 +60,9 @@ NONINFRINGMENT.
 
 @node Top, Intro, (dir), (dir)
 
-@ifinfo
+@menu
 This file documents Sd, a square dance caller's helper.
 
-@end ifinfo
-@menu
 To get started quickly, type @key{1} to go to...
 
 * Getting Started::             Getting started quickly with Sd
@@ -120,7 +120,7 @@ Calling
 Resolving and Searching
 
 * Resolving::                   Resolving
-* Nice Setup::                  Making Nice Setups
+* Normalize::                   Normalizing the Setup
 * Do Anything::                 The @code{Do Anything} operation.
 * Reconcile::                   The @code{Reconcile} operation.
 
@@ -130,7 +130,13 @@ Miscellaneous Commands
 * Change Output File::          Changing the Output File
 * Abort/Exit/Undo::             Abort, Exit, and Undo
 * Inserting Comments::          Inserting Comments
-* Saving Pictures::             Saving Pictures
+* Keeping Pictures::            Keeping Pictures of the Setup
+
+Terminal Interface
+
+* Sdtty::                       The @code{sdtty} program
+* Sdtty on the PC::             The PC version
+* Sdtty on Unix::               The Unix version
 
 Call Notes
 
@@ -156,17 +162,15 @@ Installation
 
 * Building on Unix::            Building on Unix
 * Building on the Mac::         Building on the Mac with Think C
-* Creating Project Files::	  Creating Think C Project Files
 * Compiling a New Release::	  Compiling a New Release
 * Running on Macintosh::	  Running on the Mac
 * Building on DOS::		Building on DOS with gcc
-* Compiling with DJGPP::	  Compiling with GCC on DOS
-* Running on DOS::		  Requirements for running on DOS
 * Document Formatting::		How to format the documentation
 * Manifest::			List of files in the distribution
 
 @end menu
 
+@set full-manual
 @include readme.txinfo
 
 @node Getting Started, Invoking Sd, Intro, Top
@@ -243,6 +247,18 @@ title for window manager and icon use
 name to look up resources under.  default: program name.
 @item -xrm @i{resource-line}
 an X resource manager string.
+@end table
+
+These options are specific to the terminal-based version, @code{sdtty}.
+
+@table @code
+@item -no_cursor
+dumb terminal mode: do not use cursor motion commands to keep the screen
+up-to-date efficiently
+@item -lines @var{nlines}
+the number of lines on the screen.  Default is 25.
+@item -no_line_delete
+do not use the insert line or delete line cursor control commands
 @end table
 
 Additional options specific to this program:
@@ -429,16 +445,17 @@ under @code{r}.  Digits are listed first, followed by upper case letters,
 followed by lower case letters.
 
 If you are using the keyboard-based interface (@code{sdtty}),
-type the name of the call followed by a
-"newline" (carriage return).  The program has a "completing reader", which
+type the name of the call followed by @key{Return}.
+The program has a @i{completing reader}, which
 means that you need type only as much of each word as will make the word
-unique.  When you type a space, @code{sdtty} will complete the word for
-you if it can.  When you type a newline, tab, or escape, @code{sdtty} will
+unique.  When you type @key{Space}, @code{sdtty} will complete the word for
+you if it can.  When you type @key{Return}, @key{Tab}, or @key{Escape},
+@code{sdtty} will
 complete the entire call.  So, for example, if the setup is waves and the
-level is mainstream, you could type just "sw th" and a newline to get a
-swing thru.  In fact, just "sw" is enough.  When using @code{sdtty},
-typing a question mark will show all legal things that you could type at
-that point.
+level is mainstream, you could type just @code{sw th} and @key{Return} to get a
+@i{swing thru}.  In fact, just @code{sw} is enough.
+When using @code{sdtty}, typing a question mark (@key{?}) will show all
+legal things that you could type at that point.
 
 A number of calls have limitations or quirks that you should be aware of.
 @xref{Call Notes}.
@@ -461,19 +478,22 @@ middle mouse button is held down, the menu will scroll in real time.
 
 Some calls require a numeric designator (e.g., @i{square thru 3}), a people
 designator (e.g., @i{boys run}), a direction (e.g., @i{pass in}),
-or another call (e.g., @i{clover and star
-thru}).  Such designators appear in the call menu as @code{<N>}, @code{<ANYONE>},
+or another call (e.g., @i{clover and star thru}).
+Such designators appear in the call menu as @code{<N>}, @code{<ANYONE>},
 @code{<DIRECTION>},
-or @code{<ANYTHING>}.  When you select one of the first three kinds of calls,
-a popup will appear containing numbers, people designators, or directions.  Click on
-the chosen item.  Not all items will be legal in all cases, such as
+or @code{<ANYTHING>}.
+
+When you select one of the first three kinds of calls,
+a popup will appear containing numbers, people designators, or directions.
+Click on the chosen item.  Not all items will be legal in all cases, such as
 @code{leads run} from a grand line.  If you made a mistake, just move the mouse
 away from the popup.
 When using the keyboard-based interface (@code{sdtty}),
 just type the text normally for numbers, people, or directions.
 
 When you select a call that requires a subordinate call, the program
-will prompt you for it.  When using the keyboard-based interface (@code{sdtty}),
+will prompt you for it.
+When using the keyboard-based interface (@code{sdtty}),
 you must literally type the "<anything>" in the original call.
 
 Some calls or concepts may require more than one argument.  If
@@ -481,33 +501,35 @@ this is the case, popups will appear more than once.  Enter the
 items in sequence.
 
 Some calls or concepts require a number that is naturally expressed as a
-fraction indicating some number of quarters, such as touch 1/4, 1/2, or
-3/4.  When a popup appears asking for the number, enter it as a number of
-quarters.  The program will turn the
+fraction indicating some number of quarters, such as touch 1/4, 1/2, or 3/4.
+When a popup appears asking for the number, enter it as a number of quarters.
+The program will turn the
 fraction into the appropriate form, e.g., 2/4 becomes 1/2.
 When using the keyboard-based interface (@code{sdtty}), you may type it
-as a reduced fraction, as in @samp{circle by 1/2 x 3/4}.
+as a reduced fraction, as in @samp{circle by 1/2 by 3/4}.
+
 
 @node Entering Concepts, Call Modifications, Entering Calls, Calling
 @section Entering Concepts
 
 A call may be preceded by concepts, which modify the action of the call.
-These may be nested (@dfn{stacked}) to
-any reasonable depth.  In a perhaps hopeless attempt to keep the concept
-menus from becoming too unwieldy, concepts have been organized into a
-general concept menu and several submenus organized by topics.  The
-main concept menu is in the lower left corner.  It supposedly contains all
-the extremely common concepts.  Buttons for the other concepts submenus
-appear above this menu.  Clicking on one of these buttons brings up the
-submenu.  If you don't see what you want on a concept submenu, move the
-mouse away.  Some concepts appear in more than one submenu---it doesn't
-matter which one you use.  The submenus are
+These may be nested (@dfn{stacked}) to any reasonable depth.  In a
+perhaps hopeless attempt to keep the concept menus from becoming too
+unwieldy, concepts have been organized into a general concept menu and
+several submenus organized by topics.  The main concept menu is in the
+lower left corner.  It supposedly contains all the extremely common
+concepts.  Buttons for the other concepts submenus appear above this
+menu.  Clicking on one of these buttons brings up the submenu.  If you
+don't see what you want on a concept submenu, move the mouse away.  Some
+concepts appear in more than one submenu---it doesn't matter which one
+you use.  The submenus are
 
 @table @code
 @item phantom concepts
 those that involve picking out virtual setups, that may include
-phantoms, from a real formation that is larger than eight people.  Examples:
-@i{split phantom lines}, @i{triple boxes}, @i{triple lines working forward}.
+phantoms, from a real formation that is larger than eight people.
+Examples: @i{split phantom lines}, @i{triple boxes}, @i{triple lines
+working forward}.
 
 @item couples/tandem concepts
 the obvious thing.
@@ -531,9 +553,9 @@ When you click on any concept, the universal call menu replaces whatever
 special call menu may have been presented, since the set of legal calls
 becomes highly unpredictable.
 
-If you are using the keyboard-based interface (@code{sdtty}),
-type the concept the same way that you would type a call.  The "completing
-reader" works the same way.  Type a "newline" after the concept, and
+If you are using the keyboard-based interface (@code{sdtty}), type the
+concept the same way that you would type a call.  The completing reader
+works the same way.  Type @key{Return} after the concept and
 then enter the call on the next line.  Even though a concept and the call
 to which it applies will appear on the same line in the final transcript,
 each concept and each call is entered on its own line.
@@ -548,11 +570,13 @@ apply to it.  The program will then prompt you for the second call.
 A complex tree of concepts and calls can thus be constructed.
 
 The program recognizes the level at which concepts are legal, but lets you
-override this if you wish.  The "toggle concept levels" command toggles
+override this if you wish.  The @code{toggle concept levels} command toggles
 (turns on or off) the state of off-level concept permission.  In the menu-based
-program, click on the "toggle concept levels" icon.  In the text-base program,
-type the command "toggle concept levels".  When off-level concepts are enabled,
+program, click on the @code{toggle concept levels} button.
+In the text-based program, type the command @code{toggle concept levels}.
+When off-level concepts are enabled,
 their use will cause a warning to be inserted into the transcript.
+
 
 @node Call Modifications, Tag/Scoot, Entering Concepts, Calling
 @section Call Modifications
@@ -655,7 +679,8 @@ The people selector popup contains various asymmetric selectors such as
 @code{near line} and @code{far box}.  You can use these selectors with
 the @code{so-and-so do your part} concept to call @i{near column
 pass thru}, etc.  The resultant setup must be reasonable---shape-changers
-on one side of the set may lead to problems.  Most calls have not been checked for
+on one side of the set may lead to problems.
+Most calls have not been checked for
 robustness in the presence of asymmetrical setups.  Use this with care!
 The resolver checks all eight people, so it should work.
 If you have not restored symmetry, resolves may be extraordinarily difficult
@@ -670,21 +695,30 @@ accomplish various goals.
 
 @menu
 * Resolving::                   Resolving
-* Nice Setup::                  Making Nice Setups
+* Normalize::                   Normalizing the Setup
 * Do Anything::                 The @code{Do Anything} operation.
 * Reconcile::                   The @code{Reconcile} operation.
 @end menu
 
-@node Resolving, Nice Setup,  , Resolving and Searching
+@node Resolving, Normalize,  , Resolving and Searching
 @section Resolving
 
 Whenever the setup is in a resolved state, whether intentionally or
 accidentally, the program indicates that fact at the bottom of the
-transcript area.  The program looks for a fairly wide variety of getouts.
-If the sequence is within an
-@i{extend}, @i{circulate}, @i{pass thru}, @i{trade by}, @i{slip the clutch},
-or @i{cross by}
-of a resolve, it reports that too.
+transcript area.
+The program looks for @i{right and left grand} or
+@i{left allemande}
+from 8-chain,
+trade by, double pass thru, waves, crossed waves, 1/4 tag, and 3/4 tag.
+If the sequence needs an
+@i{extend}, @i{slip the clutch}, @i{circulate}, @i{pass thru}, @i{trade by},
+@i{cross by}, or @i{dixie grand}
+first, the program reports that too.
+The program will also find
+@i{promenade}, @i{reverse promenade},
+@i{single file promenade}, @i{reverse single file promenade},
+and @i{circle right (or left)}
+resolves.
 
 Whenever the @samp{resolve} message appears, you can end the sequence and
 write it to a file by clicking on @code{end this sequence}.  There are
@@ -749,25 +783,28 @@ operation fails.  (This tends to happen if you try to resolve out of an
 hourglass at Mainstream.)  You can click on @code{find another} again to make
 another attempt if you wish.
 
-@node Nice Setup, Do Anything, Resolving, Resolving and Searching
-@section Making Nice Setups
+@node Normalize, Do Anything, Resolving, Resolving and Searching
+@section Normalizing the setup
 
-Clicking on @code{nice setup} invokes an operation very similar to the resolver,
+Clicking on @code{normalize} invokes an operation very similar to the resolver,
 except that it searches for sequences of up to three calls that normalize
-various matrices, such as 4x4, into a "nice" 8-person setup.  It uses a variety
+various matrices, such as 4x4, into a nice 8-person setup.  It uses a variety
 of phantom-like concepts to do its work.
 
 Be aware that the phantom-like concepts that this command uses are not the only ways
-to get out of large matrix setups.  There are a number of calls, like press,
-truck, loop, squeeze, "Z axle", and "finish a long trip" that are also useful.
-the @code{nice setup} operation does not search for such things.  It is only
+to get out of large matrix setups.  There are a number of calls,
+like @i{press},
+@i{truck}, @i{loop}, @i{squeeze}, @i{Z axle}, and @i{finish a long trip}
+that are also useful.
+the @code{normalize} operation does not search for such things.  It is only
 intended to search for things that might not be obvious.
 
-If you have selected "toggle concept levels", the @code{nice setup} command may
+If you have selected @code{toggle concept levels},
+the @code{normalize} command may
 make use of concepts that are not legal at the chosen level.  This is sometimes
 useful in emergencies.
 
-@node Do Anything, Reconcile, Nice Setup, Resolving and Searching
+@node Do Anything, Reconcile, Normalize, Resolving and Searching
 @section The @code{Do Anything} operation
 
 Clicking on @code{do anything} invokes an operation very similar to the resolver,
@@ -775,7 +812,10 @@ except that it searches for any legal single call.  While this may sound like
 a fairly pointless operation, remember that you can use this while one or
 more concepts are already entered, in which case it will search for legal calls
 that involve those concepts.  Hence, this operation is useful for finding
-cute uses of difficult concepts such as @i{checkpoint}, @i{interlace}, or @i{on your own}.
+cute uses of difficult concepts such as @i{checkpoint},
+@i{interlace}, or @i{on your own}.
+
+In the Macintosh version, this command is called @code{pick random call}.
 
 @node Reconcile,  , Do Anything, Resolving and Searching
 @section The @code{Reconcile} operation
@@ -837,7 +877,7 @@ sequences.
 * Change Output File::          Changing the Output File
 * Abort/Exit/Undo::             Abort, Exit, and Undo
 * Inserting Comments::          Inserting Comments
-* Saving Pictures::             Saving Pictures
+* Keeping Pictures::            Keeping Pictures of the Setup
 @end menu
 
 @node Save Sequence, Change Output File,  , Misc Commands
@@ -884,19 +924,19 @@ that is, while no concepts have been entered, the program will erase
 the last complete call, with all of its concepts.  If one or more
 concepts have been entered, only the last concept will be erased.
 
-@node Inserting Comments, Saving Pictures, Abort/Exit/Undo, Misc Commands
+@node Inserting Comments, Keeping Pictures, Abort/Exit/Undo, Misc Commands
 @section Inserting Comments
 
 You can insert arbitrary text strings into the sequence transcript in the
-form of "comments".  This is useful for things that you may want to say
-to help the dancers, such as "side boys be careful -- go to your left".
+form of @i{comments}.  This is useful for things that you may want to say
+to help the dancers, such as ``side boys be careful---go to your left.''
 Also, if you want to call something that the program can't do, so you have
 to trick the program into doing it by means of several other calls, it is useful
 to enter a comment saying what you originally wanted.  This can guide you
 when editing the transcript file.
 
 To enter a comment, click on @code{insert a comment}.  A popup will appear into
-which you may enter the text.  The comment will be enclosed in "curly braces"
+which you may enter the text.  The comment will be enclosed in curly braces
 in the transcript.
 
 A comment may be entered in front of any concept or call, and goes into
@@ -904,16 +944,17 @@ the transcript exactly where it was entered.  Because of the way the program
 assembles mouse-clicks into transcript lines, it is not possible to enter
 a comment at the end of a line.
 
-@node Saving Pictures,  , Inserting Comments, Misc Commands
-@section Saving Pictures
 
-The program shows pictures in the transcript for the current position
+@node Keeping Pictures,  , Inserting Comments, Misc Commands
+@section Keeping Pictures
+
+The program shows pictures on the screen for the current position
 and the position just before the last call.  Normally, those pictures
 will not appear in the sequence written to the file.  If you want the
 current position to have its picture written in the file (say, because the
 sequence is very difficult and you believe it may be necessary to say
 something helpful then like ``check a parallelogram with boys in the center
-box'') click on @code{save picture}.
+box'') click on @code{keep picture}.
 
 
 @node Terminal Interface, Call Notes, Misc Commands, Top
@@ -921,41 +962,42 @@ box'') click on @code{save picture}.
 
 @menu
 * Sdtty::                       The @code{sdtty} program
-* The PC version::              The PC version
-* The Unix version::            The Unix version
+* Sdtty on the PC::             The PC version
+* Sdtty on Unix::               The Unix version
 @end menu
 
-@node Sdtty, The PC version,  , Terminal Interface
+@node Sdtty, Sdtty on the PC,  , Terminal Interface
 @section Sdtty
 
 A variation of the program, called @code{sdtty}, provides
 a terminal-oriented interface useful when you don't have access to a
 window system.  In this version, you type the commands, calls, and
-concepts to a "completing" reader.
+concepts to a completing reader.
 
 At present, @code{sdtty} is the only version of the program available for
 PC-compatible computers.  We hope to have the window-based version
-available for the "Windows" (Copyright of Microsoft) operating system
-soon.
+available for Microsoft-Windows soon.
 
 Where the window-based interface prompts in a separate popup for people,
-number, or direction designators, you type the designator as part of the call name.
+number, or direction designators,
+you type the designator as part of the call name.
 For example, to call @code{<ANYONE> run} and select @code{centers}, just
 type @code{centers run}.
-Where in the window interface you would select @code{square thru <n>}
+Where in the window interface you would select @w{@code{square thru <n>}}
 and then select @code{4} in response to the ``How many?'' prompt, with
-@code{sdtty} you type @code{square thru 4} as one command.
+@code{sdtty} you type @w{@code{square thru 4}} as one command.
 
-When typing, press "space" to complete the current word.
+When typing, press @key{Space} to complete the current word.
 Type @key{TAB} or @key{ESC} to complete as much as possible.
-Type @kbd{C-u} (that is, control U) to clear a partially-typed line.
+Type @kbd{C-u} (that is, Control U) to clear a partially-typed line.
 
 Press @kbd{?} to see the possible completions.
 If there are many possibilities, @code{sdtty} will display a page and
-offer a @samp{More} prompt.  Type "space" to see the next
+offer a @samp{More} prompt.  Type @key{Space} to see the next
 page, @key{RET} to see the next line, and @key{DEL} to stop.
 
-@code{sdtty} has a special command "refresh display", that has no counterpart in
+@code{sdtty} has a special command @code{refresh display}
+that has no counterpart in
 the window-based version.  It causes a complete clean transcript
 of the current sequence to be printed.  This can be used if the display got
 messed up due to such things as unreliable terminal or modem behavior.
@@ -964,23 +1006,24 @@ messed up due to such things as unreliable terminal or modem behavior.
 maintaining a clean transcript of the current sequence on the screen
 at all times, by using whatever Operating System facilities it thinks are
 appropriate.  If, for any reason, this doesn't work properly for you,
-you can give the "-no_cursor" switch at program startup to disable
+you can give the @code{-no_cursor} switch at program startup to disable
 that.  This will cause @code{sdtty} to treat the computer's display as
-if it were a "dumb" typewriter.  When started in this way, the part of
+if it were a dumb typewriter.  When started in this way, the part of
 the transcript that has changed with each command is simply redisplayed.
 This will inevitably lead to a choppy appearance on the screen or
-printing device.  The "refresh display" command cleans that up.
+printing device.  The @code{refresh display} command cleans that up.
 
-@node The PC version, The Unix version, Sdtty, Terminal Interface
-@section The PC version
+@node Sdtty on the PC, Sdtty on Unix, Sdtty, Terminal Interface
+@section Sdtty on the PC
 
 Our DOS compiler, DJGPP, says it supports 80386, 80387, 80486, XMS,
 himem.sys, VCPI, DPMI, QEMM, 386MAX, and DesqView.
 We have also heard it works with Microsoft's EMM386 and Qualitas's
 @w{386 MAX}.
 (You need EMS; for EMM386, this means that you can't use the
-@code{NOEMS} option.)  The authors have not tested Sd with all of
-these.
+@code{NOEMS} option.  This may require that you remove the @code{NOEMS}
+option from the @code{CONFIG.SYS} file.)
+The authors have not tested Sd with all of these.
 
 To run under DOS, you need a 386 or higher processor and 2Mb of memory.
 A hard disk is recommended.  There
@@ -989,28 +1032,29 @@ The authors have not actually tried it on a system this small, and we
 would be interested in your experiences.
 
 To deal with different types of display hardware with various screen sizes,
-the "-screensize <n>" switch can be given at program startup, as in
-"sdtty -screensize 36 a2".  The default size is 25.
+the @code{-lines @var{n}} switch can be given at program startup, as in
+@code{sdtty -lines 36 a2}.  The default size is 25.
 
-@node The Unix version,  , The PC version, Terminal Interface
-@section The Unix version
+@node Sdtty on Unix,  , Sdtty on the PC, Terminal Interface
+@section Sdtty on Unix
 
-The Unix version normally uses the "curses" display access mechanism.  It
+The Unix version normally uses the @i{curses} display access mechanism.  It
 should make effective use of the screen-editing features of the terminal
 (VT-100 or emulation of same, or whatever) to keep the screen updated.
 However, this requires that all of the system facilities for dealing with
-terminals ("TERM" environment variable, "terminfo" database, "stty"
-behavior, etc.) be working properly.  If, for any reason, this doesn't
-work for you, you can turn the "curses" mechanism off completely by using the
-"-no_cursor" command-line switch at program startup.  This should even
+terminals (@code{TERM} environment variable, @code{terminfo} database,
+@code{stty} behavior, etc.) be working properly.
+If, for any reason, this doesn't
+work for you, you can turn the @i{curses} mechanism off completely by using the
+@code{-no_cursor} command-line switch at program startup.  This should even
 make it possible to use the program from a printing device.
 
-When using "curses", it normally tries to use the insert/delete line
+When using @i{curses}, it normally tries to use the insert/delete line
 capabilities of your terminal device to update the screen more efficiently.
 For certain terminal or modem configurations, this may be
 counterproductive.  If so, you can turn this feature off
 by giving the command-line switch
-"-no_line_delete" at program startup.
+@code{-no_line_delete} at program startup.
 
 @node Call Notes, Concept Notes, Terminal Interface, Top
 @chapter Call Notes
@@ -1024,7 +1068,7 @@ by giving the command-line switch
 * Recycle::                     Recycle has two forms in the Database
 @end menu
 
-@node Sweeping Direction, C1 Single Rotate,  , Call Notes
+@node Sweeping Direction, C1 Single Rotate, , Call Notes
 @section Sweeping Direction
 
 @samp{Sweep 1/4}, @samp{with the flow}, and @samp{by golly}
@@ -1054,7 +1098,7 @@ something like @samp{heads star thru}.
 Do not call these if the ends of the line are facing the same way.
 @samp{Wheel and deal} from a one-faced line is okay.
 
-@node Rotate from Columns, Colliding Recycle, Call Notes
+@node Rotate from Columns, Recycle, Colliding Recycle, Call Notes
 @section Rotate from Columns
 
 Remember that @i{rotate} and @i{single rotate} from columns is legal only
@@ -1062,7 +1106,7 @@ at C3, but from lines it is legal at C2.  Since the program has no
 knowledge of different starting setups implying different levels, the call
 is in the database at C2.  Don't use it from columns at that level.
 
-@node Recycle,  , Call Notes
+@node Recycle,  , Rotate from Columns, Call Notes
 @section Recycle
 
 There are two @i{Recycle} calls in the database: @samp{recycle} can be done
@@ -1102,7 +1146,8 @@ In this program, @dfn{gruesome} simply means
 @i{phantom couples or tandem} with the phantoms added to make a 2x8 rather than
 the 4x4 that would normally be created, and with the added requirement that
 the pairing be parallel to the long axis.  @dfn{Gruesome twosome} is just an
-abbreviation for @i{gruesome as couples twosome}.  This extension is not
+abbreviation for @i{gruesome as couples twosome}.
+This extension is not
 widely accepted at present.  Be prepared to explain what you mean.
 
 @node Divided, Concentric, Gruesome, Concept Notes
@@ -1206,7 +1251,8 @@ Some of the replacement/interruption meta-concepts push the
 semantics of the language to the limit.  Whenever a call undergoes an
 interruption or enters or leaves a part with an additional concept on it,
 there is an implicit @i{piecewise} at that instant.  That is, concepts and
-setups are re-evaluated.  This behavior is not always obvious to the dancers.
+setups are re-evaluated.
+This behavior is not always obvious to the dancers.
 Furthermore, in some cases it may be perceived as wrong.  For example, an
 implied @i{piecewise} on a concept such as @i{cross concentric} or
 @i{single cross concentric} is very likely to be considered wrong,
@@ -1215,7 +1261,7 @@ If you have any doubt about whether some instance of concept stacking is
 correct and will be understood by the dancers, do not use it.
 
 Furthermore, replacements and interruptions are @i{normal}, that is, they
-do not carry any concepts that were on the call being replaced -- only
+do not carry any concepts that were on the call being replaced---only
 those on the entire operation.
 
 Example, from a starting DPT setup:
@@ -1242,6 +1288,7 @@ If you think that some instance of a replacement or interruption will
 cause confusion on the dance floor because of this sort of issue,
 you should not use it.
 
+
 @node So-And-So Do Your Part, 12 Matrix and 16 Matrix, Implied Piecewise, Concept Notes
 @section So-And-So Do Your Part
 
@@ -1266,19 +1313,20 @@ concept may also be used to get the centers to trade.
 
 This discussion will be in terms of 12 matrices.  16 matrices are analogous.
 
-Definition: a "large" setup is a setup of more than 8 people.  A "large"
-call is a call executed in such a setup.  There are extremely few large calls
+Definition: a @dfn{large setup} is a setup of more than 8 people.
+A @dfn{large call} is a call executed in such a setup.
+There are extremely few large calls
 that don't have some kind of modifier like @samp{12 MATRIX} or @samp{3x3}
 in their name.
 
 General principle:  when in a large setup, so that phantoms are present,
 you must say something to acknowledge the existence of the phantoms, that
-is, to say that the phantom's spots count.  This is necessary whether doing
+is, to say that the phantoms' spots count.  This is necessary whether doing
 a large call, or splitting the large setup into smaller ones for doing small
 calls.  So, for example, if you are in a parallelogram, you can't just say
 the name of a large call.  You must say @samp{12 MATRIX} or @samp{2X6 MATRIX}.
 
-The explicit matrix concepts @samp{MxN MATRIX}, e.g. @samp{2X6 MATRIX}, legitimize
+The explicit matrix concepts @samp{MxN MATRIX}, e.g., @samp{2X6 MATRIX}, legitimize
 the large setup, saying where the phantoms are, and making it possible to
 call large calls, or, if the call has no large version, to split the setup
 and do multiple instances of smaller versions.
@@ -1295,10 +1343,10 @@ in which each diamond has all 4 people facing the same way,
 in which both ends are phantoms.  @samp{DIAMONDSOME} leads to a virtual 1x2.
 
 The call size modifiers @samp{12 MATRIX} or @samp{16 MATRIX} legitimize the large setup
-[though they don't always state unambiguously where the phantoms are, which
-can lead to difficulty] and also select a "large" version of a call.  When
-this modifier is used, only large versions of the call may be performed --
-the setup will not be split for small versions.
+(though they don't always state unambiguously where the phantoms are, which
+can lead to difficulty) and also select a large version of a call.  When
+this modifier is used, only large versions of the call may be
+performed---the setup will not be split for small versions.
 
 When we say that @samp{12 MATRIX} is a call size modifier, we mean that, for
 example, @samp{12 MATRIX relay the top} is a call.  @samp{3X4 MATRIX relay the top}
@@ -1318,10 +1366,11 @@ size modifier.
 
 The explict matrix concepts and call size modifiers all have the additional
 property that they can expand a smaller setup as required, so, for example,
-@samp{12 MATRIX circulate} is legal in normal columns.  [Special case: in a 2x4
+@samp{12 MATRIX circulate} is legal in normal columns.
+(Special case: in a 2x4
 setup, the @samp{16 MATRIX} call modifier doesn't know whether to expand to a
 4x4 or a 2x8, so you may need to use @samp{4X4 MATRIX} or @samp{2X8 MATRIX} explicitly.
-In other cases, the expansion is clear.]
+In other cases, the expansion is clear.)
 
 
 For example, from triple waves,
@@ -1343,9 +1392,9 @@ and
 @item 2X6 MATRIX in roll circulate
 @end table
 
-         SMALL CALLS (defined for 8 people or fewer)
+@subsection Small Calls (defined for 8 or fewer people)
 
-If a call is defined for a setup of 8 people or fewer, and the setup is larger
+If a call is defined for a setup of 8 or fewer people, and the setup is larger
 than 8 people, so you want the setup divided, you must give an explicit matrix
 concept such as @samp{2X6 MATRIX}.  This defines the formation, and tells people
 to divide the 12-person formation into the smaller formations required to do
@@ -1364,7 +1413,7 @@ are not.  You may also say
 @end table
 (The 12 MATRIX DIVIDED COLUMNS concept forms two 6-person setups.)
 
-The above examples will work from 2x4 columns also -- it expands
+The above examples will work from 2x4 columns also---it expands
 the matrix by placing phantoms outside.
 
 From triple waves, you may also say
@@ -1380,7 +1429,7 @@ You may substitute calls like @samp{3x3 peel off} for @samp{double play} in the
 above.  Note that the @samp{MxN} concept identifies a variant of the call.
 It does not cause the matrix to be expanded or recognized.
 
-         LARGE CALLS (defined for more than 8 people)
+@subsection Large Calls (defined for more than 8 people)
 
 Most large calls are versions of calls that are normally done from small
 setups.  That large version must be identified with some modifier such as
@@ -1401,7 +1450,7 @@ but not
 @item 3X3 transfer the column
 @end table
 
-The above examples will work from 2x4 columns also -- it expands
+The above examples will work from 2x4 columns also---it expands
 the matrix by placing phantoms outside.
 
 @node Bugs, Misc Advice, Concept Notes, Top
@@ -1440,7 +1489,8 @@ simply not done at lower levels.  You should use your judgement.
 
 Warning:  The database is not without errors or misunderstandings in
 nonstandard uses of calls.  The program generally tries to be extremely
-conservative.  However,
+conservative.
+However,
 you should not blindly accept what the program does, particularly if
 a call was used in an unusual way.  The management will not be
 responsible for any sequences left unattended.
@@ -1532,7 +1582,7 @@ original two numbers, we can correlate possible problems with the
 fileset on which the private version was based.
 
 The calls database also has a version.
-If you modify the database, please
+If you modify the database, we ask that you
 change the version string at the top of the file.
 
 @include install.txinfo
@@ -1833,12 +1883,12 @@ of promoting the sharing and reuse of software generally.
 
 @item
 BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
+FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW@.  EXCEPT WHEN
 OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
 PROVIDE THE PROGRAM ``AS IS'' WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
 OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS
-TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE@.  THE ENTIRE RISK AS
+TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU@.  SHOULD THE
 PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
 REPAIR OR CORRECTION.
 
@@ -1884,7 +1934,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE@.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License

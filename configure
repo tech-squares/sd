@@ -1,6 +1,16 @@
 #!/bin/sh
+# From configure.in Time-stamp: 93/11/30 00:19:42 gildea
+# configure script for Sd (square dance caller's helper)
+#
+# options:
+#    --with-warnings: of interest to developers only
+#		(not implemented for all compilers)
+#    --with-pc: generate makefile for use on IBM-PC running DOS
+#		with dmake and djgpp C compiler
+#
+#!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
-# Generated automatically using autoconf.
+# Generated automatically using autoconf version 1.7 by gildea.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -128,14 +138,7 @@ esac
 # Save the original args to write them into config.status later.
 configure_args="$*"
 
-TIME_STAMP="configure.in Time-stamp: <93/08/03 18:05:56 gildea>"
-#
-# options:
-#    --with-warnings: of interest to developers only
-#		(not implemented for all compilers)
-#    --with-pc: generate makefile for use on IBM-PC running DOS
-#		with dmake and djgpp C compiler
-#
+CONFIG_FILES=Makefile
 
 # See if this is a build with djgpp for a PC.
 
@@ -143,9 +146,10 @@ TIME_STAMP="configure.in Time-stamp: <93/08/03 18:05:56 gildea>"
 withval="$with_pc"
 if test -n "$withval"; then
   
-echo "making makefile for djgpp on a PC"
+test -r makefile.pc.in && CONFIG_FILES=makefile.pc
+echo "making ${CONFIG_FILES} for djgpp on a PC"
 # ****** Beginning of PC section ******
-SDTTY_OBJ="sdui-tty.o sdmatch.o sdui-tpc.o"
+SDTTY_OBJ="$(SDTTY_OBJ_PC)"
 # DOS can't handle long command lines
 SDTTY_OBJS="@pcfiles.lnk"
 CC=gcc
@@ -154,18 +158,16 @@ DEFS=
 TTY_FLAGS=
 TTY_LIBS=-lpc
 X11_LIBS=
-# In case you're wondering, those are tabs in the next two definitions.
-STRIP="	strip \$@"
-AOUT2EXE="	aout2exe \$@"
-
-
-DMAKE_IMPLICIT="\%.o: \%.c; $(CC) $(CFLAGS) -c \$*.c"
+LN_S="ln -s"
+STRIP="strip \$@"
+AOUT2EXE="aout2exe \$@"
+DEFAULT_TARGET=alltty
 # ****** End of PC section ******
 
 else
   
 # ****** Beginning of Unix section ******
-echo "making makefile for unix"
+echo "making ${CONFIG_FILES} for Unix"
 echo "checking for compiler type"
 
 if test -z "$CC"; then
@@ -256,14 +258,13 @@ rm -f conftest*
   test -n "$need_trad" && CC="$CC -traditional"
 fi
 
+CDEBUGFLAGS=-O
 
 # If we didn't get gcc, look for other compilers.  Set CDEBUGFLAGS appropriately.
 # In any case, deal with the "with-warnings" switch.
 
 if test -n "$GCC"; then
   echo "using gcc"
-  CDEBUGFLAGS=-O
-  # Deal with the "with-warnings" switch.
   # check whether --with-warnings was given
 withval="$with_warnings"
 if test -n "$withval"; then
@@ -272,32 +273,27 @@ fi
 
 else
   echo "not using gcc, looking for other compilers"
-  CDEBUGFLAGS=-O
-  CC_save="$CC"
+  echo "checking for HP compiler"
+  cat > conftest.c <<EOF
+#include "confdefs.h"
+#ifdef __hpux
+yes
+#endif
+EOF
+eval "$CPP conftest.c > conftest.out 2>&1"
+if egrep "yes" conftest.out >/dev/null 2>&1; then
+  rm -rf conftest*
   CC="$CC -Aa -z +DA1.1 -D_AES_SOURCE"
   DEFS="+O3 +Obb750"
-  echo checking for HP compiler
-cat > conftest.c <<EOF
-#include "confdefs.h"
-#include <stdio.h>
-int main() { exit(0); }
-int t() { printf("hello world\n");  }
-EOF
-if eval $compile; then
-  rm -rf conftest*
   # check whether --with-warnings was given
 withval="$with_warnings"
 if test -n "$withval"; then
   CC="$CC +w1"
 fi
 
-     CDEBUGFLAGS="$DEFS"
-     DEFS=
+   CDEBUGFLAGS="$DEFS"
+   DEFS=
 
-else
-  rm -rf conftest*
-  CC="$CC_save"
-    DEFS=
 fi
 rm -f conftest*
 
@@ -308,7 +304,7 @@ fi
 
 echo "got compiler type"
 
-echo "checking whether -I. is needed"
+echo "checking whether -I$srcdir is needed"
 cat > conftest.c <<EOF
 #include "confdefs.h"
 #include "sd.h"
@@ -322,64 +318,132 @@ else
 fi
 rm -f conftest*
 
-
 # Begin X11 investigation.
 
-echo "searching for include directory to use in X11_FLAGS"
-if test -z "$found_X11_FLAGS"; then
-  echo "looking for <X11/Xaw/Paned.h>..."
-  # first try without any -I flag
-  cat > conftest.c <<EOF
-#include "confdefs.h"
-#include <X11/Xaw/Paned.h>
+# If we find X, set shell vars x_includes and x_libraries to the paths.
+no_x=true
+echo checking for X include and library files with xmkmf
+rm -fr conftestdir
+if mkdir conftestdir; then
+  cd conftestdir
+  cat > Imakefile <<\EOF
+acfindx:
+	@echo "im_incroot=$(INCROOT); im_usrlibdir=$(USRLIBDIR); im_libdir=$(LIBDIR)"
 EOF
-err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
-if test -z "$err"; then
-  rm -rf conftest*
-  found_X11_FLAGS=1
-
-else
-  rm -rf conftest*
-  found_X11_FLAGS=""
-fi
-rm -f conftest*
-  X11_FLAGS=""
-fi
-CPP_fi_save="$CPP"
-for dir in /usr/include/X11R5		/usr/local/include		/usr/athena/include	
-do
-  if test -n "$found_X11_FLAGS"; then
-    break
-  else
-    echo "looking for <X11/Xaw/Paned.h> in $dir"
-    X11_FLAGS="-I$dir"
-    CPP="$CPP_fi_save $X11_FLAGS"
-    cat > conftest.c <<EOF
-#include "confdefs.h"
-#include <X11/Xaw/Paned.h>
-EOF
-err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
-if test -z "$err"; then
-  rm -rf conftest*
-  found_X11_FLAGS=1
-
-else
-  rm -rf conftest*
-  X11_FLAGS=""
-fi
-rm -f conftest*
+  if (xmkmf) >/dev/null 2>/dev/null && test -f Makefile; then
+    no_x=
+    # GNU make sometimes prints "make[1]: Entering...", which would confuse us.
+    eval `make acfindx | grep -v make`
+    # Open Windows xmkmf reportedly sets LIBDIR instead of USRLIBDIR.
+    if test ! -f $im_usrlibdir/libX11.a && test -f $im_libdir/libX11.a; then
+      im_usrlibdir=$im_libdir
+    fi
+    case "$im_incroot" in
+	/usr/include) ;;
+	*) x_includes="$im_incroot" ;;
+    esac
+    case "$im_usrlibdir" in
+	/usr/lib | /lib) ;;
+	*) x_libraries="$im_usrlibdir" ;;
+    esac
   fi
-done
-if test -z "$found_X11_FLAGS"; then
-  echo "note: cannot find <X11/Xaw/Paned.h> header file"
+  cd ..
+  rm -fr conftestdir
 fi
-CPP="$CPP_fi_save"
 
+if test -z "$im_usrlibdir"; then
+echo checking for X include and library files directly
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <X11/Intrinsic.h>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  no_x=
 
-# Clean this up for further tests.
-LIBS=""
-CFLAGS=""
+else
+  rm -rf conftest*
+  for dir in \
+    /usr/local/include \
+    /usr/unsupported/include \
+    /usr/x386/include \
+    /usr/local/x11r5/include \
+    /usr/include/X11R5 \
+    /usr/include/X11R4 \
+    /usr/X11R5/include \
+    /usr/X11/include \
+    /usr/openwin/include \
+    /usr/openwin/share/include \
+    /usr/lpp/Xamples/include \
+    ; \
+  do
+    if test -r $dir/X11/Intrinsic.h; then
+      x_includes=$dir; no_x=
+      break
+    fi
+  done
+fi
+rm -f conftest*
 
+# Check for the libraries.  First see if replacing the `include' by
+# `lib' works.
+LIBS_save="${LIBS}"
+LIBS="${LIBS} -lXt"
+have_lib=""
+echo checking for -lXt
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; no_x=
+else
+   :; for dir in `echo "$x_includes" | sed s/include/lib/` \
+  /usr/local/lib \
+  /usr/unsupported/lib \
+  /usr/x386/lib \
+  /usr/local/x11r5/lib \
+  /usr/lib/X11 \
+  /usr/lib/X11R4 \
+  /usr/X11R5/lib \
+  /usr/X11/lib \
+  /usr/openwin/lib \
+  /usr/lpp/Xamples/lib \
+  ; \
+do
+  for extension in a so sl; do
+    if test -r $dir/libXt.$extension; then
+      x_libraries=$dir; no_x=
+      break 2
+    fi
+  done
+done
+fi
+
+fi
+if test -n "$verbose"; then
+  test -n "$x_includes" && echo "	found X11 headers in $x_includes"
+  test -n "$x_libraries" && echo "	found X11 libraries in $x_libraries"
+fi
+if test -n "$x_includes"; then
+  X11_FLAGS="-I$x_includes"
+fi
+if test -n "$x_libraries"; then
+  x_flags="-L$x_libraries"
+fi
+if test -n "$no_x"; then
+  echo "note: cannot find X11 headers and libraries"
+fi
 LIBS_save="${LIBS}"
 LIBS="${LIBS} -lsocket"
 have_lib=""
@@ -427,69 +491,36 @@ else
 fi
 
 
-echo "checking for X11 libraries ..."
-LIBS="-lXaw -lXmu -lXt -lXext -lX11 $LIBS"
-echo checking for libraries in normal location
-cat > conftest.c <<EOF
+X11_LIBS="$x_flags -lXaw -lXmu -lXt -lXext -lX11 $LIBS"
+
+if test -n "$x_libraries"; then
+    echo "checking whether -R$x_libraries is needed"
+  LIBS="$X11_LIBS"
+  cat > conftest.c <<EOF
 #include "confdefs.h"
-
-int main() { exit(0); }
-int t() { XawListChange(); }
+main(){XDisplayName(0); exit(0);}
 EOF
-if eval $compile; then
-  rm -rf conftest*
-  x_libs=1
-
-fi
-rm -f conftest*
-
-if test -z "$x_libs"; then
-  LIBS_save="$LIBS"
-  LIBS="-L/usr/lib/X11R5 $LIBS"
-  echo checking for libraries in /usr/lib/X11R5
-cat > conftest.c <<EOF
-#include "confdefs.h"
-
-int main() { exit(0); }
-int t() { XawListChange(); }
-EOF
-if eval $compile; then
-  rm -rf conftest*
-  x_libs=1
-
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  :
 else
-  rm -rf conftest*
-  LIBS="$LIBS_save"
-fi
-rm -f conftest*
-
-fi
-if test -z "$x_libs"; then
-  LIBS_save="$LIBS"
-  LIBS="-L/usr/athena/lib $LIBS"
-  echo checking for libraries in /usr/athena/lib
-cat > conftest.c <<EOF
+  # losing, try adding -R
+    LIBS="$LIBS -R$x_libraries"
+    cat > conftest.c <<EOF
 #include "confdefs.h"
-
-int main() { exit(0); }
-int t() { XawListChange(); }
+main(){XDisplayName(0); exit(0);}
+    
 EOF
-if eval $compile; then
-  rm -rf conftest*
-  x_libs=1
-
-else
-  rm -rf conftest*
-  LIBS="$LIBS_save"
-fi
-rm -f conftest*
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  echo "your system requires the non-standard -R argument; my condolences"
+     X11_LIBS="$X11_LIBS -R$x_libraries"
 
 fi
-if test -z "$x_libs"; then
-  echo "note: cannot link X11/Xaw programs"
+rm -fr conftest*
 fi
-
-X11_LIBS="$LIBS"
+rm -fr conftest*
+fi
 
 # End of X11 investigation, begin curses investigation.
 
@@ -520,12 +551,7 @@ echo "checking for curses include files and libraries ..."
 
 CFLAGS=""
 LIBS="-lcurses"
-echo checking for library in normal location
-cat > conftest.c <<EOF
-#include "confdefs.h"
-
-int main() { exit(0); }
-int t() { 
+curses_prog='
 #include <curses.h>
 #include <unistd.h>
 int ly, lx;
@@ -533,7 +559,13 @@ initscr();            noecho();   cbreak();         scrollok(stdscr, LINES);
 idlok(stdscr, TRUE);  endwin();   (void) getch();   clrtoeol();
 clrtobot();           refresh();  move(1, 2);       addstr((char *) 0);
 getstr((char *) 0);   addch(3);   beep();           getyx(stdscr, ly, lx);
- }
+'
+echo checking for library in normal location
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { $curses_prog }
 EOF
 if eval $compile; then
   rm -rf conftest*
@@ -551,15 +583,7 @@ cat > conftest.c <<EOF
 #include "confdefs.h"
 
 int main() { exit(0); }
-int t() { 
-#include <curses.h>
-#include <unistd.h>
-int ly, lx;
-initscr();            noecho();   cbreak();         scrollok(stdscr, LINES);
-idlok(stdscr, TRUE);  endwin();   (void) getch();   clrtoeol();
-clrtobot();           refresh();  move(1, 2);       addstr((char *) 0);
-getstr((char *) 0);   addch(3);   beep();           getyx(stdscr, ly, lx);
- }
+int t() { $curses_prog }
 EOF
 if eval $compile; then
   rm -rf conftest*
@@ -571,7 +595,10 @@ rm -f conftest*
 fi
 
 if test -z "$got_curses_libs"; then
-  echo "note: cannot link curses programs, disabling curses service"
+  echo "********************************************************************"
+  echo "* NOTE: Not able to build curses programs, disabling curses.       *"
+  echo "* Sdtty will always behave as if the \"-no_cursor\" switch given.    *"
+  echo "********************************************************************"
   CFLAGS="-DNO_CURSES"
   LIBS=""
 fi
@@ -579,43 +606,40 @@ fi
 
 TTY_FLAGS="$CFLAGS"
 TTY_LIBS="$LIBS"
-SDTTY_OBJ="sdui-tty.o sdmatch.o sdui-ttu.o"
+SDTTY_OBJ="$(SDTTY_OBJ_UNIX)"
 SDTTY_OBJS="$(SD_OBJS) $(SDTTY_OBJ)"
-DMAKE_IMPLICIT=
+
+echo checking for ln -s
+rm -f conftestdata
+if ln -s X conftestdata 2>/dev/null
+then
+  rm -f conftestdata
+  LN_S="ln -s"
+else
+  LN_S=ln
+fi
+
+
+
+if test -z "$no_x" -a -n "$DISPLAY"; then
+  DEFAULT_TARGET=allx11
+else
+  DEFAULT_TARGET=alltty
+fi
 
 # ****** End of Unix section ******
 
 fi
 
 
-if test -n "$x_libs" -a -n "$found_X11_FLAGS" -a -n "$DISPLAY"; then
-  DEFAULT_TARGET=allx11
-else
-  DEFAULT_TARGET=alltty
-fi
-
 echo "compilation settings are as follows:"
-echo "  compiler invocation (CC) =$CC"
-echo "  general compilation flags (FLAGS) =$DEFS"
-echo "  extra flags for optimization/debug (CDEBUGFLAGS) =$CDEBUGFLAGS"
-echo "  extra flags for compiling sdui-x11.c (X11_FLAGS) =$X11_FLAGS"
-echo "  extra flags for compiling sdui-ttu.c (TTY_FLAGS) =$TTY_FLAGS"
-echo "  flags for linking sd with X11 (X11_LIBS) =$X11_LIBS"
-echo "  flags for linking sdtty (TTY_LIBS) =$TTY_LIBS"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+echo "  compiler invocation (CC) = $CC"
+echo "  general compilation flags (DEFS) = $DEFS"
+echo "  extra flags for optimization/debug (CDEBUGFLAGS) = $CDEBUGFLAGS"
+echo "  extra flags for compiling sdui-x11.c (X11_FLAGS) = $X11_FLAGS"
+echo "  extra flags for compiling sdui-ttu.c (TTY_FLAGS) = $TTY_FLAGS"
+echo "  flags for linking X11 (X11_LIBS) = $X11_LIBS"
+echo "  flags for linking sdtty (TTY_LIBS) = $TTY_LIBS"
 
 # Set default prefixes.
 if test -n "$prefix"; then
@@ -662,17 +686,17 @@ STRIP='$STRIP'
 AOUT2EXE='$AOUT2EXE'
 CC='$CC'
 CPP='$CPP'
+LN_S='$LN_S'
+CONFIG_FILES='$CONFIG_FILES'
 CDEBUGFLAGS='$CDEBUGFLAGS'
 DEFS='$DEFS'
-X11_LIBS='$X11_LIBS'
 X11_FLAGS='$X11_FLAGS'
+X11_LIBS='$X11_LIBS'
 TTY_FLAGS='$TTY_FLAGS'
 TTY_LIBS='$TTY_LIBS'
 SDTTY_OBJ='$SDTTY_OBJ'
 SDTTY_OBJS='$SDTTY_OBJS'
-TIME_STAMP='$TIME_STAMP'
 DEFAULT_TARGET='$DEFAULT_TARGET'
-DMAKE_IMPLICIT='$DMAKE_IMPLICIT'
 LIBS='$LIBS'
 srcdir='$srcdir'
 DEFS='$DEFS'
@@ -704,17 +728,17 @@ s%@STRIP@%$STRIP%g
 s%@AOUT2EXE@%$AOUT2EXE%g
 s%@CC@%$CC%g
 s%@CPP@%$CPP%g
+s%@LN_S@%$LN_S%g
+s%@CONFIG_FILES@%$CONFIG_FILES%g
 s%@CDEBUGFLAGS@%$CDEBUGFLAGS%g
 s%@DEFS@%$DEFS%g
-s%@X11_LIBS@%$X11_LIBS%g
 s%@X11_FLAGS@%$X11_FLAGS%g
+s%@X11_LIBS@%$X11_LIBS%g
 s%@TTY_FLAGS@%$TTY_FLAGS%g
 s%@TTY_LIBS@%$TTY_LIBS%g
 s%@SDTTY_OBJ@%$SDTTY_OBJ%g
 s%@SDTTY_OBJS@%$SDTTY_OBJS%g
-s%@TIME_STAMP@%$TIME_STAMP%g
 s%@DEFAULT_TARGET@%$DEFAULT_TARGET%g
-s%@DMAKE_IMPLICIT@%$DMAKE_IMPLICIT%g
 s%@LIBS@%$LIBS%g
 s%@srcdir@%$srcdir%g
 s%@DEFS@%$DEFS%
@@ -726,4 +750,3 @@ exit 0
 EOF
 chmod +x config.status
 ${CONFIG_SHELL-/bin/sh} config.status
-

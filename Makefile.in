@@ -1,15 +1,18 @@
 # Makefile for Sd (square dance caller's helper)
-# Time-stamp: <93/07/02 16:47:00 wba>
+# Time-stamp: <93/11/30 17:59:45 gildea>
 
 srcdir = @srcdir@
-TEXDIR = /TeX/bin
+# VPATH is for GNU make
+VPATH = @srcdir@
 
-# This gives the compiler name and any switches that it needs to make it operate
-# the way we want (ANSI language, standards conformance, target hardware, etc.)
+# This gives the compiler name and any switches that it needs to make
+# it operate the way we want (ANSI language, standards conformance,
+# target hardware, etc.)
+# To get gcc on Athena, "add outland" before running "configure".
 CC = @CC@
 
 # This gives any "-D" switches that we always need to send to the compiler.
-FLAGS = @DEFS@
+DEFS = @DEFS@
 
 # This gives the optimization and/or debug info.  These flags presumably
 # don't affect the semantics of the language and run-time environment, so you
@@ -17,11 +20,11 @@ FLAGS = @DEFS@
 # The options shown here have been chosen to optimize the program for
 # production use.  Depending on your operating system, compiler, and debugger,
 # this may compromise the ability to debug the program.  In this case, you may
-# need to choose different options, typically "-g", for debugging.  Consult your
-# system, compiler, and debugger vendor for further information.
+# need to choose different options, typically "-g", for debugging.
+# Consult your system, compiler, and debugger vendor for further information.
 CDEBUGFLAGS = @CDEBUGFLAGS@
 
-CFLAGS = $(FLAGS) $(CDEBUGFLAGS)
+CFLAGS = $(DEFS) $(CDEBUGFLAGS)
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
 # of the X11 user interface (sdui-x11.c).
@@ -52,7 +55,12 @@ SD_OBJS = sdmain.o sdinit.o sdutil.o sdbasic.o \
 SDX11_SRC = sdui-x11.c
 SDX11_OBJ = sdui-x11.o
 
-TTY_DIST_SRCS = sdui-tty.c sdmatch.c sdui-ttu.c sdui-tpc.c
+# This has all special source files for sdtty,
+# for making the distribution and running lint.
+SDTTY_SRC = sdui-tty.c sdmatch.c sdui-ttu.c sdui-tpc.c
+SDTTY_OBJ_UNIX = sdui-tty.o sdmatch.o sdui-ttu.o
+SDTTY_OBJ_PC   = sdui-tty.o sdmatch.o sdui-tpc.o
+# This has the special object files used for building this version of sdtty.
 SDTTY_OBJ = @SDTTY_OBJ@
 
 SDTTY_OBJS = @SDTTY_OBJS@
@@ -60,10 +68,8 @@ SDTTY_OBJS = @SDTTY_OBJS@
 MKCALLS_SRCS = mkcalls.c dbcomp.c
 MKCALLS_OBJS = mkcalls.o dbcomp.o
 
-.SUFFIXES: .o .c .dvi .info .txinfo
-
-.c.o:
-	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
+SRCS = $(SD_SRCS) $(SDX11_SRC) $(SDTTY_SRC) $(MKCALLS_SRCS)
+OBJS = $(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ) $(MKCALLS_OBJS)
 
 all: @DEFAULT_TARGET@
 allx11: sd sd_calls.dat
@@ -73,20 +79,23 @@ everything: allx11 sdtty
 sd: $(SD_OBJS) $(SDX11_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(SD_OBJS) $(SDX11_OBJ) $(X11_LIBS)
 
-sdtty: $(SD_OBJS) $(SDTTY_OBJ)
-	$(CC) $(CFLAGS) -o $@ $(SDTTY_OBJS) $(TTY_LIBS)
-@STRIP@
-@AOUT2EXE@
-
 mkcalls: $(MKCALLS_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(MKCALLS_OBJS)
-@STRIP@
-@AOUT2EXE@
+	@STRIP@
+	@AOUT2EXE@
+
+# The aout2exe program is for djgpp on DOS
+
+sdtty: $(SD_OBJS) $(SDTTY_OBJ)
+	$(CC) $(CFLAGS) -o $@ $(SDTTY_OBJS) $(TTY_LIBS)
+	@STRIP@
+	@AOUT2EXE@
 
 sd_calls.dat: sd_calls.txt mkcalls
 	./mkcalls
 
-@DMAKE_IMPLICIT@
+.c.o:
+	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
 
 # sdui-x11.c may need -D_POSIX_SOURCE with gcc 1.40 on Ultrix 4.2
 
@@ -102,6 +111,9 @@ dbcomp.o: database.h
 
 $(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ): sd.h database.h
 
+configure: configure.in
+	autoconf
+
 Makefile:: configure
 	$(srcdir)/configure
 
@@ -110,21 +122,21 @@ Makefile:: Makefile.in config.status
 
 info: sd_doc.info
 dvi: sd_doc.dvi
-PS: sd_doc.PS
+ps: sd_doc.ps
 
-sd_doc.info sd_doc.dvi: sd_doc.txinfo readme.txinfo install.txinfo
+sd_doc.dvi sd_doc.info sd_doc.txt: sd_doc.txinfo readme.txinfo install.txinfo
+
+# additional suffixes used for the documentation
+.SUFFIXES: .dvi .info .txt .txinfo
 
 RM = rm -f
 
-MAKEINFO = $(TEXDIR)/makeinfo --no-split
-MAKE_ASCII = $(TEXDIR)/makeinfo --no-split --no-headers
-TXI2DVI = $(TEXDIR)/tex
-DVISELECT = $(TEXDIR)/dviselect
-DVICONCAT = $(TEXDIR)/dviconcat
-DVIPS = $(TEXDIR)/dvips
+MAKEINFO = makeinfo --no-split
+MAKE_ASCII = makeinfo --no-split --no-headers
+TXI2DVI = tex
+DVIPS = dvips
 
 # We do it twice, so cross references will be reconciled.
-
 .txinfo.dvi:
 	$(TXI2DVI) $<
 	$(TXI2DVI) $<
@@ -132,17 +144,17 @@ DVIPS = $(TEXDIR)/dvips
 .txinfo.info:
 	$(MAKEINFO) -I$(srcdir) $<
 
-# TeX outputs front, body, toc; we want front, toc, body
+.txinfo.txt:
+	$(MAKE_ASCII) -o $@ -I$(srcdir) $<
 
-sd_doc-sorted.dvi: sd_doc.dvi
-	$(DVISELECT) -i sd_doc.dvi =1:2 > tempa.dvi
-	$(DVISELECT) -i sd_doc.dvi :_1 > tempb.dvi
-	($(DVISELECT) -i sd_doc.dvi -s 1: | $(DVISELECT) =3:) > tempc.dvi
-	$(DVICONCAT) -o sd_doc-sorted.dvi tempa.dvi tempb.dvi tempc.dvi
-	$(RM) tempa.dvi tempb.dvi tempc.dvi
+sd_doc.ps: sd_doc.dvi
+	$(DVIPS) -o $@ $?
 
-sd_doc.PS: sd_doc-sorted.dvi
-	$(DVIPS) -U -o sd_doc.PS sd_doc-sorted.dvi
+# Stephen's fancy way of producing a pretty, compact PostScript file.
+# You don't want to know.
+sd_doc.PS: sd_doc.txinfo readme.txinfo install.txinfo
+	if [ -r make-ps ]; then make-ps; \
+	else make sd_doc.ps && mv sd_doc.ps sd_doc.PS; fi
 
 INSTALL: install.txinfo
 	$(MAKE_ASCII) -o $@ --no-validate $(srcdir)/install.txinfo
@@ -150,8 +162,23 @@ INSTALL: install.txinfo
 README: readme.txinfo
 	$(MAKE_ASCII) -o $@ --no-validate $(srcdir)/readme.txinfo
 
+
+docclean:
+	$(RM) *.aux *.log *.toc *.dvi
+	$(RM) *.cp *.cps *.fn *.fns *.ky *.kys *.pg *.pgs *.tp *.tps *.vr *.vrs
+
+clean:: docclean
 clean::
-	$(RM) $(MKCALLS_OBJS) $(SDX11_OBJ) $(SD_OBJS) $(SDTTY_OBJ) sd sdtty mkcalls sd_calls.dat sd.tar sd.tar.Z
+	$(RM) *.o sd sdtty mkcalls
+	$(RM) sd_calls.dat sd.tar sd.tar.Z
+	$(RM) lint.out
+
+distclean: clean
+	$(RM) sequence.*
+	$(RM) *~ core
+
+realclean: distclean
+	$(RM) *.info *.PS sd_doc.txt sd_doc.ps
 
 LINT = /usr/lang/alint
 
@@ -159,25 +186,47 @@ lint:
 	$(LINT) -ux $(SD_SRCS) $(SDX11_SRC)
 
 DISTTXT = README INSTALL Relnotes oldnotes COPYING \
-            Imakefile configure Makefile.in Sd.res sd_calls.txt \
-            db_doc.txt sd_doc.txinfo readme.txinfo install.txinfo
-DISTSRCS = sd.h database.h paths.h sdui-ttu.h \
-            sdmatch.c sdmatch.h
-DISTFILES = $(DISTTXT) $(SD_SRCS) $(SDX11_SRC) $(TTY_DIST_SRCS) \
-            $(MKCALLS_SRCS) $(DISTSRCS)
+            Imakefile Makefile.in configure configure.in Sd.res sd_calls.txt \
+            db_doc.txt sd_doc.txinfo readme.txinfo install.txinfo \
+            sd_doc.PS sd_doc.txt
+DISTSRCS = sd.h database.h paths.h sdui-ttu.h sdmatch.h
+MACFILES = MacSd.p.Hqx MacSd.p.rsrc.Hqx Macwdef.p.Hqx \
+            macalert.c maccomp.c macdlog.c macevent.c macguts.h maclabel.c \
+            macmatch.c macmenu.c macpref.c macrec.c macsel.c macstart.c \
+            macstuff.c mactext.c macutil.c macwdef.c macwin.c macwmgr.c \
+            sdsi-mac.c sdui-mac.c
+PCFILES = pcfiles.lnk makefile.pc
+DISTFILES = $(DISTTXT) $(SRCS) $(DISTSRCS) $(MACFILES) $(PCFILES)
 
 TAR = tar cvf sd.tar
 
-dist: INSTALL README
+dist: dist-files
 	$(TAR) $(DISTFILES)
+	compress sd.tar
+
+dist-files: configure INSTALL README pc-files sd_doc.txt sd_doc.PS
 
 ls:
 	@echo $(DISTFILES)
 
 bnarc:
-	lharc a sd290bn readme install relnotes oldnotes copying \
-	sd_calls.txt sd_calls.dat db_doc.txt \
-	sdtty.exe mkcalls.exe go32.exe
-	lharc s sd290bn
+	lharc a sd300bn readme install relnotes oldnotes copying \
+	 sd_calls.txt sd_calls.dat db_doc.txt \
+	 sdtty.exe mkcalls.exe go32.exe \
+	 sd_doc.txt sd_doc.ps
+	lharc s sd300bn
 
-# end of Makefile from @TIME_STAMP@
+pc-files: pcfiles.lnk makefile.pc
+
+pcfiles.lnk:
+	rm -f $@
+	for obj in $(SD_OBJS) $(SDTTY_OBJ_PC); do echo $$obj; done >> $@
+
+LN = @LN_S@
+
+makefile.pc: configure
+	-mv config.status config.status.save
+	-$(LN) Makefile.in makefile.pc.in
+	$(srcdir)/configure --with-pc
+	-mv config.status.save config.status
+	-rm makefile.pc.in
