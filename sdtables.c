@@ -1010,6 +1010,8 @@ Private map_thing map_ov_qtag_2 = {{0, 1, 15, 14, 10, 11, 12, 13},    {1, 2, 6, 
         map_thing map_trngl_box1        = {{1, 2, -1, 0},                  {0},                         {0, 1}, {0}, MPKIND__NONE,        1,  s_trngl, s2x2,     0x000, 0};
         map_thing map_trngl_box2        = {{1, 2, 0, -1},                  {0},                         {0, 1}, {0}, MPKIND__NONE,        1,  s_trngl, s2x2,     0x000, 0};
 
+        map_thing map_inner_box         = {{2, 3, 4, 5, 10, 11, 12, 13},   {0},                            {0}, {0}, MPKIND__NONE,        1,  s2x8,   s2x4,      0x000, 0};
+
 /* For maps with arity 1, a nonzero item in map3[0] means that the "offset goes away" warning should be given in certain cases. */
 /* For maps with arity 3, a nonzero item in map4[0] means that the "overlap goes away" warning should be given in certain cases. */
 

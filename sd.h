@@ -591,6 +591,7 @@ typedef enum {
    concept_triple_diamonds_together,
    concept_quad_diamonds,
    concept_quad_diamonds_together,
+   concept_inner_boxes,
    concept_triple_diag,
    concept_triple_diag_together,
    concept_triple_twin,
