@@ -76,7 +76,12 @@ static tm_thing maps_isearch_twosome[] = {
    {{-2, 15, 3, 1, -2, 5, 11, 9,     -1, 13, -1, -1, -1, 7, -1, -1},             0,     0000,         8, 0,  0,  0, 0,  s2x4,  s4x4},
    {{10, 15, 3, -2, 2, 7, 6, -2,     -1, -1, 14, -1, -1, -1, 11, -1},            0,     0000,         8, 0,  0,  0, 0,  s2x4,  s4x4},
 
+   // When analyzing, we prefer the 4x6->3x4 formulation.  But we can synthesize
+   // from a qtag.
+   {{4, 7, 22, 13, 15, 20, 17, 18, 11, 0, 2, 9,
+     5, 6, 23, 12, 14, 21, 16, 19, 10, 1, 3, 8},                                 0, 0xFFFFFF,        12, 1,  0,  0, 0,  s3x4,  s4x6},
    {{7, 22, 15, 20, 18, 11, 2, 9,    6, 23, 14, 21, 19, 10, 3, 8},               0, 0xFCCFCC,         8, 1,  0,  0, 0,  s_qtag,s4x6},
+
    {{11, 10, 9, 8, 7, 6, 12, 13, 14, 15, 16, 17,
                       0, 1, 2, 3, 4, 5, 23, 22, 21, 20, 19, 18},                 0,     0000,        12, 0,  0,  0, 0,  s2x6,  s4x6},
    {{0, 2, 4, 6, 8, 10, 13, 15, 17, 19, 21, 23,
@@ -94,13 +99,16 @@ static tm_thing maps_isearch_twosome[] = {
    // for C1 phantoms.  We believe that having them arranged in 3 definite lines,
    // from which, for example, we could have the very center 2 trade, is better.
 
-   // Next two are for various people as couples in a 3x4 matrix, making virtual columns of 6.
-   {{2, 5, 7, 8, 11, 0,              -1, -1, 6, -1, -1, 1},                      0,   0x00C3,         6, 1,  0,  0, 0,  s2x3,  s3x4},
-   {{2, 5, 7, 9, 11, 1,              3, -1, -1, 8, -1, -1},                      0,   0x030C,         6, 1,  0,  0, 0,  s2x3,  s3x4},
+   // But we are nevertheless going to try it the other way, by swapping the
+   // following two pairs with each other.
 
    // Next two are for various people as couples in a C1 phantom, making virtual columns of 6.
    {{3, 7, 5, 9, 15, 13,             1, -1, -1, 11, -1, -1},                     0,     0000,         6, 0,  0,  0, 0,  s2x3,  s_c1phan},
    {{0, 2, 6, 8, 10, 12,             -1, -1, 4, -1, -1, 14},                     0,     0000,         6, 0,  0,  0, 0,  s2x3,  s_c1phan},
+
+   // Next two are for various people as couples in a 3x4 matrix, making virtual columns of 6.
+   {{2, 5, 7, 8, 11, 0,              -1, -1, 6, -1, -1, 1},                      0,   0x00C3,         6, 1,  0,  0, 0,  s2x3,  s3x4},
+   {{2, 5, 7, 9, 11, 1,              3, -1, -1, 8, -1, -1},                      0,   0x030C,         6, 1,  0,  0, 0,  s2x3,  s3x4},
 
    {{0, 2, 4, 6, 9, 11, 13, 15,      1, 3, 5, 7, 8, 10, 12, 14},            0x5555,   0xFFFF,         8, 0,  0,  0, 0,  s2x4,  s2x8},
    {{0, 2, 4, 6, 9, 11, 13, 15, 17, 19, 20, 22,
@@ -201,7 +209,8 @@ static tm_thing maps_isearch_twosome[] = {
    {{1, 3, 4, 6, 7, 0,               2, -1, -1, 5, -1, -1},                      0,     0x66,         6, 1,  0,  0, 0,  s_short6,  s_nxtrglcw},
    {{2, 3, 5, 6, 7, 0,              -1, -1, 4, -1, -1, 1},                       0,     0x33,         6, 1,  0,  0, 0,  s_short6,  s_nxtrglccw},
 
-
+   {{0, 2, 3, 4, 7, 8, 9, 11,        1, -1, -1, 5, 6, -1, -1, 10},           0x4141, 06363,
+    8, 0, 0, 0, 0, s2x4, s2x6},
 
    {{0, 2, 4, 7, 9, 11,              1, 3, 5, 6, 8, 10},                     0x555,   0x0FFF,         6, 0,  0,  0, 0,  s2x3,  s2x6},
    // The two maps just below must be after the map just above.
@@ -817,8 +826,8 @@ extern void tandem_couples_move(
    setup *result) THROW_DECL
 {
    if (ss->cmd.cmd_misc2_flags & CMD_MISC2__DO_NOT_EXECUTE) {
-      result->result_flags = 0;
       result->kind = nothing;
+      clear_result_flags(result);
       return;
    }
 
@@ -1197,8 +1206,8 @@ extern void tandem_couples_move(
    current_options.who = saved_selector;
 
    if (!allmask) {
-      result->result_flags = 0;
       result->kind = nothing;
+      clear_result_flags(result);
       return;
    }
 
@@ -1610,8 +1619,8 @@ extern void tandem_couples_move(
             for (i=0 ; i<12 ; i++) swap_people(result, i, i+12);
          }
          else if (ss->kind == s1x4 && result->kind == s2x2) {
-            result->result_flags &= ~3;
-            result->result_flags |= (ss->rotation & 1) + 1;
+            result->result_flags.misc &= ~3;
+            result->result_flags.misc |= (ss->rotation & 1) + 1;
          }
 
          return;

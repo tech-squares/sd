@@ -30,6 +30,9 @@
 
 // This file defines all the functions in class iofull.
 
+// Do this to get WM_MOUSEWHEEL defined in windows header files.
+#define _WIN32_WINNT 0x0400
+
 #define STRICT
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
@@ -48,12 +51,7 @@
 
 static int window_size_args[4] = {780, 560, 10, 20};
 
-extern void windows_init_printer_font(HWND hwnd, HDC hdc);
-extern void windows_choose_font();
-extern void windows_print_this(HWND hwnd, char *szMainTitle, HINSTANCE hInstance,
-                               const char *filename);
-extern void windows_print_any(HWND hwnd, char *szMainTitle, HINSTANCE hInstance);
-void PrintFile(const char *szFileName, HWND hwnd, char *szMainTitle, HINSTANCE hInstance);
+#include "sdprint.h"
 #include "resource.h"
 
 
@@ -131,6 +129,7 @@ static LPTSTR lpBits;       // Address of the pixel data in same.
 
 static HINSTANCE GLOBhInstance;
 static int GLOBiCmdShow;
+static printer *GLOBprinter;
 
 static HWND hwndMain;
 static HWND hwndAcceptButton;
@@ -150,10 +149,10 @@ static HWND hwndStatusBar;
 static HWND ButtonFocusTable[4];
 
 
-static BOOL InPopup = FALSE;
+static bool InPopup = false;
 static int ButtonFocusIndex = 0;  // What thing (from ButtonFocusTable) has the focus.
 static int ButtonFocusHigh = 2;   // 3 if in popup, else 2
-static BOOL WaitingForCommand;
+static bool WaitingForCommand;
 static int nLastOne;
 static int nTotalImageHeight;   // Total height of the stuff that we would
                                 // like to show in the transcript window.
@@ -719,10 +718,10 @@ static int LookupKeystrokeBinding(
          user_match.indent = FALSE;
          user_match.valid = TRUE;
 
-         /* We have the fully filled in match item.
-            Process it and exit from the command loop. */
+         // We have the fully filled in match item.
+         // Process it and exit from the command loop.
 
-         WaitingForCommand = FALSE;
+         WaitingForCommand = false;
       }
 
       return 2;
@@ -1125,8 +1124,8 @@ int WINAPI WinMain(
 
    // Set the UI options for Sd.
 
-   ui_options.reverse_video = 0;
-   ui_options.pastel_color = 0;
+   ui_options.reverse_video = false;
+   ui_options.pastel_color = false;
 
    // Initialize all the callbacks that sdlib will need.
    iofull ggg;
@@ -1138,6 +1137,7 @@ int WINAPI WinMain(
 
    return sdmain(__argc, __argv);
 }
+
 
 BOOL MainWindow_OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 {
@@ -1158,8 +1158,6 @@ BOOL MainWindow_OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
    GetTextMetrics(hdc, &tm);
    SystemTextWidth = tm.tmAveCharWidth;
    SystemTextHeight = tm.tmHeight+tm.tmExternalLeading;
-
-   windows_init_printer_font(hwnd, hdc);
 
    ReleaseDC(hwnd, hdc);
 
@@ -1336,6 +1334,13 @@ bool iofull::help_manual()
 }
 
 
+bool iofull::help_faq()
+{
+   (void) ShellExecute(NULL, "open", "c:\\sd\\faq.html", NULL, NULL, SW_SHOWNORMAL);
+   return TRUE;
+}
+
+
 void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 {
    int i;
@@ -1343,7 +1348,7 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
    int nMenuIndex;
 
    switch (id) {
-   case ID_FILE_ABOUTSD:
+   case ID_HELP_ABOUTSD:
       DialogBox(GLOBhInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, (DLGPROC) AboutWndProc);
       break;
    case ID_HELP_SDHELP:
@@ -1351,6 +1356,10 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       // program mechanism will do the same thing.  That claim isn't yet
       // completely true, so we leave this in for now.
       (void) gg->help_manual();
+      break;
+   case ID_HELP_FAQ:
+      // Ditto.
+      (void) gg->help_faq();
       break;
    case ID_FILE_EXIT:
       SendMessage(hwndMain, WM_CLOSE, 0, 0L);
@@ -1364,7 +1373,7 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       break;
    case CANCEL_BUTTON_INDEX:
       user_match.match.index = -1;
-      WaitingForCommand = FALSE;
+      WaitingForCommand = false;
       break;
    case LISTBOX_INDEX:
       // See whether this an appropriate single-click or double-click.
@@ -1413,7 +1422,7 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
                char linebuff[INPUT_TEXTLINE_SIZE+1];
                if (process_accel_or_abbrev(asearch->value, linebuff)) {
                   SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)"");  // Erase the edit box.
-                  WaitingForCommand = FALSE;
+                  WaitingForCommand = false;
                   return;
                }
 
@@ -1440,7 +1449,7 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
          // utterance.  Use it directly.
 
          SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)"");  // Erase the edit box.
-         WaitingForCommand = FALSE;
+         WaitingForCommand = false;
          return;
       }
 
@@ -1500,7 +1509,7 @@ void MainWindow_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
          }
       }
 
-      WaitingForCommand = FALSE;
+      WaitingForCommand = false;
       break;
    case ID_COMMAND_COPY_TEXT:
       SendMessage(hwndEdit, WM_COPY, 0, 0);
@@ -1599,6 +1608,10 @@ LRESULT CALLBACK TranscriptWndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM l
    switch (iMsg) {
       HANDLE_MSG(hwnd, WM_PAINT, Transcript_OnPaint);
       HANDLE_MSG(hwnd, WM_VSCROLL, Transcript_OnScroll);
+   case WM_MOUSEWHEEL:
+      Transcript_OnScroll(hwnd, (HWND) lParam, SB_THUMBTRACK,
+                          nImageOffTop-(((int) (short int) HIWORD(wParam))*3/WHEEL_DELTA));
+      return 0;
    case WM_LBUTTONDOWN:
       /* User clicked mouse in the transcript area.  Presumably this
          is because she wishes to use the up/down arrow keys for scrolling.
@@ -2151,6 +2164,18 @@ LRESULT WINAPI Startup_Dialog_WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 
 
 
+// Set the default font: 14 point bold Courier New.
+
+print_default_info printer_default_info = {
+   "Courier New",
+   "Text Files (*.txt)\0*.txt\0" "All Files (*.*)\0*.*\0",
+   14,
+   true,
+   false,
+   IDD_PRINTING_DIALOG,
+   IDC_FILENAME};
+
+
 bool iofull::init_step(init_callback_state s, int n)
 {
    WNDCLASSEX wndclass;
@@ -2207,6 +2232,8 @@ bool iofull::init_step(init_callback_state s, int n)
 
       if (!hwndMain)
          gg->fatal_error_exit(1, "Can't create main window", 0);
+
+      GLOBprinter = new printer(GLOBhInstance, hwndMain, printer_default_info);
 
       // If the user specified a specific session, do that session.
       // If we succeed at it, we won't put up the dialog box at all.
@@ -2467,15 +2494,26 @@ void EnterMessageLoop()
 
    user_match.valid = FALSE;
    erase_matcher_input();
-   WaitingForCommand = TRUE;
+   WaitingForCommand = true;
 
    while (GetMessage(&Msg, NULL, 0, 0) && WaitingForCommand) {
       TranslateMessage(&Msg);
       DispatchMessage(&Msg);
    }
 
-   if (WaitingForCommand)
-      general_final_exit(Msg.wParam);   /* User closed the window. */
+   // The message loop has been broken.  Either we got a message
+   // that requires action (user clicked on a call, as opposed to
+   // WM_PAINT), or the Windows message mechanism recognizes that
+   // the program is closing.  The former case is indicated by
+   // the message handler turning off WaitingForCommand.  Final
+   // exit is indicated by GetMessage returning false while
+   // WaitingForCommand remains true.
+
+   if (WaitingForCommand) {
+      // User closed the window.
+      delete GLOBprinter;
+      general_final_exit(Msg.wParam);
+   }
 }
 
 
@@ -2621,7 +2659,7 @@ void ShowListBox(int nWhichOne)
          UpdateStatusBar("<selector>");
 
          // Menu is shorter than it appears, because we are skipping first item.
-         for (int i=0 ; i<selector_enum_extent-1 ; i++)
+         for (int i=0 ; i<selector_ENUM_EXTENT-1 ; i++)
             scan_menu(selector_menu_list[i],
                       hDC, &nLongest, MAKELONG(i, (int) ui_special_concept));
       }
@@ -2757,7 +2795,7 @@ uims_reply iofull::get_resolve_command()
    EnterMessageLoop();
 
    if (user_match.match.index < 0)
-      uims_menu_index = -1-user_match.match.index;   /* Special encoding from a function key. */
+      uims_menu_index = -1-user_match.match.index;   // Special encoding from a function key.
    else
       uims_menu_index = (int) resolve_command_values[user_match.match.index];
 
@@ -2817,91 +2855,50 @@ popup_return iofull::do_getout_popup (char dest[])
    }
 }
 
-
-int iofull::do_write_anyway_popup()
+int iofull::yesnoconfirm(char *title, char *line1, char *line2, bool excl, bool info)
 {
-   if (MessageBox(hwndMain, "This sequence is not resolved.\n"
-                  "Do you want to write it anyway?",
-                  "Confirmation", MB_YESNO) == IDYES)
-      return 1;
-   else
-      return 0;
-}
+   char finalline[200];
 
-int iofull::do_delete_clipboard_popup()
-{
-   if (MessageBox(hwndMain, "There are calls in the clipboard.\n"
-                  "Do you want to delete all of them?",
-                  "Confirmation", MB_YESNO) == IDYES)
-      return 1;
-   else
-      return 0;
-}
+   if (line1 && line1[0]) {
+      strcpy(finalline, line1);
+      strcat(finalline, "\n");
+      strcat(finalline, line2);
+   }
+   else {
+      strcpy(finalline, line2);
+   }
 
-int iofull::do_session_init_popup()
-{
-   if (MessageBox(hwndMain, "You already have a session file.\n"
-                  "Do you really want to delete it and start over?",
-                  "Confirmation", MB_ICONEXCLAMATION | MB_OKCANCEL | MB_DEFBUTTON2) == IDOK)
+   uint32 flags = MB_YESNO | MB_DEFBUTTON2;
+   if (excl) flags |= MB_ICONEXCLAMATION;
+   if (info) flags |= MB_ICONINFORMATION;
+
+   if (MessageBox(hwndMain, finalline, title, flags) == IDYES)
       return POPUP_ACCEPT;
    else
       return POPUP_DECLINE;
 }
-
 
 int iofull::do_abort_popup()
 {
-   if (MessageBox(hwndMain, "Do you really want to abort this sequence?",
-                  "Confirmation", MB_ICONEXCLAMATION | MB_OKCANCEL | MB_DEFBUTTON2) == IDOK)
-      return POPUP_ACCEPT;
-   else
-      return POPUP_DECLINE;
+   return yesnoconfirm("Confirmation", (char *) 0,
+                       "Do you really want to abort this sequence?", true, false);
 }
 
 
-int iofull::do_modifier_popup(Cstring callname, modify_popup_kind kind)
-{
-   char modifier_question[150];
-
-   switch (kind) {
-   case modify_popup_any:
-      wsprintf(modifier_question,
-               "The \"%s\" can be replaced.", callname);
-      break;
-   case modify_popup_only_tag:
-      wsprintf(modifier_question,
-               "The \"%s\" can be replaced with a tagging call.", callname);
-      break;
-   case modify_popup_only_circ:
-      wsprintf(modifier_question,
-               "The \"%s\" can be replaced with a modified circulate-like call.", callname);
-      break;
-   default:
-      lstrcpy(modifier_question, "Internal error: unknown modifier kind.");
-   }
-
-   lstrcat(modifier_question, "\nDo you want to replace it?");
-
-   if (MessageBox(hwndMain, modifier_question, "Replacement", MB_YESNO) == IDYES)
-      return 1;
-   else
-      return 0;
-}
-
-static BOOL do_popup(int nWhichOne)
+static bool do_popup(int nWhichOne)
 {
    uims_reply SavedMenuKind = MenuKind;
    uims_reply SavedMy_reply = my_reply;
    nLastOne = ui_undefined;
    MenuKind = ui_call_select;
-   InPopup = TRUE;
+   InPopup = true;
    ButtonFocusHigh = 3;
    ButtonFocusIndex = 0;
    PositionAcceptButtons();
    ShowWindow(hwndCancelButton, SW_SHOWNORMAL);
    ShowListBox(nWhichOne);
    EnterMessageLoop();
-   InPopup = FALSE;
+   InPopup = false;
    ButtonFocusHigh = 2;
    ButtonFocusIndex = 0;
    PositionAcceptButtons();
@@ -3075,19 +3072,19 @@ void iofull::update_resolve_menu(command_kind goal, int cur, int max,
 
 bool iofull::choose_font()
 {
-   windows_choose_font();
+   GLOBprinter->choose_font();
    return true;
 }
 
 bool iofull::print_this()
 {
-   windows_print_this(hwndMain, szMainTitle, GLOBhInstance, outfile_string);
+   GLOBprinter->print_this(outfile_string, szMainTitle, false);
    return true;
 }
 
 bool iofull::print_any()
 {
-   windows_print_any(hwndMain, szMainTitle, GLOBhInstance);
+   GLOBprinter->print_any(szMainTitle, false);
    return true;
 }
 
@@ -3127,9 +3124,10 @@ void iofull::terminate(int code)
    if (hwndMain) {
       // Check whether we should write out the transcript file.
       if (code == 0 && wrote_a_sequence) {
-         if (MessageBox(hwndMain, "Do you want to print the file?",
-                        "Confirmation", MB_ICONINFORMATION | MB_YESNO | MB_DEFBUTTON2) == IDYES)
-            PrintFile(outfile_string, hwndMain, szMainTitle, GLOBhInstance);
+         if (yesnoconfirm("Confirmation", (char *) 0,
+                          "Do you want to print the file?",
+                          false, true) == POPUP_ACCEPT)
+            GLOBprinter->print_this(outfile_string, szMainTitle, false);
       }
 
       SendMessage(hwndMain, WM_USER+2, 0, 0L);

@@ -32,6 +32,7 @@
    assoc
    find_calldef
    clear_people
+   clear_result
    rotperson
    rotcw
    rotccw
@@ -369,6 +370,12 @@ extern void update_id_bits(setup *ss)
       5, d_east, 7, d_west,
       ~0};
 
+   static unsigned short int face_1x4[] = {
+      2, d_west, 3, d_east,
+      3, d_west, 1, d_east,
+      1, d_west, 0, d_east,
+      ~0};
+
    static unsigned short int face_2x4[] = {
       3, d_west, 2, d_east,
       2, d_west, 1, d_east,
@@ -506,6 +513,8 @@ extern void update_id_bits(setup *ss)
       face_list = face_qtg; break;
    case s_spindle:
       face_list = face_spindle; break;
+   case s1x4:
+      face_list = face_1x4; break;
    case s2x4:
       face_list = face_2x4; break;
    case s1x8:
@@ -655,20 +664,25 @@ extern void update_id_bits(setup *ss)
       if ((livemask & 00303UL) != 00303UL) ptr = (id_bit_table *) 0;
       break;
    case swqtag:
-      // We recognize the center 1x6 if it is are fully populated.
-      if ((livemask & 0x39CUL) != 0x39CUL) ptr = (id_bit_table *) 0;
+      // We recognize "center 6" if the center 2 spots are empty,
+      // so that there is a "short 6".
+      // Otherwise, we recognize the center 1x6 if it is fully populated.
+      if (livemask == 0x1EF)
+         ptr = id_bit_table_wqtag_hollow;
+      else if ((livemask & 0x39CUL) != 0x39CUL)
+         ptr = (id_bit_table *) 0;
       break;
    case s3dmd:
-      /* The standard table requires all points, and centers of center diamond only, occupied.
-         But first we look for a few other configurations. */
+      // The standard table requires all points, and centers of center diamond only, occupied.
+      // But first we look for a few other configurations.
 
       // Look for center 1x6 occupied.
       if ((livemask & 0xE38UL) == 0xE38UL) ptr = id_bit_table_3dmd_ctr1x6;
-      /* Look for center 1x6 having center 1x4 occupied. */
+      // Look for center 1x6 having center 1x4 occupied.
       else if ((livemask & 0xC30UL) == 0xC30UL) ptr = id_bit_table_3dmd_ctr1x4;
-      /* Look for center 1x4 and outer points. */
+      // Look for center 1x4 and outer points.
       else if (livemask == 06565UL) ptr = id_bit_table_3dmd_in_out;
-      /* Otherwise, see whether to accept default or reject everything. */
+      // Otherwise, see whether to accept default or reject everything.
       else if (livemask != 04747UL) ptr = (id_bit_table *) 0;
       break;
    case s4dmd:
@@ -682,6 +696,10 @@ extern void update_id_bits(setup *ss)
          is present, we can do a "triple trade". */
       if (livemask == 06666UL || livemask == 06363UL || livemask == 07272UL)
          ptr = id_bit_table_3ptpd;
+      break;
+   case shsqtag:
+      // Only allow it if outer pairs are together.
+      if (livemask != 0xF3CUL && livemask != 0xCF3UL) ptr = (id_bit_table *) 0;
       break;
    }
 
@@ -853,7 +871,8 @@ extern void touch_or_rear_back(
    case CFLAG1_REAR_BACK_FROM_QTAG:
    case CFLAG1_REAR_BACK_FROM_R_WAVE:
    case CFLAG1_REAR_BACK_FROM_EITHER:
-      if (touchflags != CFLAG1_REAR_BACK_FROM_QTAG) {
+      if (touchflags != CFLAG1_REAR_BACK_FROM_QTAG &&
+          !scopy->cmd.cmd_final_flags.test_heritbits(INHERITFLAG_MXNMASK)) {
          // Check for rearing back from a wave.
          tptr = full_expand::search_table_1(scopy->kind, livemask, directions);
          if (tptr) goto found_tptr;
@@ -1111,15 +1130,12 @@ extern void do_matrix_expansion(
    bool recompute_id) THROW_DECL
 {
    uint32 needprops = concprops & CONCPROP__NEED_MASK;
+   if (needprops == 0) return;
    uint32 needpropbits = NEEDMASK(needprops);
 
    for (;;) {
       int i;
-      uint32 livemask, j;
-
-      for (i=0, j=1, livemask=0; i<=attr::slimit(ss); i++, j<<=1) {
-         if (ss->people[i].id1) livemask |= j;
-      }
+      uint32 livemask = little_endian_live_mask(ss);
 
       // Search for simple things in the hash table.
 
@@ -1862,7 +1878,7 @@ restriction_test_result verify_restriction(
    bool instantiate_phantoms,
    bool *failed_to_instantiate) THROW_DECL
 {
-   int idx, limit, i, j, k;
+   int idx, limit, i, j;
    uint32 t = 0;
    uint32 qa0, qa1, qa2, qa3;
    uint32 qaa[4];
@@ -1871,6 +1887,11 @@ restriction_test_result verify_restriction(
    const veryshort *p, *q;
    int phantom_count = 0;
    restriction_tester::restr_initializer *rr;
+   int k = 0;
+   int local_negate = tt.assump_negate;
+
+   if (tt.assumption == cr_not_all_sel || tt.assumption == cr_some_sel)
+      local_negate = 1;
 
    switch (tt.assumption) {
    case cr_alwaysfail:
@@ -1878,6 +1899,50 @@ restriction_test_result verify_restriction(
    case cr_give_fudgy_warn:
       warn(warn__may_be_fudgy);
       return restriction_passes;
+
+   case cr_ptp_unwrap_sel:
+      k ^= 022002200 ^ 014001400;
+   case cr_nor_unwrap_sel:
+      k ^= 014001400;
+      goto cr_none_sel_label;
+
+   case cr_ends_sel:
+      k = ~k;
+      /* FALL THROUGH!!!!!! */
+   case cr_ctrs_sel:
+      /* FELL THROUGH!!!!!! */
+
+      switch (ss->kind) {
+      case s1x4: k ^= 0x5; break;
+      case s2x4: k ^= 0x99; break;
+      case s_qtag: case s_bone: k ^= 0x33; break;
+      case s_rigger: k ^= 0xCC; break;
+      default: goto bad;
+      }
+      /* FALL THROUGH!!!!!! */
+   case cr_not_all_sel:
+   case cr_all_sel:
+      /* FELL THROUGH!!!!!! */
+      k = ~k;
+      /* FALL THROUGH!!!!!! */
+
+   case cr_some_sel:
+   case cr_none_sel:
+   cr_none_sel_label:
+      /* FELL THROUGH!!!!!! */
+      for (idx=0 ; idx<=attr::slimit(ss) ; idx++,k>>=1) {
+         if (!ss->people[idx].id1) {
+            if (tt.assump_live) goto bad;
+         }
+         else if (selectp(ss, idx)) {
+            if (!(k&1)) goto bad;
+         }
+         else {
+            if (k&1) goto bad;
+         }
+      }
+      goto good;
+
    case cr_nice_diamonds:
       // B=1 => right-handed; B=2 => left-handed.
       tt.assumption = cr_jright;
@@ -1995,7 +2060,7 @@ restriction_test_result verify_restriction(
             qaa[idx&1] |=  t;
             qaa[(idx&1)^1] |= t^2;
          }
-         else if (tt.assump_negate || tt.assump_live) goto bad;    /* All live people
+         else if (local_negate || tt.assump_live) goto bad;    /* All live people
                                                                       were demanded. */
       }
 
@@ -2160,7 +2225,7 @@ restriction_test_result verify_restriction(
 
          for (i=0,j=idx; i<rr->size; i++,j+=limit) {
             if ((t = ss->people[rr->map1[j]].id1) != 0) { qa0 |= t; qa1 |= t^2; }
-            else if (tt.assump_negate || tt.assump_live) goto bad;    /* All live people were demanded. */
+            else if (local_negate || tt.assump_live) goto bad;    /* All live people were demanded. */
          }
 
          if ((qa0 & qa1 & 2) != 0) goto bad;
@@ -2214,9 +2279,9 @@ restriction_test_result verify_restriction(
 
          for (int jjj=0 ; jjj<rr->size ; jjj++) {
             if ((t = ss->people[map1item[0]].id1) != 0)     { qa0 |= t;   qa1 |= t^2; }
-            else if (tt.assump_negate) goto bad;    /* All live people were demanded. */
+            else if (local_negate) goto bad;    /* All live people were demanded. */
             if ((t = ss->people[map1item[szlim]].id1) != 0) { qa0 |= t^2; qa1 |= t;   }
-            else if (tt.assump_negate) goto bad;    /* All live people were demanded. */
+            else if (local_negate) goto bad;    /* All live people were demanded. */
             map1item++;
          }
 
@@ -2533,11 +2598,11 @@ restriction_test_result verify_restriction(
    }
 
  good:
-   if (tt.assump_negate) return restriction_fails;
+   if (local_negate) return restriction_fails;
    else return restriction_passes;
 
  bad:
-   if (tt.assump_negate) return restriction_passes;
+   if (local_negate) return restriction_passes;
    else return restriction_fails;
 }
 
@@ -2743,6 +2808,7 @@ extern void initialize_sdlib()
    restriction_tester::initialize_tables();
    select::initialize();
    conc_tables::initialize();
+   merge_table::initialize();
    tglmap::initialize();
    initialize_commonspot_tables();
    map::initialize();
@@ -2785,12 +2851,12 @@ extern void initialize_sdlib()
    // Create the selector menu list.  It is one item shorter than the enumeration,
    // because we skip the first item in the enumeration.
 
-   selector_menu_list = (Cstring *) get_mem((selector_enum_extent) * sizeof(char *));
+   selector_menu_list = (Cstring *) get_mem((selector_ENUM_EXTENT) * sizeof(char *));
 
-   for (i=0; i<selector_enum_extent-1; i++)
+   for (i=0; i<selector_ENUM_EXTENT-1; i++)
       selector_menu_list[i] = selector_list[i+1].name;
 
-   selector_menu_list[selector_enum_extent-1] = (Cstring) 0;
+   selector_menu_list[selector_ENUM_EXTENT-1] = (Cstring) 0;
 
    /* Create the circcer list. */
 
@@ -2840,21 +2906,26 @@ static bool check_for_supercall(parse_block *parseptrcopy)
    return false;
 }
 
+static parse_block pbend(&conzept::mark_end_of_list);
+static parse_block pbsuper(&conzept::marker_concept_supercall);
 
+// This writes over its 2nd and 3rd arguments.
 extern bool check_for_concept_group(
    parse_block *parseptrcopy,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p) THROW_DECL
 {
    concept_kind k;
+   parse_block *kk;
    bool retval = false;
    parse_block *parseptr_skip;
    parse_block *next_parseptr;
 
    parse_block *first_arg = parseptrcopy;
 
-   *need_to_restrain_p = 0;
+   kkk = &pbend;
+   need_to_restrain = 0;
 
  try_again:
 
@@ -2863,22 +2934,24 @@ extern bool check_for_concept_group(
    parseptr_skip = parseptrcopy->next;
 
    if (parseptrcopy->concept) {
-      k = parseptrcopy->concept->kind;
+      kk = parseptrcopy;
 
       if (check_for_supercall(parseptrcopy))
-         k = concept_supercall;
+         kk = &pbsuper;
    }
    else
-      k = marker_end_of_list;
+      kk = &pbend;
+
+   k = kk->concept->kind;
 
    if (!retval) {
-      *k_p = k;
+      kkk = kk;
 
       if (k == concept_crazy ||
           k == concept_frac_crazy ||
           k == concept_n_times_const ||
           k == concept_n_times)
-         *need_to_restrain_p |= 2;
+         need_to_restrain |= 2;
    }
 
    // We do these even if we aren't the first concept.
@@ -2893,7 +2966,7 @@ extern bool check_for_concept_group(
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_rev_echo) ||
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_revorder) ||
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_finish))
-      *need_to_restrain_p |= 1;
+      need_to_restrain |= 1;
 
 
    // If skipping "phantom", maybe it's "phantom tandem", so we need to skip both.
@@ -3687,10 +3760,11 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
                }
             }
 
-            call_restriction kkk;      /* gets set to the qualifier corresponding to
-                                          what we have. */
             uint32 t1;
             uint32 t2;
+            uint32 ndir = d_north;
+            uint32 sdir = d_south;
+            uint32 tb;
             bool b1 = true;
             bool b2 = true;
 
@@ -3704,6 +3778,23 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
                t1 = 0; t2 = 3; break;
             case s_bone6:
                t1 = 5; t2 = 2; break;
+            case s_short6:
+               // This one has the people facing sideways.
+               ndir = d_east; sdir = d_west;
+               t1 = 1; t2 = 4; break;
+            case s_star:
+               // This has to look at headliner-sideliner-ness.  It
+               // will screw up if people are T-boned.
+               tb = (ss->people[0].id1 | ss->people[1].id1 |
+                  ss->people[2].id1 | ss->people[3].id1) & 011;
+               if (tb == 1) {
+                  ndir = d_east; sdir = d_west;
+                  t1 = 1; t2 = 3; break;
+               }
+               else if (tb == 010) {
+                  t1 = 0; t2 = 2; break;
+               }
+               else goto bad;
             default:
                goto bad;
             }
@@ -3711,14 +3802,16 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
             t1 = ss->people[t1].id1;
             t2 = ss->people[t2].id1;
 
-            if (t1 && (t1 & d_mask)!=d_north) b1 = false;
-            if (t2 && (t2 & d_mask)!=d_south) b1 = false;
-            if (t1 && (t1 & d_mask)!=d_south) b2 = false;
-            if (t2 && (t2 & d_mask)!=d_north) b2 = false;
+            if (t1 && (t1 & d_mask)!=ndir) b1 = false;
+            if (t2 && (t2 & d_mask)!=sdir) b1 = false;
+            if (t1 && (t1 & d_mask)!=sdir) b2 = false;
+            if (t2 && (t2 & d_mask)!=ndir) b2 = false;
 
             if (b1 == b2) goto bad;
-            kkk = b1 ? cr_ctr_pts_rh : cr_ctr_pts_lh;
-            if (this_qualifier == kkk) goto good;
+
+            if (this_qualifier ==
+                (b1 ? cr_ctr_pts_rh : cr_ctr_pts_lh))
+               goto good;
          }
          goto bad;
       case cr_line_ends_looking_out:
@@ -3778,36 +3871,14 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
          if (ss->people[1].id1 & ss->people[5].id1) goto good;
          goto bad;
 
-         // Beware!  These next ones use cumulative xoring of the variable k,
-         // which is in all cases initialized to zero.
-
       case cr_ptp_unwrap_sel:
-         k ^= 022002200 ^ 014001400;
       case cr_nor_unwrap_sel:
-         k ^= 014001400;
-         goto cr_none_sel_label;
-
       case cr_ends_sel:
-         k = ~k;
-         /* FALL THROUGH!!!!!! */
       case cr_ctrs_sel:
-         /* FELL THROUGH!!!!!! */
-
-         switch (ssK) {
-         case s1x4: k ^= 0x5; break;
-         case s2x4: k ^= 0x99; break;
-         case s_qtag: case s_bone: k ^= 0x33; break;
-         case s_rigger: k ^= 0xCC; break;
-         default: k = ~1;  /* Will force an error later, unless splitting. */
-         }
-         /* FALL THROUGH!!!!!! */
       case cr_all_sel:
-         /* FELL THROUGH!!!!!! */
-         k = ~k;
-         /* FALL THROUGH!!!!!! */
+      case cr_not_all_sel:
+      case cr_some_sel:
       case cr_none_sel:
-      cr_none_sel_label:
-         /* FELL THROUGH!!!!!! */
 
          // If we are not looking at the whole setup (that is, we are deciding
          // whether to split the setup into smaller ones), let it pass.
@@ -3816,20 +3887,7 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
              setup_attrs[ssK].keytab[1] != key)
             goto good;
 
-         if (k == 1) goto bad;
-
-         for (idx=0 ; idx<=attr::slimit(ss) ; idx++,k>>=1) {
-            if (!ss->people[idx].id1) {
-               if (tt.assump_live) goto bad;
-            }
-            else if (selectp(ss, idx)) {
-               if (!(k&1)) goto bad;
-            }
-            else {
-               if (k&1) goto bad;
-            }
-         }
-         goto good;
+         goto check_tt;
       default:
          break;
       }
@@ -4000,6 +4058,15 @@ extern void clear_people(setup *z)
 {
    (void) memset(z->people, 0, sizeof(personrec)*MAX_PEOPLE);
 }
+
+
+extern void clear_result_flags(setup *z)
+{
+   z->result_flags.misc = 0;
+   z->result_flags.clear_split_info();
+}
+
+
 
 
 extern uint32 copy_person(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace)
@@ -4356,10 +4423,11 @@ extern parse_block *process_final_concepts(
 }
 
 
+// This writes over its 2nd and 3rd arguments.
 extern parse_block *really_skip_one_concept(
    parse_block *incoming,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p) THROW_DECL
 {
    final_and_herit_flags junk_concepts;
@@ -4383,13 +4451,13 @@ extern parse_block *really_skip_one_concept(
 
       if (check_for_supercall(parseptrcopy)) {
          *parseptr_skip_p = &parseptrcopy->next->subsidiary_root;
-         *k_p = concept_supercall;
+         kkk = &pbsuper;
 
          /* We don't restrain for echo with supercalls, because echo doesn't pull parts
             apart, and supercalls don't work with multiple-part calls as the target
             for which they are restraining the concept. */
 
-         *need_to_restrain_p = 1;
+         need_to_restrain = 1;
          return parseptrcopy;
       }
 
@@ -4401,7 +4469,7 @@ extern parse_block *really_skip_one_concept(
          fail("Can't use a concept that takes a second call.");
    }
 
-   (void) check_for_concept_group(parseptrcopy, k_p, need_to_restrain_p, parseptr_skip_p);
+   (void) check_for_concept_group(parseptrcopy, kkk, need_to_restrain, parseptr_skip_p);
 
    return parseptrcopy;
 }
@@ -4471,8 +4539,8 @@ extern bool fix_n_results(int arity, int goal, setup z[],
       // First, check that all setups have the same "eighth rotation" stuff,
       // and don't have any "imprecise rotation".
 
-      if ((z[i].result_flags & RESULTFLAG__IMPRECISE_ROT) ||
-          (i > 0 && (z[0].result_flags ^ z[i].result_flags) & RESULTFLAG__PLUSEIGHTH_ROT))
+      if ((z[i].result_flags.misc & RESULTFLAG__IMPRECISE_ROT) ||
+          (i > 0 && (z[0].result_flags.misc ^ z[i].result_flags.misc) & RESULTFLAG__PLUSEIGHTH_ROT))
          goto lose;
 
       if (z[i].kind == s_normal_concentric) {
@@ -4762,6 +4830,7 @@ const resolve_tester configuration::null_resolve = {
 
 static const resolve_tester test_thar_stuff[] = {
    {resolve_rlg,            MS, 2,   {5, 4, 3, 2, 1, 0, 7, 6},     0x8A31A813},
+   {resolve_minigrand,      MS, 4,   {5, 0, 3, 6, 1, 4, 7, 2},     0x8833AA11},
    {resolve_prom,           MS, 6,   {5, 4, 3, 2, 1, 0, 7, 6},     0x8833AA11},
    {resolve_slipclutch_rlg, MS, 1,   {5, 2, 3, 0, 1, 6, 7, 4},     0x8138A31A},
    {resolve_la,             MS, 5,   {5, 2, 3, 0, 1, 6, 7, 4},     0xA31A8138},
@@ -5588,7 +5657,7 @@ void toplevelmove() THROW_DECL
    // Put in identification bits for global/unsymmetrical stuff, if possible.
    for (i=0; i<MAX_PEOPLE; i++) starting_setup.people[i].id2 &= ~GLOB_BITS_TO_CLEAR;
 
-   if (!(starting_setup.result_flags & RESULTFLAG__IMPRECISE_ROT)) {
+   if (!(starting_setup.result_flags.misc & RESULTFLAG__IMPRECISE_ROT)) {
       // Can't do it if rotation is not known.
       if (attr::slimit(&starting_setup) >= 0) {
          // Put in headliner/sideliner stuff if possible.
@@ -5714,17 +5783,17 @@ void toplevelmove() THROW_DECL
    }
 
    // Once rotation is imprecise, it is always imprecise.  Same for the other flags copied here.
-   newhist.state.result_flags |= starting_setup.result_flags &
+   newhist.state.result_flags.misc |= starting_setup.result_flags.misc &
       (RESULTFLAG__IMPRECISE_ROT|RESULTFLAG__ACTIVE_PHANTOMS_ON|RESULTFLAG__ACTIVE_PHANTOMS_OFF);
 
    // But 1/8 rotation stuff cancels in pairs.
-   if (newhist.state.result_flags & starting_setup.result_flags & RESULTFLAG__PLUSEIGHTH_ROT) {
-      newhist.state.result_flags &= ~RESULTFLAG__PLUSEIGHTH_ROT;
+   if (newhist.state.result_flags.misc & starting_setup.result_flags.misc & RESULTFLAG__PLUSEIGHTH_ROT) {
+      newhist.state.result_flags.misc &= ~RESULTFLAG__PLUSEIGHTH_ROT;
       newhist.state.rotation++;
       canonicalize_rotation(&newhist.state);
    }
    else
-      newhist.state.result_flags |= starting_setup.result_flags & RESULTFLAG__PLUSEIGHTH_ROT;
+      newhist.state.result_flags.misc |= starting_setup.result_flags.misc & RESULTFLAG__PLUSEIGHTH_ROT;
 }
 
 
@@ -5897,7 +5966,6 @@ extern bool do_subcall_query(
       // Need to present the popup to the operator
       // and find out whether modification is desired.
 
-      modify_popup_kind kind;
       char pretty_call_name[MAX_TEXT_LINE_LENGTH];
 
       // Star turn calls can have funny names like "nobox".
@@ -5907,14 +5975,20 @@ extern bool do_subcall_query(
          "turn the star @b" : orig_call->name,
          pretty_call_name, &current_options);
 
-      if (this_is_tagger) kind = modify_popup_only_tag;
-      else if (this_is_tagger_circcer) kind = modify_popup_only_circ;
-      else kind = modify_popup_any;
+      char *line_format;
 
-      if (gg->do_modifier_popup(pretty_call_name, kind)) {
+      if (this_is_tagger)
+         line_format = "The \"%s\" can be replaced with a tagging call.";
+      else if (this_is_tagger_circcer)
+         line_format = "The \"%s\" can be replaced with a modified circulate-like call.";
+      else
+         line_format = "The \"%s\" can be replaced.";
+
+      char tempstuff[200];
+      sprintf(tempstuff, line_format, pretty_call_name);
+      if (gg->yesnoconfirm("Replacement", tempstuff, "Do you want to replace it?", false, false)) {
          // User accepted the modification.
          // Set up the prompt and get the concepts and call.
-
          (void) sprintf(tempstring_text, "REPLACEMENT FOR THE %s", pretty_call_name);
       }
       else {

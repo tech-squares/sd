@@ -10,7 +10,7 @@
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-    This is for version 34. */
+    This is for version 35. */
 
 /* These are written as the first two halfwords of the binary database file.
    The format version is not related to the version of the program or database.
@@ -21,7 +21,7 @@
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 211
+#define DATABASE_FORMAT_VERSION 218
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -46,8 +46,10 @@ enum base_call_index {
    base_call_slither,
    base_call_maybegrandslither,
    base_base_prepare_to_drop,
+   base_base_hinge_and_then_trade,
+   base_base_hinge_and_then_trade_for_breaker,
    base_call_two_o_circs,
-   /* The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
+   // The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group.
    base_call_tagger0,
    base_call_tagger1_noref,
    base_call_tagger2_noref,
@@ -379,10 +381,13 @@ enum setup_kind {
    sbigbone,
    sbigdmd,
    sbigptpd,
+   sbig3x1dmd,
+   sbig1x3dmd,
    sbig3dmd,
    sbig4dmd,
    sdblxwave,
    sdblspindle,
+   sdblbone,
    s_dead_concentric,
    s_normal_concentric
 };
@@ -556,6 +561,10 @@ enum begin_kind {
    b_pbigdmd,
    b_bigptpd,
    b_pbigptpd,
+   b_big3x1dmd,
+   b_pbig3x1dmd,
+   b_big1x3dmd,
+   b_pbig1x3dmd,
    b_big3dmd,
    b_pbig3dmd,
    b_big4dmd,
@@ -563,7 +572,9 @@ enum begin_kind {
    b_dblxwave,
    b_pdblxwave,
    b_dblspindle,
-   b_pdblspindle
+   b_pdblspindle,
+   b_dblbone,
+   b_pdblbone
 };
 
 // These bits are used in the "callarray_flags" field of a "callarray".
@@ -673,12 +684,14 @@ enum call_restriction {
    cr_ripple_both_centers, // Qualifier only.
    cr_ripple_any_centers,  // Qualifier only.
    cr_people_1_and_5_real, // Qualifier only.
-   cr_ctrs_sel,            // Qualifier only.
-   cr_ends_sel,            // Qualifier only.
-   cr_all_sel,             // Qualifier only.
-   cr_none_sel,            // Qualifier only.
-   cr_nor_unwrap_sel,      // Qualifier only.
-   cr_ptp_unwrap_sel,      // Qualifier only.
+   cr_ctrs_sel,
+   cr_ends_sel,
+   cr_all_sel,
+   cr_not_all_sel,
+   cr_some_sel,
+   cr_none_sel,
+   cr_nor_unwrap_sel,
+   cr_ptp_unwrap_sel,
    cr_explodable,          // Restriction only.
    cr_rev_explodable,      // Restriction only.
    cr_peelable_box,        // Restriction only.
@@ -751,9 +764,10 @@ enum calldef_schema {
    schema_concentric_zs,
    schema_cross_concentric_zs,
    schema_concentric_or_diamond_line,
-   schema_concentric_or_6_2,
+   schema_concentric_or_6_2_line,
    schema_concentric_6_2,
    schema_cross_concentric_6_2,
+   schema_concentric_6_2_line,
    schema_concentric_2_6,
    schema_cross_concentric_2_6,
    schema_concentric_2_4,

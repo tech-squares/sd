@@ -12,8 +12,9 @@
 
     This is for version 34. */
 
-/* This defines the following function:
+/* This defines the following functions:
    do_big_concept
+   stable_move
 
 and the following external variables:
    global_tbonetest
@@ -1005,7 +1006,7 @@ static void do_concept_parallelogram(
       divided_setup_move(ss, map_code, phantest_ok, true, result);
 
       // The split-axis bits are gone.  If someone needs them, we have work to do.
-      result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+      result->result_flags.clear_split_info();
       return;
    }
 
@@ -1119,8 +1120,8 @@ static void do_concept_parallelogram(
          current_options.who = saved_selector;
 
          if (!tbonetest) {
-            result->result_flags = 0;
             result->kind = nothing;
+            clear_result_flags(result);
             return;
          }
       
@@ -1176,7 +1177,7 @@ static void do_concept_parallelogram(
    divided_setup_move(ss, map_code, phantest_ok, true, result);
 
    // The split-axis bits are gone.  If someone needs them, we have work to do.
-   result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+   result->result_flags.clear_split_info();
 }
 
 
@@ -2056,11 +2057,29 @@ static void do_concept_do_divided_diamonds(
 
    // If arg4 is nonzero, this is point-to-point diamonds.
 
-
    divided_setup_move(ss,
                       parseptr->concept->arg4 ?
                       MAPCODE(s_ptpd,2,MPKIND__SPLIT,1) :
                       MAPCODE(s_qtag,2,MPKIND__SPLIT,1),
+                      (phantest_kind) parseptr->concept->arg1, true, result);
+}
+
+
+static void do_concept_do_divided_bones(
+   setup *ss,
+   parse_block *parseptr,
+   setup *result) THROW_DECL
+{
+   // We expand, first to a bigrig, and then to a dblbone.
+   // Either or both of these may be unnecessary and may fail.
+
+   setup tempsetup = *ss;
+
+   do_matrix_expansion(&tempsetup, CONCPROP__NEEDK_END_1X4, false);
+   if (tempsetup.kind == sbigrig) expand::expand_setup(&s_bigrig_dblbone, &tempsetup);
+
+   divided_setup_move(&tempsetup,
+                      MAPCODE(s_bone,2,MPKIND__SPLIT,0),
                       (phantest_kind) parseptr->concept->arg1, true, result);
 }
 
@@ -2237,7 +2256,7 @@ static void do_concept_omit(
    // copy the incoming setup to the result, so that we will actually
    // have done the null call.  But of course we save our hard-won
    // result flags.
-   uint32 save_flags = result->result_flags;
+   resultflag_rec save_flags = result->result_flags;
    *result = *ss;
    result->result_flags = save_flags;
 }
@@ -2425,8 +2444,11 @@ static void do_concept_diagnose(
 
    move(ss, false, result);
 
-   sprintf(junk, "Command flags: 0x%08X, result flags: 0x%08X.",
-         (unsigned int) ss->cmd.cmd_misc_flags, (unsigned int) result->result_flags);
+   sprintf(junk, "Command flags: 0x%08X, result flags misc/split: 0x%08X/%d/%d.",
+           (unsigned int) ss->cmd.cmd_misc_flags,
+           (unsigned int) result->result_flags.misc,
+           (unsigned int) result->result_flags.split_info[0],
+           (unsigned int) result->result_flags.split_info[1]);
    fail(junk);
 }
 
@@ -2441,24 +2463,24 @@ static void do_concept_old_stretch(
 
    move(ss, false, result);
 
-   /* We don't check if this was 3x1 -- too complicated for now. */
+   // We don't check if this was 3x1 -- too complicated for now.
 
-   if (!mxnstuff &&
-       !(((((result->rotation & 1) * 7) + 1) * RESULTFLAG__SPLIT_AXIS_XMASK) &
-         result->result_flags))
+   uint32 field_to_check = (result->rotation & 1);
+
+   if (!mxnstuff && result->result_flags.split_info[field_to_check] == 0)
       fail("Stretch call was not a 4 person call divided along stretching axis.");
 
    if (mxnstuff && (result->kind == s1x8)) {
       /* This is a bit sleazy. */
 
       if (((result->people[0].id1 ^ result->people[1].id1) & 2) ||
-               (result->result_flags & RESULTFLAG__VERY_ENDS_ODD)) {
+               (result->result_flags.misc & RESULTFLAG__VERY_ENDS_ODD)) {
          swap_people(result, 1, 6);
          swap_people(result, 2, 5);
          swap_people(result, 3, 7);
       }
       else if (((result->people[2].id1 ^ result->people[3].id1) & 2) ||
-               (result->result_flags & RESULTFLAG__VERY_CTRS_ODD)) {
+               (result->result_flags.misc & RESULTFLAG__VERY_CTRS_ODD)) {
          swap_people(result, 2, 6);
       }
       else {
@@ -2967,7 +2989,7 @@ static void do_concept_crazy(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
-   uint32 finalresultflags = 0;
+   uint32 finalresultflagsmisc = 0;
    int this_part;
 
    setup tempsetup = *ss;
@@ -3031,8 +3053,8 @@ static void do_concept_crazy(
          // Request is to do just part this_part.
          i = this_part-1;
          highlimit = this_part;
-         finalresultflags |= RESULTFLAG__PARTS_ARE_KNOWN;
-         if (highlimit == craziness) finalresultflags |= RESULTFLAG__DID_LAST_PART;
+         finalresultflagsmisc |= RESULTFLAG__PARTS_ARE_KNOWN;
+         if (highlimit == craziness) finalresultflagsmisc |= RESULTFLAG__DID_LAST_PART;
          break;
       case CMD_FRAC_CODE_FROMTO:
          // Request is to do everything up through part this_part.
@@ -3046,8 +3068,8 @@ static void do_concept_crazy(
          // Request is to do just part this_part, counting from the end.
          i = highlimit-this_part;
          highlimit += 1-this_part;
-         finalresultflags |= RESULTFLAG__PARTS_ARE_KNOWN;
-         if (highlimit == craziness) finalresultflags |= RESULTFLAG__DID_LAST_PART;
+         finalresultflagsmisc |= RESULTFLAG__PARTS_ARE_KNOWN;
+         if (highlimit == craziness) finalresultflagsmisc |= RESULTFLAG__DID_LAST_PART;
          break;
       default:
          // If the "K" field ("part2") is nonzero, maybe we can still do something.
@@ -3090,12 +3112,12 @@ static void do_concept_crazy(
          move(&tempsetup, false, result);
       }
 
-      finalresultflags |= result->result_flags;
+      finalresultflagsmisc |= result->result_flags.misc;
 
       tempsetup = *result;
    }
 
-   result->result_flags = finalresultflags;
+   result->result_flags.misc = finalresultflagsmisc;
 }
 
 
@@ -3221,7 +3243,7 @@ static void do_concept_phan_crazy(
       offsetmapcode = MAPCODE(s_qtag,2,MPKIND__SPLIT,0);
    }
 
-   uint32 finalresultflags = 0;
+   uint32 finalresultflagsmisc = 0;
 
    // This setup rotation stuff is complicated.  What we do may be
    // different for "each side" and "centers".
@@ -3257,7 +3279,7 @@ static void do_concept_phan_crazy(
       else                              // Do it on each side.
          divided_setup_move(&tempsetup, offsetmapcode, phanstuff, true, result);
 
-      finalresultflags |= result->result_flags;
+      finalresultflagsmisc |= result->result_flags.misc;
       tempsetup = *result;
       tempsetup.cmd = cmd;    // Get a fresh copy of the command for next time.
    }
@@ -3265,7 +3287,8 @@ static void do_concept_phan_crazy(
    // Flip the setup back.  No need to canonicalize.
    result->rotation -= rot;
    // The split-axis bits are gone.  If someone needs them, we have work to do.
-   result->result_flags = finalresultflags & ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+   result->result_flags.misc = finalresultflagsmisc;
+   result->result_flags.clear_split_info();
 }
 
 
@@ -3276,7 +3299,7 @@ static void do_concept_fan(
    setup *result) THROW_DECL
 {
    setup tempsetup;
-   uint32 finalresultflags = 0;
+   uint32 finalresultflagsmisc = 0;
    /* This is a huge amount of kludgy stuff shoveled in from a variety of sources.
       It needs to be cleaned up and thought about. */
 
@@ -3325,36 +3348,32 @@ static void do_concept_fan(
    tempsetup.cmd.prior_elongation_bits = 0;
    tempsetup.cmd.prior_expire_bits = 0;
    move(&tempsetup, false, result);
-   finalresultflags |= result->result_flags;
-   result->result_flags = finalresultflags & ~3;
+   finalresultflagsmisc |= result->result_flags.misc;
+   result->result_flags.misc = finalresultflagsmisc & ~3;
 }
 
-
-
-static void do_concept_stable(
+void stable_move(
    setup *ss,
-   parse_block *parseptr,
+   bool fractional,
+   bool everyone,
+   int howfar,
+   selector_kind who,
    setup *result) THROW_DECL
 {
-   uint32 directions[32];
-   bool selected[32];
-   setup_kind kk;
-   int n, i, rot, howfar, orig_rotation;
-
-   bool fractional = parseptr->concept->arg2 != 0;
-   bool everyone = parseptr->concept->arg1 == 0;
-   selector_kind saved_selector = current_options.who;
-
-   current_options.who = parseptr->options.who;
-
-   howfar = parseptr->options.number_fields;
    if (fractional && howfar > 4)
       fail("Can't do fractional stable more than 4/4.");
 
-   n = attr::slimit(ss);
+   selector_kind saved_selector = current_options.who;
+   current_options.who = who;
+
+   int n = attr::slimit(ss);
    if (n < 0) fail("Sorry, can't do stable starting in this setup.");
 
-   for (i=0; i<=n; i++) {           /* Save current facing directions. */
+   uint32 directions[32];
+   bool selected[32];
+
+   int i;
+   for (i=0; i<=n; i++) {           // Save current facing directions.
       uint32 p = ss->people[i].id1;
       if (p & BIT_PERSON) {
          directions[(p >> 6) & 037] = p;
@@ -3369,11 +3388,11 @@ static void do_concept_stable(
 
    current_options.who = saved_selector;
 
-   orig_rotation = ss->rotation;
+   int orig_rotation = ss->rotation;
    move(ss, false, result);
-   rot = ((orig_rotation - result->rotation) & 3) * 011;
+   int rot = ((orig_rotation - result->rotation) & 3) * 011;
 
-   kk = result->kind;
+   setup_kind kk = result->kind;
 
    if (kk == s_dead_concentric)
       kk = result->inner.skind;
@@ -3381,27 +3400,51 @@ static void do_concept_stable(
    n = attr::klimit(kk);
    if (n < 0) fail("Sorry, can't do stable going to this setup.");
 
-   for (i=0; i<=n; i++) {           /* Restore facing directions of selected people. */
+   for (i=0; i<=n; i++) {      // Restore facing directions of selected people.
       uint32 p = result->people[i].id1;
       if (p & BIT_PERSON) {
          if (selected[(p >> 6) & 037]) {
+            uint32 stop_amount;
             if (fractional) {
+               stop_amount = (p & (STABLE_VBIT*3)) / STABLE_VBIT;
+
                if (!(p & STABLE_ENAB))
                   fail("fractional stable not supported for this call.");
-               result->people[i].id1 =
-                  rotperson(p, ((0 - ((p & (STABLE_VBIT*3)) / STABLE_VBIT)) & 3) * 011);
+               p = rotperson(p, ((0 - stop_amount) & 3) * 011);
             }
             else {
-               result->people[i].id1 = rotperson(
-                     (p & ~(d_mask | STABLE_MASK)) |
-                        (directions[(p >> 6) & 037] & (d_mask | STABLE_MASK)),
-                     rot);
+               stop_amount = 1;   // So that roll will be turned off.
+
+               p = rotperson(
+                  (p & ~(d_mask | STABLE_MASK)) |
+                  (directions[(p >> 6) & 037] & (d_mask | STABLE_MASK)),
+                  rot);
             }
+
+            // If this was fractional stable, roll is turned off
+            // only if the person was actually stopped from turning.
+            if (stop_amount) p = (p & ~ROLL_DIRMASK) | ROLL_IS_M;
          }
-         if (fractional)
-            result->people[i].id1 &= ~STABLE_MASK;
+
+         if (fractional) p &= ~STABLE_MASK;
+
+         result->people[i].id1 = p;
       }
    }
+}
+
+
+static void do_concept_stable(
+   setup *ss,
+   parse_block *parseptr,
+   setup *result) THROW_DECL
+{
+   stable_move(ss,
+               parseptr->concept->arg2 != 0,
+               parseptr->concept->arg1 == 0,
+               parseptr->options.number_fields,
+               parseptr->options.who,
+               result);
 }
 
 
@@ -3420,7 +3463,7 @@ static void do_concept_emulate(
 
    *result = res1;      // Get all the other fields.
 
-   result->result_flags |= RESULTFLAG__FORCE_SPOTS_ALWAYS;
+   result->result_flags.misc |= RESULTFLAG__FORCE_SPOTS_ALWAYS;
    result->kind = ss->kind;
    result->rotation = ss->rotation;
 
@@ -3659,11 +3702,14 @@ static void do_concept_checkerboard(
    move(&a1, false, &res1);
 
    // Look at the rotation coming out of the move.  If the setup is 1x4, we require it to be
-   // even (checkerboard lockit not allowed).  Otherwise, allow any rotation.  This means
-   // we allow diamonds that are oriented rather peculiarly!
-
-   if ((res1.rotation != 0) && res1.kind == s1x4)
-      fail("'Checker' call went to 1x4 setup oriented wrong way.");
+   // even (checkerboard lockit not allowed).  Otherwise, allow any rotation.
+   // But we give a warning for peculiarly oriented diamonds.
+   if (res1.rotation != 0) {
+      if (res1.kind == s1x4)
+         fail("'Checker' call went to 1x4 setup oriented wrong way.");
+      if (res1.kind == sdmd)
+         warn(warn_controversial);
+   }
 
    rot = res1.rotation * 011;
 
@@ -3759,10 +3805,10 @@ static bool do_call_under_repetition(
 
    copy_cmd_preserve_elong_and_expire(ss, result);
 
-   if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+   if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
       update_id_bits(result);
 
-   /* We don't supply these; they get filled in by the call. */
+   // We don't supply these; they get filled in by the call.
    result->cmd.cmd_misc_flags &= ~DFM1_CONCENTRICITY_FLAG_MASK;
    if (!yyy->m_first_call) {
       result->cmd.cmd_misc_flags |= CMD_MISC__NO_CHK_ELONG;
@@ -3825,7 +3871,7 @@ static void do_concept_sequential(
       // If we are being asked to do just one part of a call,
       // exit now.  Also, fill in bits in result->result_flags.
 
-      if (zzz.query_instant_stop(result->result_flags)) break;
+      if (zzz.query_instant_stop(result->result_flags.misc)) break;
 
    go_to_next_cycle:
 
@@ -3866,25 +3912,25 @@ static void do_concept_special_sequential(
          result->cmd.parseptr = parseptr->subsidiary_root;
          result->cmd.cmd_frac_flags = FRACS(CMD_FRAC_CODE_FROMTO,stopindex-1,0) |
             CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
-         result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+         result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
          do_call_in_series(result, true, false, true, false);
       }
 
       // Do the replacement call.
 
       result->cmd = ss->cmd;
-      if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+      if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
          update_id_bits(result);    // So you can interrupt with "leads run", etc.
       result->cmd.cmd_misc_flags &= ~CMD_MISC__NO_EXPAND_MATRIX;
 
       // Give this call a clean start with respect to expiration stuff.
-      uint32 suspended_expiration_bits = result->result_flags & RESULTFLAG__EXPIRATION_BITS;
-      result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
+      uint32 suspended_expiration_bits = result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
+      result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
       do_call_in_series(result, true, false, true, false);
 
       // Put back the expiration bits for the resumed call.
-      result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
-      result->result_flags |= suspended_expiration_bits|RESULTFLAG__EXPIRATION_ENAB;
+      result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
+      result->result_flags.misc |= suspended_expiration_bits|RESULTFLAG__EXPIRATION_ENAB;
 
       // Do the remainder of the main call, if there is more.
 
@@ -3892,7 +3938,7 @@ static void do_concept_special_sequential(
       result->cmd.parseptr = parseptr->subsidiary_root;
       result->cmd.cmd_frac_flags = FRACS(CMD_FRAC_CODE_FROMTOREV,stopindex+1,0) |
          CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
-      result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+      result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
       do_call_in_series(result, true, false, true, false);
    }
    else if (parseptr->concept->arg1 == 2) {
@@ -3902,15 +3948,15 @@ static void do_concept_special_sequential(
          fail("Can't stack meta or fractional concepts.");
 
       setup tttt;
-      uint32 finalresultflags = 0;
+      uint32 finalresultflagsmisc = 0;
 
       // Do the special first part.
 
       tttt = *ss;
-      if (!(tttt.result_flags & RESULTFLAG__NO_REEVALUATE))
+      if (!(tttt.result_flags.misc & RESULTFLAG__NO_REEVALUATE))
          update_id_bits(&tttt);           /* So you can use "leads run", etc. */
       move(&tttt, false, result);
-      finalresultflags |= result->result_flags;
+      finalresultflagsmisc |= result->result_flags.misc;
       normalize_setup(result, simple_normalize, false);
 
       // Do the rest of the original call, if there is more.
@@ -3924,10 +3970,10 @@ static void do_concept_special_sequential(
          (CMD_FRAC_PART_BIT*2) |
          CMD_FRAC_NULL_VALUE;
       move(&tttt, false, result);
-      finalresultflags |= result->result_flags;
+      finalresultflagsmisc |= result->result_flags.misc;
       normalize_setup(result, simple_normalize, false);
 
-      result->result_flags = finalresultflags & ~3;
+      result->result_flags.misc = finalresultflagsmisc & ~3;
    }
    else {
       // This is replace with (4), follow with (0) or precede with (1).
@@ -3951,15 +3997,15 @@ static void do_concept_special_sequential(
          result->cmd.parseptr = parseptr->subsidiary_root;
          result->cmd.cmd_misc2_flags |= CMD_MISC2__DO_NOT_EXECUTE;
          do_call_in_series_simple(result);
-         uint32 saved_last_flag = result->result_flags &
+         uint32 saved_last_flagmisc = result->result_flags.misc &
             (RESULTFLAG__DID_LAST_PART|RESULTFLAG__PARTS_ARE_KNOWN);  // The info we want.
 
          // Now do the actual replacement call.  It gets no fractions.
          prepare_for_call_in_series(result, ss);
          result->cmd.cmd_frac_flags = CMD_FRAC_NULL_VALUE;
          do_call_in_series_simple(result);
-         result->result_flags &= ~RESULTFLAG__PART_COMPLETION_BITS;
-         result->result_flags |= saved_last_flag;
+         result->result_flags.misc &= ~RESULTFLAG__PART_COMPLETION_BITS;
+         result->result_flags.misc |= saved_last_flagmisc;
       }
       else {
          // Follow (0) or precede (1).
@@ -3970,11 +4016,11 @@ static void do_concept_special_sequential(
             if ((call_index ^ parseptr->concept->arg1) != 0) {
                // The interloper call.  It gets no fractions.
                result->cmd.cmd_frac_flags = CMD_FRAC_NULL_VALUE;
-               uint32 saved_last_flag = result->result_flags &
+               uint32 saved_last_flagmisc = result->result_flags.misc &
                   (RESULTFLAG__DID_LAST_PART|RESULTFLAG__PARTS_ARE_KNOWN);
                do_call_in_series_simple(result);
-               result->result_flags &= ~RESULTFLAG__PART_COMPLETION_BITS;
-               result->result_flags |= saved_last_flag;
+               result->result_flags.misc &= ~RESULTFLAG__PART_COMPLETION_BITS;
+               result->result_flags.misc |= saved_last_flagmisc;
             }
             else {
                // The base call, or the part of it.
@@ -4022,7 +4068,7 @@ static void do_concept_n_times(
    zzz.m_first_call = !zzz.m_reverse_order;
 
    *result = *ss;
-   result->result_flags = 0;
+   clear_result_flags(result);
 
    for (;;) {
       int fetch_number;
@@ -4032,10 +4078,10 @@ static void do_concept_n_times(
       if (zzz.ran_off_active_section()) break;
 
       // Do *NOT* try to maintain consistent splitting across repetitions when doing "twice".
-      result->result_flags |= RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+      result->result_flags.maximize_split_info();
 
-      // We do *not* remember the yoyo/twisted expiration stuff.
-      result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
+      // We do *NOT* remember the yoyo/twisted expiration stuff.
+      result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
 
       do_call_in_series_simple(result);
 
@@ -4046,7 +4092,7 @@ static void do_concept_n_times(
       // If we are being asked to do just one part of a call,
       // exit now.  Also, fill in bits in result->result_flags.
 
-      if (zzz.query_instant_stop(result->result_flags)) break;
+      if (zzz.query_instant_stop(result->result_flags.misc)) break;
 
    go_to_next_cycle:
 
@@ -4055,8 +4101,8 @@ static void do_concept_n_times(
       zzz.m_client_index += zzz.m_subcall_incr;
    }
 
-   result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
-   result->result_flags |= offline_split_info.result_flags;
+   result->result_flags.misc |= offline_split_info.result_flags.misc;  //******* needed?
+   result->result_flags.copy_split_info(offline_split_info.result_flags);
 }
 
 
@@ -4065,8 +4111,15 @@ static void do_concept_trace(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
+   int interlock = ss->cmd.cmd_final_flags.test_heritbit(INHERITFLAG_INTLK);
+
+   ss->cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_INTLK);
+   // We don't allow other flags, like "cross".
+   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+      fail("Illegal modifier before \"trace\".");
+
    int i, r[4], rot[4];
-   uint32 finalresultflags;
+   resultflag_rec finalresultflags;
    setup a[4], res[4];
    setup outer_inners[2];
    const veryshort *tracearray;
@@ -4078,6 +4131,9 @@ static void do_concept_trace(
 
    if (ss->kind != s_qtag) fail("Must have a 1/4-tag-like setup for trace.");
 
+   // We handle "interlocked trace" in a rather simple-minded way.
+   if (interlock != 0) swap_people(ss, 3, 7);
+
    ss->cmd.cmd_misc_flags |= CMD_MISC__DISTORTED;
 
    for (i=0 ; i<4 ; i++) {
@@ -4087,12 +4143,12 @@ static void do_concept_trace(
       a[i].rotation = 0;
    }
 
-   if ((ss->people[6].id1&d_mask) == d_north && (ss->people[2].id1&d_mask) == d_south) {
+   if ((ss->people[6].id1 & d_mask) == d_north && (ss->people[2].id1 & d_mask) == d_south) {
       a[1].cmd.parseptr = parseptr->subsidiary_root;
       a[3].cmd.parseptr = parseptr->subsidiary_root;
       tracearray = tracearray1;
    }
-   else if ((ss->people[6].id1&d_mask) == d_south && (ss->people[2].id1&d_mask) == d_north) {
+   else if ((ss->people[6].id1 & d_mask) == d_south && (ss->people[2].id1 & d_mask) == d_north) {
       a[0].cmd.parseptr = parseptr->subsidiary_root;
       a[2].cmd.parseptr = parseptr->subsidiary_root;
       tracearray = tracearray2;
@@ -4112,17 +4168,17 @@ static void do_concept_trace(
    clear_people(&outer_inners[1]);
    clear_people(&outer_inners[0]);
 
-   /* Check that everyone is in a 2x2 or vertically oriented 1x4. */
+   // Check that everyone is in a 2x2 or vertically oriented 1x4.
 
    for (i=0 ; i<4 ; i++) {
       if ((res[i].kind != s2x2 && res[i].kind != nothing && (res[i].kind != s1x4 || (!(res[i].rotation&1)))))
          fail("You can't do this.");
    }
 
-   /* Process people going into the center. */
+   // Process people going into the center.
 
    outer_inners[1].rotation = 0;
-   outer_inners[1].result_flags = 0;
+   clear_result_flags(&outer_inners[1]);
 
    if   ((res[0].kind == s2x2 && (res[0].people[2].id1 | res[0].people[3].id1)) ||
          (res[1].kind == s2x2 && (res[1].people[0].id1 | res[1].people[1].id1)) ||
@@ -4181,10 +4237,10 @@ static void do_concept_trace(
       install_rot(&outer_inners[1], 1, &res[3], 3^r[3], rot[3]);
    }
 
-   /* Process people going to the outside. */
+   // Process people going to the outside.
 
    outer_inners[0].rotation = 0;
-   outer_inners[0].result_flags = 0;
+   clear_result_flags(&outer_inners[0]);
 
    for (i=0 ; i<4 ; i++) {
       r[i] = res[i].rotation & 2;
@@ -4223,6 +4279,12 @@ static void do_concept_trace(
    normalize_concentric(schema_concentric, 1, outer_inners,
                         ((~outer_inners[0].rotation) & 1) + 1, 0, result);
    result->result_flags = finalresultflags;
+
+   if (interlock != 0) {
+      if (result->kind != s_qtag) fail("Can't do this interlocked trace.");
+      swap_people(result, 3, 7);
+   }
+
    reinstate_rotation(ss, result);
 }
 
@@ -4323,7 +4385,7 @@ static void do_concept_inner_outer(
             else                      fail("There are no triple columns here.");
          }
          goto ready;
-      case sbigh: case sbigx: case sbigrig: case shsqtag: 
+      case sbigh: case sbigx: case sbigrig: case shsqtag: case sbig3x1dmd: case sbig1x3dmd:
          goto verify_clw;
       }
 
@@ -4457,6 +4519,7 @@ static void do_concept_inner_outer(
       switch (ss->kind) {
       case s3dmd: case s3ptpd: case s_3mdmd: case s_3mptpd: case s3x1dmd: case s1x3dmd:
       case shsqtag: case s_hrglass: case s_dhrglass: case sbighrgl: case sbigdhrgl:
+      case sbig3x1dmd: case sbig1x3dmd:
          goto ready;
       }
 
@@ -4784,6 +4847,10 @@ static void do_concept_mini_but_o(
    case s_rigger:
       if (is_an_o) mask = 0xBB;
       break;
+   case swqtag:
+      // We require the center two missing.
+      if (is_an_o && (ss->people[4].id1 | ss->people[9].id1) == 0) mask = 0x16B;
+      break;
    case s3x4:
       if (is_an_o) mask = 02626;
       break;
@@ -4847,16 +4914,64 @@ static void do_concept_triple_formations(
    //   1 - triple lines or diamonds
    //   2 - triple boxes or diamonds
 
+   setup tempsetup = *ss;
+
+   // We need to expand certain setups, of course.
+   //
+   // Why don't we do it the usual way, with "NEEDK" bits like
+   // "NEEDK_TRIPLE_1X4_OR_BOX", setting those bits in the concept
+   // properties?  Because we would run out of bits!  We have used
+   // up too many bits doing other (worthwhile) things.  Unless we
+   // change the format of the "NEEDK" mechanism to use 64 bits
+   // (which isn't worth it), we have to do these by hand.  It's
+   // not actually a serious problem -- the "NEEDK" mechanism does
+   // a lot of powerful and useful things elsewhere in the program.
+   // We don't need that power and flexibility here.  It's not much
+   // work to take care of the individual cases.
+
+   uint32 need_prop = 0;
+
    switch (parseptr->concept->arg3) {
    case 0:
-      if (ss->kind == sbigbone || ss->kind == sbigrig)
-         do_triple_formation(ss, parseptr, ~0UL, result);
-      else
+      switch (tempsetup.kind) {
+      case s_rigger:            need_prop = CONCPROP__NEEDK_END_1X4; break;
+      case s2x4:                need_prop = CONCPROP__NEEDK_4X4; break;
+      case s_bone: case s_qtag: need_prop = CONCPROP__NEEDK_END_2X2; break;
+      }
+
+      do_matrix_expansion(&tempsetup, need_prop, false);
+
+      // The 4x4 case is for a box sandwiched between two parallel 1x4's.
+      // Concentric_move knows how to deal with this.
+      if (tempsetup.kind != sbigbone && tempsetup.kind != sbigrig &&
+          tempsetup.kind != sbigdmd && tempsetup.kind != s4x4)
+         fail("Can't do this concept in this setup.");
+      break;
+   case 1:
+      switch (tempsetup.kind) {
+      case s3x1dmd: case s1x3dmd: case s_hrglass: need_prop = CONCPROP__NEEDK_END_1X4; break;
+      }
+
+      do_matrix_expansion(&tempsetup, need_prop, false);
+
+      if (tempsetup.kind != sbig3x1dmd && tempsetup.kind != sbig1x3dmd &&
+          tempsetup.kind != shsqtag)
          fail("Can't do this concept in this setup.");
       break;
    default:
-      fail("Can't do this concept in this setup.");
+
+      switch (tempsetup.kind) {
+      case s_dhrglass: case s_hrglass: need_prop = CONCPROP__NEEDK_END_2X2; break;
+      }
+
+      do_matrix_expansion(&tempsetup, need_prop, false);
+
+      if (tempsetup.kind != sbighrgl && tempsetup.kind != sbigdhrgl)
+         fail("Can't do this concept in this setup.");
+      break;
    }
+
+   do_triple_formation(&tempsetup, parseptr, ~0UL, result);
 }
 
 
@@ -5220,8 +5335,8 @@ static void do_concept_meta(
    parse_block *parseptr_skip;
    parse_block fudgyblock;
    setup_command nocmd, yescmd;
-   uint32 expirations_to_clear = 0;
-   uint32 finalresultflags = 0;
+   uint32 expirations_to_clearmisc = 0;
+   uint32 finalresultflagsmisc = 0;
    meta_key_kind key = (meta_key_kind) parseptr->concept->arg1;
 
    prepare_for_call_in_series(result, ss);
@@ -5319,7 +5434,7 @@ static void do_concept_meta(
        key != meta_key_revorder &&
        key != meta_key_shift_n &&
        key != meta_key_shift_half) {
-      concept_kind k;
+      parse_block *kstuff;
       uint32 need_to_restrain;
       parse_block *parseptrcopy;
 
@@ -5332,9 +5447,10 @@ static void do_concept_meta(
       parse_block **foop;
       parse_block **fooq;
 
-      parseptrcopy = really_skip_one_concept(parseptr->next, &k,
-                                             &need_to_restrain, &foop);
+      parseptrcopy = really_skip_one_concept(parseptr->next, kstuff,
+                                             need_to_restrain, &foop);
       parseptr_skip = *foop;
+      concept_kind k = kstuff->concept->kind;
 
       yescmd.parseptr = parseptrcopy;
 
@@ -5342,9 +5458,9 @@ static void do_concept_meta(
       // the expiration bit for same, if we do it "piecewise" or whatever.
 
       if (k == concept_yoyo)
-         expirations_to_clear = RESULTFLAG__YOYO_EXPIRED;
+         expirations_to_clearmisc = RESULTFLAG__YOYO_EXPIRED;
       if (k == concept_twisted)
-         expirations_to_clear = RESULTFLAG__TWISTED_EXPIRED;
+         expirations_to_clearmisc = RESULTFLAG__TWISTED_EXPIRED;
 
       if (concept_table[k].concept_prop & CONCPROP__SECOND_CALL)
          fooq = &parseptrcopy->subsidiary_root;
@@ -5517,7 +5633,7 @@ static void do_concept_meta(
          if ((corefracs &
               (CMD_FRAC_REVERSE | CMD_FRAC_CODE_MASK | CMD_FRAC_PART_MASK | 0xFFFF)) ==
              (                    CMD_FRAC_CODE_ONLY | CMD_FRAC_PART_BIT | CMD_FRAC_NULL_VALUE)) {
-            finalresultflags |= RESULTFLAG__PARTS_ARE_KNOWN;
+            finalresultflagsmisc |= RESULTFLAG__PARTS_ARE_KNOWN;
             result->cmd = yescmd;
             result->cmd.cmd_frac_flags = CMD_FRAC_NULL_VALUE;
             goto do_less;
@@ -5525,8 +5641,8 @@ static void do_concept_meta(
          else if ((corefracs &
               (CMD_FRAC_REVERSE | CMD_FRAC_CODE_MASK | CMD_FRAC_PART_MASK | 0xFFFF)) ==
              (                    CMD_FRAC_CODE_ONLY | CMD_FRAC_PART_BIT*2 | CMD_FRAC_NULL_VALUE)) {
-            finalresultflags |= RESULTFLAG__PARTS_ARE_KNOWN;
-            finalresultflags |= RESULTFLAG__DID_LAST_PART;
+            finalresultflagsmisc |= RESULTFLAG__PARTS_ARE_KNOWN;
+            finalresultflagsmisc |= RESULTFLAG__DID_LAST_PART;
             result->cmd = nocmd;
             result->cmd.cmd_frac_flags = CMD_FRAC_NULL_VALUE;
             goto do_less;
@@ -5534,8 +5650,8 @@ static void do_concept_meta(
          else if ((corefracs &
               (CMD_FRAC_REVERSE | CMD_FRAC_CODE_MASK | CMD_FRAC_PART_MASK | 0xFFFF)) ==
              (                    CMD_FRAC_CODE_FROMTOREV | CMD_FRAC_PART_BIT*2 | CMD_FRAC_NULL_VALUE)) {
-            finalresultflags |= RESULTFLAG__PARTS_ARE_KNOWN;
-            finalresultflags |= RESULTFLAG__DID_LAST_PART;
+            finalresultflagsmisc |= RESULTFLAG__PARTS_ARE_KNOWN;
+            finalresultflagsmisc |= RESULTFLAG__DID_LAST_PART;
             result->cmd = nocmd;
             result->cmd.cmd_frac_flags = CMD_FRAC_NULL_VALUE;
             goto do_less;
@@ -5561,7 +5677,7 @@ static void do_concept_meta(
       // And then again without it.
       result->cmd = nocmd;
 
-      if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+      if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
          update_id_bits(result);
 
       // Assumptions don't carry through.
@@ -5701,7 +5817,6 @@ static void do_concept_meta(
 
       // Do the initial part, if any, without the concept.
 
-      int next_to_last_flag = 0;  // We may need the "next_to_last" stuff.
       if (shiftynum > 1) {
          result->cmd = nocmd;
          // Set the fractionalize field to do the first few parts of the call.
@@ -5710,7 +5825,6 @@ static void do_concept_meta(
             CMD_FRAC_CODE_FROMTO | CMD_FRAC_NULL_VALUE;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
          do_call_in_series_simple(result);
-         next_to_last_flag = result->result_flags;
       }
 
       // Do the part of the call that needs the concept.
@@ -5724,8 +5838,8 @@ static void do_concept_meta(
       do_call_in_series_simple(result);
 
       int did_last = 0;
-      if (result->result_flags & RESULTFLAG__PARTS_ARE_KNOWN)
-         did_last = result->result_flags & RESULTFLAG__DID_LAST_PART;
+      if (result->result_flags.misc & RESULTFLAG__PARTS_ARE_KNOWN)
+         did_last = result->result_flags.misc & RESULTFLAG__DID_LAST_PART;
 
       // If the parts were not known, go ahead anyway, and hope for the best.
       // It is very likely that the code below will respond correctly
@@ -5827,7 +5941,7 @@ static void do_concept_meta(
          result->cmd.cmd_frac_flags =
             FRACS(CMD_FRAC_CODE_ONLY,1,0) | CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
-         result->result_flags |= RESULTFLAG__EXPIRATION_ENAB;
+         result->result_flags.misc |= RESULTFLAG__EXPIRATION_ENAB;
          do_call_in_series_simple(result);
 
          // And the rest of the call without it.
@@ -5926,7 +6040,7 @@ static void do_concept_meta(
             CMD_FRAC_PART_BIT*1 | CMD_FRAC_NULL_VALUE;
          // Assumptions don't carry through.
          result->cmd.cmd_assume.assumption = cr_none;
-         result->result_flags |= RESULTFLAG__EXPIRATION_ENAB;
+         result->result_flags.misc |= RESULTFLAG__EXPIRATION_ENAB;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
       }
       else
@@ -5948,7 +6062,7 @@ static void do_concept_meta(
          result->cmd.cmd_frac_flags =
             FRACS(CMD_FRAC_CODE_ONLY,1,0) | CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
-         result->result_flags |= RESULTFLAG__EXPIRATION_ENAB;
+         result->result_flags.misc |= RESULTFLAG__EXPIRATION_ENAB;
          do_call_in_series_simple(result);
 
          // the interior of the call without it,
@@ -5959,18 +6073,20 @@ static void do_concept_meta(
          result->cmd.cmd_frac_flags =
             FRACS(CMD_FRAC_CODE_FROMTOREV,2,1) | CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
-         result->result_flags |= RESULTFLAG__EXPIRATION_ENAB;
+         result->result_flags.misc |= RESULTFLAG__EXPIRATION_ENAB;
          do_call_in_series_simple(result);
 
-         // and the last part with it.
+         // and the last part with it.  Be sure to reset the "twisted"/"yoyo" expiration.
 
          result->cmd = yescmd;
+         result->result_flags.misc &= ~expirations_to_clearmisc;
+
          // Assumptions don't carry through.
          result->cmd.cmd_assume.assumption = cr_none;
          result->cmd.cmd_frac_flags =
             FRACS(CMD_FRAC_CODE_ONLYREV,1,0) | CMD_FRAC_BREAKING_UP | CMD_FRAC_NULL_VALUE;
          result->cmd.cmd_misc_flags |= CMD_MISC__PUT_FRAC_ON_FIRST;
-         result->result_flags |= RESULTFLAG__EXPIRATION_ENAB;
+         result->result_flags.misc |= RESULTFLAG__EXPIRATION_ENAB;
       }
       else
          fail("Can't stack meta or fractional concepts.");
@@ -6019,13 +6135,14 @@ static void do_concept_meta(
       frac_flags = corefracs &
          ~(CMD_FRAC_CODE_MASK|CMD_FRAC_PART_MASK|CMD_FRAC_PART2_MASK);
 
-      uint32 saved_last_flag = 0;
+      uint32 saved_last_flagmisc = 0;
 
       do {
          /* Here is where we make use of actual numerical assignments. */
          uint32 revrand = key-meta_key_random;
 
          index++;
+         if (index > 7) fail("Sorry, can't handle this number.");
          copy_cmd_preserve_elong_and_expire(ss, result);
 
          /* If concept is "[reverse] random" and this is an even/odd-numbered part,
@@ -6041,7 +6158,7 @@ static void do_concept_meta(
          }
          else {
             result->cmd = yescmd;
-            result->result_flags &= ~expirations_to_clear;
+            result->result_flags.misc &= ~expirations_to_clearmisc;
          }
 
          // Set the fractionalize field to do the indicated part.
@@ -6055,50 +6172,50 @@ static void do_concept_meta(
          // If the call that we are doing has the RESULTFLAG__NO_REEVALUATE flag
          // on (meaning we don't re-evaluate under *any* circumstances, particularly
          // circumstances like these), we do not re-evaluate the ID bits.
-         if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+         if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
             update_id_bits(result);
 
          result->cmd.cmd_misc_flags &= ~CMD_MISC__NO_EXPAND_MATRIX;
 
          do_call_in_series(result, true, false, true, false);
 
-         if (result->result_flags & RESULTFLAG__SECONDARY_DONE) {
+         if (result->result_flags.misc & RESULTFLAG__SECONDARY_DONE) {
             index = 0;
             frac_flags |= CMD_FRAC_IMPROPER_BIT;
          }
 
-         result->result_flags &= ~RESULTFLAG__SECONDARY_DONE;
+         result->result_flags.misc &= ~RESULTFLAG__SECONDARY_DONE;
 
          // Now look at the "DID_LAST_PART" bits of the call we just executed,
          // to see whether we should break out.
-         if (!(result->result_flags & RESULTFLAG__PARTS_ARE_KNOWN)) {
+         if (!(result->result_flags.misc & RESULTFLAG__PARTS_ARE_KNOWN)) {
             // Problem.  The call doesn't know what it did.
             // Perhaps the previous part knew.  This could arise if we
             // do something like "random use flip back in swing the fractions" --
             // various parts aren't actually done, but enough parts are done
             // for us to piece together the required information.
 
-            result->result_flags &= ~RESULTFLAG__PART_COMPLETION_BITS;
+            result->result_flags.misc &= ~RESULTFLAG__PART_COMPLETION_BITS;
 
-            if ((saved_last_flag & (RESULTFLAG__PARTS_ARE_KNOWN|RESULTFLAG__DID_LAST_PART))
+            if ((saved_last_flagmisc & (RESULTFLAG__PARTS_ARE_KNOWN|RESULTFLAG__DID_LAST_PART))
                 == RESULTFLAG__PARTS_ARE_KNOWN) {
-               result->result_flags |= RESULTFLAG__PARTS_ARE_KNOWN;
-               if (saved_last_flag & RESULTFLAG__DID_NEXTTOLAST_PART)
-                  result->result_flags |= RESULTFLAG__DID_LAST_PART;
+               result->result_flags.misc |= RESULTFLAG__PARTS_ARE_KNOWN;
+               if (saved_last_flagmisc & RESULTFLAG__DID_NEXTTOLAST_PART)
+                  result->result_flags.misc |= RESULTFLAG__DID_LAST_PART;
             }
 
-            saved_last_flag = 0;   // Need to recharge before can use it again.
+            saved_last_flagmisc = 0;   // Need to recharge before can use it again.
          }
          else
-            saved_last_flag = result->result_flags;
+            saved_last_flagmisc = result->result_flags.misc;
 
-         if (!(result->result_flags & RESULTFLAG__PARTS_ARE_KNOWN))
+         if (!(result->result_flags.misc & RESULTFLAG__PARTS_ARE_KNOWN))
             fail("Can't have 'no one' do a call.");
 
          // We will pass all those bits back to our client.
          if (doing_just_one) break;
       }
-      while (!(result->result_flags & RESULTFLAG__DID_LAST_PART));
+      while (!(result->result_flags.misc & RESULTFLAG__DID_LAST_PART));
 
       goto get_out;
    }
@@ -6108,9 +6225,9 @@ static void do_concept_meta(
  do_less:
 
    // This seems to make t50 work.
-   result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+   result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
    do_call_in_series_simple(result);
-   result->result_flags |= finalresultflags;
+   result->result_flags.misc |= finalresultflagsmisc;
 
  get_out: ;
 }
@@ -6180,7 +6297,7 @@ static void do_concept_replace_nth_part(
       result->cmd.prior_expire_bits |= RESULTFLAG__EXPIRATION_ENAB;
       result->cmd.cmd_frac_flags = newfracs;
       // This seems to make t50 work.
-      result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+      result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
       do_call_in_series(result, true, false, true, false);
    }
 
@@ -6188,18 +6305,18 @@ static void do_concept_replace_nth_part(
 
    result->cmd = ss->cmd;
    result->cmd.parseptr = parseptr->subsidiary_root;
-   if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+   if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
       update_id_bits(result);    // So you can interrupt with "leads run", etc.
    result->cmd.cmd_misc_flags &= ~CMD_MISC__NO_EXPAND_MATRIX;
 
    // Give this call a clean start with respect to expiration stuff.
-   uint32 suspended_expiration_bits = result->result_flags & RESULTFLAG__EXPIRATION_BITS;
-   result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
+   uint32 suspended_expiration_bitsmisc = result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
+   result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
    do_call_in_series(result, true, false, true, false);
 
    // Put back the expiration bits for the resumed call.
-   result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
-   result->result_flags |= suspended_expiration_bits|RESULTFLAG__EXPIRATION_ENAB;
+   result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
+   result->result_flags.misc |= suspended_expiration_bitsmisc|RESULTFLAG__EXPIRATION_ENAB;
 
    // Do the final part, if there is more.
 
@@ -6222,7 +6339,7 @@ static void do_concept_replace_nth_part(
    copy_cmd_preserve_elong_and_expire(ss, result);
    result->cmd.cmd_frac_flags = frac_key;
    // This seems to make t50 work.
-   result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+   result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
    do_call_in_series(result, true, false, true, false);
 }
 
@@ -6237,25 +6354,25 @@ static void do_concept_interlace(
    if (ss->cmd.cmd_frac_flags != CMD_FRAC_NULL_VALUE)
       fail("Can't stack meta or fractional concepts.");
 
-   uint32 first_doneflag = 0;
-   uint32 second_doneflag = 0;
+   uint32 first_doneflagmisc = 0;
+   uint32 second_doneflagmisc = 0;
    uint32 indexa = 0;
    uint32 indexb = 0;
 
    prepare_for_call_in_series(result, ss);
    uint32 a_frac_flags = CMD_FRAC_NULL_VALUE;
    uint32 b_frac_flags = CMD_FRAC_NULL_VALUE;
-   uint32 calla_expiration_bits = 0;
-   uint32 callb_expiration_bits = 0;
+   uint32 calla_expiration_bitsmisc = 0;
+   uint32 callb_expiration_bitsmisc = 0;
 
    // If yoyo coming in, set callb_expiration, so only calla will do it.
 
    if (ss->cmd.cmd_final_flags.test_heritbit(INHERITFLAG_YOYO))
-      callb_expiration_bits |= RESULTFLAG__YOYO_EXPIRED;
+      callb_expiration_bitsmisc |= RESULTFLAG__YOYO_EXPIRED;
    if (ss->cmd.cmd_final_flags.test_heritbit(INHERITFLAG_TWISTED))
-      callb_expiration_bits |= RESULTFLAG__TWISTED_EXPIRED;
+      callb_expiration_bitsmisc |= RESULTFLAG__TWISTED_EXPIRED;
    if (ss->cmd.cmd_final_flags.test_finalbit(FINAL__SPLIT_SQUARE_APPROVED))
-      callb_expiration_bits |= RESULTFLAG__SPLIT_EXPIRED;
+      callb_expiration_bitsmisc |= RESULTFLAG__SPLIT_EXPIRED;
 
    // Well, actually, what we want to do it not carry the stuff around,
    // that is, not clear and restore.
@@ -6263,11 +6380,11 @@ static void do_concept_interlace(
    do {
       indexa++;
 
-      if (!(first_doneflag & RESULTFLAG__DID_LAST_PART)) {
+      if (!(first_doneflagmisc & RESULTFLAG__DID_LAST_PART)) {
          // Do the indicated part of the first call.
          copy_cmd_preserve_elong_and_expire(ss, result, true);
-         result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
-         result->result_flags |= calla_expiration_bits & RESULTFLAG__EXPIRATION_BITS;
+         result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
+         result->result_flags.misc |= calla_expiration_bitsmisc & RESULTFLAG__EXPIRATION_BITS;
 
          // If we know that this part is in fact last, we say so.  That way,
          // if the subject call is an instance of "finally", it will work.
@@ -6275,51 +6392,51 @@ static void do_concept_interlace(
          result->cmd.cmd_frac_flags = FRACS(CMD_FRAC_CODE_ONLY,indexa,0) |
             CMD_FRAC_BREAKING_UP | a_frac_flags;
 
-         if (first_doneflag & RESULTFLAG__DID_NEXTTOLAST_PART)
+         if (first_doneflagmisc & RESULTFLAG__DID_NEXTTOLAST_PART)
             result->cmd.cmd_frac_flags |= CMD_FRAC_THISISLAST;
 
-         if (!(result->result_flags & RESULTFLAG__NO_REEVALUATE))
+         if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
             update_id_bits(result);
          result->cmd.cmd_misc_flags &= ~CMD_MISC__NO_EXPAND_MATRIX;
 
          // This seems to make t50 work.
-         result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+         result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
 
          do_call_in_series(result, true, false, true, false);
-         calla_expiration_bits = result->result_flags;
+         calla_expiration_bitsmisc = result->result_flags.misc;
 
-         if (!(result->result_flags & RESULTFLAG__PARTS_ARE_KNOWN))
+         if (!(result->result_flags.misc & RESULTFLAG__PARTS_ARE_KNOWN))
             fail("Can't have 'no one' do a call.");
 
-         if (result->result_flags & RESULTFLAG__SECONDARY_DONE) {
+         if (result->result_flags.misc & RESULTFLAG__SECONDARY_DONE) {
             indexa = 0;
             a_frac_flags |= CMD_FRAC_IMPROPER_BIT;
          }
 
-         first_doneflag = result->result_flags;
-         result->result_flags &= ~RESULTFLAG__SECONDARY_DONE;  /* **** need this? */
+         first_doneflagmisc = result->result_flags.misc;
+         result->result_flags.misc &= ~RESULTFLAG__SECONDARY_DONE;  /* **** need this? */
       }
-      else if (!(second_doneflag & RESULTFLAG__DID_LAST_PART))
+      else if (!(second_doneflagmisc & RESULTFLAG__DID_LAST_PART))
          warn(warn__bad_interlace_match);
 
       indexb++;
 
-      if (!(second_doneflag & RESULTFLAG__DID_LAST_PART)) {
+      if (!(second_doneflagmisc & RESULTFLAG__DID_LAST_PART)) {
          // Do the indicated part of the second call.
          copy_cmd_preserve_elong_and_expire(ss, result, true);
          result->cmd.parseptr = parseptr->subsidiary_root;
-         result->result_flags &= ~RESULTFLAG__EXPIRATION_BITS;
-         result->result_flags |= callb_expiration_bits & RESULTFLAG__EXPIRATION_BITS;
+         result->result_flags.misc &= ~RESULTFLAG__EXPIRATION_BITS;
+         result->result_flags.misc |= callb_expiration_bitsmisc & RESULTFLAG__EXPIRATION_BITS;
 
          // If other part has run out, and we aren't doing an improper fraction,
          // just finish this.
-         if ((first_doneflag & RESULTFLAG__DID_LAST_PART) &&
-             !(second_doneflag & RESULTFLAG__SECONDARY_DONE)) {
+         if ((first_doneflagmisc & RESULTFLAG__DID_LAST_PART) &&
+             !(second_doneflagmisc & RESULTFLAG__SECONDARY_DONE)) {
             result->cmd.cmd_frac_flags = FRACS(CMD_FRAC_CODE_FROMTOREV,indexb,0) |
                CMD_FRAC_BREAKING_UP | b_frac_flags;
 
             // This seems to make t50 work.
-            result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+            result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
 
             do_call_in_series(result, true, false, true, false);
             return;
@@ -6329,26 +6446,26 @@ static void do_concept_interlace(
             CMD_FRAC_BREAKING_UP | b_frac_flags;
 
          // This seems to make t50 work.
-         result->cmd.prior_expire_bits |= result->result_flags & RESULTFLAG__EXPIRATION_BITS;
+         result->cmd.prior_expire_bits |= result->result_flags.misc & RESULTFLAG__EXPIRATION_BITS;
 
          do_call_in_series(result, true, false, true, false);
-         callb_expiration_bits = result->result_flags;
+         callb_expiration_bitsmisc = result->result_flags.misc;
 
-         if (!(result->result_flags & RESULTFLAG__PARTS_ARE_KNOWN))
+         if (!(result->result_flags.misc & RESULTFLAG__PARTS_ARE_KNOWN))
             fail("Can't have 'no one' do a call.");
 
-         if (result->result_flags & RESULTFLAG__SECONDARY_DONE) {
+         if (result->result_flags.misc & RESULTFLAG__SECONDARY_DONE) {
             indexb = 0;
             b_frac_flags |= CMD_FRAC_IMPROPER_BIT;
          }
 
-         second_doneflag = result->result_flags;
-         result->result_flags &= ~RESULTFLAG__SECONDARY_DONE;  /* **** need this? */
+         second_doneflagmisc = result->result_flags.misc;
+         result->result_flags.misc &= ~RESULTFLAG__SECONDARY_DONE;  /* **** need this? */
       }
-      else if (!(first_doneflag & RESULTFLAG__DID_LAST_PART))
+      else if (!(first_doneflagmisc & RESULTFLAG__DID_LAST_PART))
          warn(warn__bad_interlace_match);
    }
-   while ((first_doneflag & second_doneflag & RESULTFLAG__DID_LAST_PART) == 0);
+   while ((first_doneflagmisc & second_doneflagmisc & RESULTFLAG__DID_LAST_PART) == 0);
 }
 
 
@@ -6418,9 +6535,9 @@ static void do_concept_fractional(
             move(ss, false, result);
             // And, if it reported that it did the last part, change it to
             // "secondary_done" to indicate that we're not finished.
-            if (result->result_flags & RESULTFLAG__DID_LAST_PART) {
-               result->result_flags &= ~RESULTFLAG__DID_LAST_PART;
-               result->result_flags |= RESULTFLAG__SECONDARY_DONE;
+            if (result->result_flags.misc & RESULTFLAG__DID_LAST_PART) {
+               result->result_flags.misc &= ~RESULTFLAG__DID_LAST_PART;
+               result->result_flags.misc |= RESULTFLAG__SECONDARY_DONE;
             }
          }
          else {
@@ -6448,6 +6565,10 @@ static void do_concept_fractional(
             result->cmd.cmd_frac_flags &= 0xFFFF;   // Do the whole 3/5.
          }
 
+         if (!(result->result_flags.misc & RESULTFLAG__NO_REEVALUATE))
+            update_id_bits(result);
+         result->cmd.cmd_misc_flags &= ~CMD_MISC__NO_EXPAND_MATRIX;
+
          do_call_in_series(result, false, false,
             !(ss->cmd.cmd_misc_flags & CMD_MISC__EXPLICIT_MATRIX),
             false);
@@ -6465,7 +6586,6 @@ static void do_concept_so_and_so_begin(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
-   uint32 finalresultflags;
    selector_kind saved_selector;
    int i;
    setup setup1, setup2;
@@ -6474,9 +6594,16 @@ static void do_concept_so_and_so_begin(
    // See if we are being requested to do only stuff that does not
    // include the first part.  If so, we just do it.
 
-   if (((ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_ONLY ||
+   // We check for either part selection indicating the first part isn't involved ...
+   if ((((ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_ONLY ||
         (ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_FROMTOREV) &&
-       (ss->cmd.cmd_frac_flags & CMD_FRAC_PART_MASK) >= CMD_FRAC_PART_BIT*2) {
+       (ss->cmd.cmd_frac_flags & CMD_FRAC_PART_MASK) >= CMD_FRAC_PART_BIT*2)
+       ||
+       // or fraction selection indicating the same.
+       // That is, code="only", part=0, reverse off, and starting frac != 0.
+       (((ss->cmd.cmd_frac_flags & (CMD_FRAC_CODE_MASK|CMD_FRAC_PART_MASK|CMD_FRAC_REVERSE))
+         == CMD_FRAC_CODE_ONLY)
+        && (ss->cmd.cmd_frac_flags & 0xF000) != 0)) {
       move(ss, false, result);
       return;
    }
@@ -6527,7 +6654,7 @@ static void do_concept_so_and_so_begin(
    the_setups[1].result_flags = get_multiple_parallel_resultflags(the_setups, 2);
 
    merge_setups(&the_setups[0], merge_c1_phantom, &the_setups[1]);
-   finalresultflags = the_setups[1].result_flags;
+   uint32 finalresultflagsmisc = the_setups[1].result_flags.misc;
    normalize_setup(&the_setups[1], simple_normalize, false);
 
    if ((important_bits & CMD_FRAC_CODE_MASK) != CMD_FRAC_CODE_ONLY)
@@ -6539,8 +6666,8 @@ static void do_concept_so_and_so_begin(
 
    if ((important_bits & CMD_FRAC_PART_MASK) == CMD_FRAC_PART_BIT) {
       *result = the_setups[1];
-      finalresultflags |= result->result_flags;
-      result->result_flags = finalresultflags & ~3;
+      result->result_flags.misc |= finalresultflagsmisc;
+      result->result_flags.misc &= ~3;
       return;
    }
 
@@ -6550,9 +6677,9 @@ static void do_concept_so_and_so_begin(
    the_setups[1].cmd.cmd_frac_flags =
       CMD_FRAC_CODE_FROMTOREV | CMD_FRAC_PART_BIT*2 | passed_bits;
    move(&the_setups[1], false, result);
-   finalresultflags |= result->result_flags;
+   result->result_flags.misc = finalresultflagsmisc;
+   result->result_flags.misc &= ~3;
    normalize_setup(result, simple_normalize, false);
-   result->result_flags = finalresultflags & ~3;
 }
 
 
@@ -6648,7 +6775,7 @@ static void do_concept_concentric(
                       DFM1_CONC_CONCENTRIC_RULES, true, ~0UL, result);
 
       // 8-person concentric operations do not show the split.
-      result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+      result->result_flags.clear_split_info();
       break;
    }
 }
@@ -6864,8 +6991,8 @@ extern bool do_big_concept(
       }
    
       if (!tbonetest) {
-         result->result_flags = 0;
          result->kind = nothing;
+         clear_result_flags(result);
          return true;
       }
    
@@ -6884,7 +7011,7 @@ extern bool do_big_concept(
          (ss, substandard_concptptr, result);
       remove_tgl_distortion(result);
       /* Beware -- result is not necessarily canonicalized. */
-      result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;  /* **** For now. */
+      result->result_flags.clear_split_info();  /* **** For now. */
       return true;
    }
 
@@ -6946,8 +7073,8 @@ extern bool do_big_concept(
       orig_tbonetest = global_tbonetest;
 
       if (!global_tbonetest) {
-         result->result_flags = 0;
          result->kind = nothing;
+         clear_result_flags(result);
          return true;
       }
    }
@@ -6956,7 +7083,7 @@ extern bool do_big_concept(
    remove_tgl_distortion(result);
    /* Beware -- result is not necessarily canonicalized. */
    if (!(this_table_item->concept_prop & CONCPROP__SHOW_SPLIT))
-      result->result_flags &= ~RESULTFLAG__SPLIT_AXIS_FIELDMASK;
+      result->result_flags.clear_split_info();
    return true;
 }
 
@@ -7058,6 +7185,13 @@ concept_table_item concept_table[] = {
    {CONCPROP__NEED_ARG2_MATRIX | CONCPROP__NO_STEP | CONCPROP__GET_MASK |
     Nostandard_matrix_phantom,
     do_concept_do_divided_diamonds},                        // concept_do_divided_diamonds
+
+
+   {CONCPROP__NO_STEP | CONCPROP__GET_MASK |
+    Nostandard_matrix_phantom,
+    do_concept_do_divided_bones},                           // concept_do_divided_bones
+
+
    {CONCPROP__STANDARD,
     do_concept_distorted},                                  // concept_distorted
    {CONCPROP__NO_STEP | CONCPROP__GET_MASK,
@@ -7163,7 +7297,7 @@ concept_table_item concept_table[] = {
     do_concept_checkpoint},                                 // concept_checkpoint
    {CONCPROP__SECOND_CALL | CONCPROP__NO_STEP,
     on_your_own_move},                                      // concept_on_your_own
-   {CONCPROP__SECOND_CALL | CONCPROP__NO_STEP,
+   {CONCPROP__SECOND_CALL | CONCPROP__PERMIT_MODIFIERS | CONCPROP__NO_STEP,
     do_concept_trace},                                      // concept_trace
    {CONCPROP__NO_STEP,
     do_concept_outeracting},                                // concept_outeracting
