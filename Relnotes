@@ -1,12 +1,5 @@
-		    RELEASE NOTES FOR VERSION 28.01
+		    RELEASE NOTES FOR VERSION 28.0
        Database version = 28.0, format = 34, X11 UI version 1.12.
-
-===============================================================================
-A bug was fixed in tandem/couples/siamese that could make it switch the paired
-people with each other if the call being executed involved stepping to a wave
-or rearing back from one.  This seems to have been introduced at about the time
-that fractional twosome/solid was added.  This bug is serious.
-===============================================================================
 
 Fixed long-standing bug in so-and-so-based triangle calls.
 

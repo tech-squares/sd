@@ -489,7 +489,6 @@ extern void tandem_couples_move(
    unsigned int orbitmask;
    unsigned int sglmask;
    unsigned int livemask;
-   setup saved_originals;
    long_boolean fractional = FALSE;
    tm_thing *our_map_table;
 
@@ -640,8 +639,6 @@ extern void tandem_couples_move(
    tandstuff.virtual_setup.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
    pack_us(ss->people, map, fraction, twosome, &tandstuff);
    update_id_bits(&tandstuff.virtual_setup);
-   saved_originals = tandstuff.virtual_setup;    /* Move will clobber the incoming setup.  This bug caused
-                                                    embarrassment at an ATA dance, April 3, 1993. */
    move(&tandstuff.virtual_setup, conceptptrcopy, callspec, final_concepts, FALSE, &tandstuff.virtual_result);
 
    if (setup_limits[tandstuff.virtual_result.kind] < 0)
@@ -675,8 +672,8 @@ extern void tandem_couples_move(
                   fail("fractional twosome not supported for this call.");
             }
 
-            orbit = p - saved_originals.rotation +
-                  tandstuff.virtual_result.rotation - saved_originals.people[vpi].id1;
+            orbit = p - tandstuff.virtual_setup.rotation +
+                  tandstuff.virtual_result.rotation - tandstuff.virtual_setup.people[vpi].id1;
 
             if (twosome == 2) {
                orbit -= ((p & (STABLE_VBIT*3)) / STABLE_VBIT);
