@@ -236,6 +236,7 @@ selector_item selector_list[] = {
                                                                   selector_uninitialized},
    {"Mbeaus???",    "Mbeaus???",   "MBEAUS???",    "MBEAUS???",   selector_uninitialized},
    {"Mbelles???",   "Mbelles???",  "MBELLES???",   "MBELLES???",  selector_uninitialized},
+   {"notctr dmd???", "notctr dmd???", "NOTCTR DMD???", "NOTCTR DMD???",  selector_uninitialized},
    {(Cstring) 0,    (Cstring) 0,   (Cstring) 0,    (Cstring) 0,   selector_uninitialized}};
 
 // BEWARE!!  These strings are keyed to the definition of "warning_index" in sd.h .

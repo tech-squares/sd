@@ -311,9 +311,12 @@ extern bool selectp(setup *ss, int place) THROW_DECL
       break;
 #endif
    case selector_ctrdmd:
-      if      ((pid2 & (ID2_CTRDMD|ID2_NCTRDMD)) == ID2_CTRDMD) return true;
-      else if ((pid2 & (ID2_CTRDMD|ID2_NCTRDMD)) == ID2_NCTRDMD) return false;
-      break;
+   case selector_notctrdmd:
+      p2 = pid2 & (ID2_CTRDMD|ID2_NCTRDMD);
+      if      (p2 == ID2_CTRDMD) s = selector_ctrdmd;
+      else if (p2 == ID2_NCTRDMD) s = selector_notctrdmd;
+      else break;
+      goto eq_return;
    case selector_ctr_1x4:
       if      ((pid2 & (ID2_CTR1X4|ID2_NCTR1X4)) == ID2_CTR1X4) return true;
       else if ((pid2 & (ID2_CTR1X4|ID2_NCTR1X4)) == ID2_NCTR1X4) return false;

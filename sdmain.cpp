@@ -31,8 +31,8 @@
 //    string is also required by paragraphs 2(a) and 2(c) of the GNU
 //    General Public License if you distribute the file.
 
-#define VERSION_STRING "36.5"
-#define TIME_STAMP "wba@alum.mit.edu  15 Dec 2004 $"
+#define VERSION_STRING "36.52"
+#define TIME_STAMP "wba@alum.mit.edu  23 Dec 2004 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -994,14 +994,9 @@ extern int sdmain(int argc, char *argv[])
    // must be initialized before executing calls.)
 
    global_cache_failed_flag = false;
-   clear_screen();
 
-   if (!open_session(argc, argv)) {
-      global_age = 1;
-      global_error_flag = (error_flag_type) 0;
-      interactivity = interactivity_normal;
+   if (!open_session(argc, argv))
       run_program();
-   }
 
    // This does a lot more than just exit.  It updates the init file.
    // If deletion of an item in the init file was called for, "open_session"

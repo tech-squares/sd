@@ -44,7 +44,7 @@
 //    string is also required by paragraphs 2(a) and 2(c) of the GNU
 //    General Public License if you distribute the file.
 
-version "36.5"
+version "36.52"
 
 call "nothing" mainstream tag nullcall
             dont_use_in_resolve
@@ -7802,7 +7802,7 @@ call "cross cycle" c3
             visible_fractions
    seq ctrsfold [force_cross]
    seq splitctrrot []
-   seq quarterin []
+   seq roll []
 
 call "2/3 cross cycle" c3
             visible_fractions
@@ -19007,6 +19007,10 @@ call "_check line or thar, unusual" dontshow tag checklineorthar_unusual
       array [ZM0N ZM1N]
    setup thar thar
       array [ZM0N ZM1N ZM2N ZM3N ZM4N ZM5N ZM6N ZM7N]
+   setup crosswave crosswave
+      array [ZM0N ZM1N ZM2N ZM3N ZM4N ZM5N ZM6N ZM7N]
+   setup pcrosswave crosswave
+      array [ZM0N ZM1N ZM2N ZM3N ZM4N ZM5N ZM6N ZM7N]
 
 call "_check parallel lines" dontshow tag checkparlines
    setup 2x4 2x4
@@ -19078,11 +19082,11 @@ call "_check par lines and fan back" dontshow tag checkparlinesnfanback
 
 call "_rims trade part 2" dontshow tag rims_trade_2
             yoyo_is_inherited bigmatrix_is_inherited
-   select_original_rims circulate [or_anycall] nullcall []
+   select_original_rims box_circulate_maybe_diamond [or_anycall] nullcall []
 
 call "_hubs trade part 2" dontshow tag hubs_trade_2
             yoyo_is_inherited bigmatrix_is_inherited
-   select_original_hubs circulate [or_anycall] nullcall []
+   select_original_hubs box_circulate_maybe_diamond [or_anycall] nullcall []
 
 call "_rims trade @0 part 2" dontshow tag rims_trade_2_any
             yoyo_is_inherited bigmatrix_is_inherited

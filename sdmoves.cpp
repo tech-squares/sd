@@ -1188,7 +1188,7 @@ static const checkitem checktable[] = {
    {0x00670055, 0x01000420, s_qtag, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00770055, 0x01400420, s_2stars, 0, warn__none, (const coordrec *) 0, {127}},
 
-   // Someone did a truck-like operation from a rigger, for example,
+   // Inner wing did a tow-truck-like operation from a rigger, for example,
    // after a sets in motion.  Fudge to a 1/4 tag.
    {0x00620026, 0x01008404, s_qtag, 0, warn__none, (const coordrec *) 0,
     {-2, 2, -4, 5, 2, 2, 5, 5, 2, -2, 4, -5, -2, -2, -5, -5, 127}},
@@ -1196,6 +1196,16 @@ static const checkitem checktable[] = {
    // Similar to the above, but truck was from a deepxwv.
    {0x00620066, 0x11100400, s_qtag, 0, warn__none, (const coordrec *) 0,
     {-2, 6, -4, 5, 2, 6, 5, 5, 2, -6, 4, -5, -2, -6, -5, -5, 127}},
+
+   // Inner wing did a 1/2 tow truck from a crosswave.  We want a thar.
+   {0x00750066, 0x08400220, s_thar, 0, warn__none, (const coordrec *) 0,
+    {-7, 0, -9, 0, -3, 0, -5, 0, 0, 6, 0, 9, 0, 2, 0, 5,
+    7, 0, 9, 0, 3, 0, 5, 0, 0, -6, 0, -9, 0, -2, 0, -5}},
+
+   // Outer person did a 1/2 tow truck from a thar.  We want a crosswave.
+   {0x00B50095, 0x02400180, s_crosswave, 0, warn__none, (const coordrec *) 0,
+    {-11, 0, -9, 0, -7, 0, -5, 0, 0, 9, 0, 6, 0, 5, 0, 2,
+    11, 0, 9, 0, 7, 0, 5, 0, 0, -9, 0, -6, 0, -5, 0, -2}},
 
    {0x00570067, 0x03100084, shsqtag, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00570057, 0x03100084, shsqtag, 0, warn__none, (const coordrec *) 0, {127}},
@@ -4519,13 +4529,13 @@ static bool do_misc_schema(
                            result);
    }
    else if (the_schema == schema_select_original_rims) {
-      *special_selectorp = selector_ends;
+      *special_selectorp = ss->kind == s_crosswave ? selector_notctrdmd : selector_ends;
       *special_modifiersp = innerdef->modifiers1;
       *special_indicatorp = selective_key_plain_from_id_bits;
       return true;
    }
    else if (the_schema == schema_select_original_hubs) {
-      *special_selectorp = selector_centers;
+      *special_selectorp = ss->kind == s_crosswave ? selector_ctrdmd : selector_centers;
       *special_modifiersp = innerdef->modifiers1;
       *special_indicatorp = selective_key_plain_from_id_bits;
       return true;

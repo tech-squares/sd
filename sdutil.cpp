@@ -2267,6 +2267,11 @@ void run_program()
 {
    int i;
 
+   global_age = 1;
+   global_error_flag = (error_flag_type) 0;
+   interactivity = interactivity_normal;
+   clear_screen();
+
    if (!ui_options.diagnostic_mode) {
       writestuff("SD -- square dance caller's helper.");
       newline();

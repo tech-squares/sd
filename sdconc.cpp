@@ -4632,6 +4632,19 @@ extern void inner_selective_move(
          else if ((ssmask & ~(mask-setup_attrs[ss->kind].setup_conc_masks.mask_normal)) == 0)
             goto do_concentric_ends;
       }
+
+      if (ctr_end_masks_to_use != &dead_masks &&
+          ssmask != 0 &&
+          setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd != 0) {
+         if ((ssmask & ~setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd) == 0) {
+            schema = schema_concentric_diamonds;
+            goto do_concentric_ctrs;
+         }
+         else if ((ssmask & ~(mask-setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd)) == 0) {
+            schema = schema_concentric_diamonds;
+            goto do_concentric_ends;
+         }
+      }
    }
    else if (orig_indicator == selective_key_plain ||
             orig_indicator == selective_key_plain_no_live_subsets ||
@@ -4767,8 +4780,10 @@ extern void inner_selective_move(
       }
 
       if (ctr_end_masks_to_use->mask_ctr_dmd) {
-         schema = schema_concentric_diamonds;
-         if (ssmask == ctr_end_masks_to_use->mask_ctr_dmd) goto do_concentric_ctrs;
+         if (ssmask == ctr_end_masks_to_use->mask_ctr_dmd) {
+            schema = schema_concentric_diamonds;
+            goto do_concentric_ctrs;
+         }
       }
 
       if (ss->kind == s3x1dmd) {
@@ -4786,14 +4801,16 @@ extern void inner_selective_move(
       uint32 mask = ~(~0 << (sizem1+1));
 
       if (setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd) {
-         schema = schema_concentric_diamonds;
-         if (ssmask == mask-setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd)
+         if (ssmask == mask-setup_attrs[ss->kind].setup_conc_masks.mask_ctr_dmd) {
+            schema = schema_concentric_diamonds;
             goto do_concentric_ends;
+         }
       }
       else if (ss->kind == s_galaxy && setup_attrs[ss->kind].setup_conc_masks.mask_normal) {
-         schema = schema_concentric;
-         if (ssmask == mask-setup_attrs[ss->kind].setup_conc_masks.mask_normal)
+         if (ssmask == mask-setup_attrs[ss->kind].setup_conc_masks.mask_normal) {
+            schema = schema_concentric;
             goto do_concentric_ends;
+         }
       }
    }
 

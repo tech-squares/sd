@@ -694,6 +694,7 @@ enum selector_kind {
    // Start of invisible selectors.
    selector_INVISIBLE_START,   selector_mysticbeaus = selector_INVISIBLE_START,
    selector_mysticbelles,
+   selector_notctrdmd,
    selector_ENUM_EXTENT   // Not a selector; indicates extent of the enum.
 };
 

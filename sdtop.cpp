@@ -3049,10 +3049,9 @@ extern bool check_for_concept_group(
    if (!retval) {
       kkk = kk;
 
-      if (k == concept_crazy ||
-          k == concept_frac_crazy ||
-          k == concept_n_times_const ||
-          k == concept_n_times)
+      if (k == concept_crazy || k == concept_frac_crazy)
+         need_to_restrain |= 1;
+      else if (k == concept_n_times_const || k == concept_n_times)
          need_to_restrain |= 2;
    }
 
