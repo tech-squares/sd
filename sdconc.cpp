@@ -1032,6 +1032,7 @@ static calldef_schema concentrify(
    setup *ss,
    calldef_schema & analyzer,
    int & crossing,   // This is int (0 or 1), not bool.
+   int & inverting,  // This too.
    setup inners[],
    setup *outers,
    int *center_arity_p,
@@ -1172,6 +1173,10 @@ static calldef_schema concentrify(
           (ss->kind == s1x8 && (livemask & 0xCC)))
          fail("Can't find centers and ends in this formation.");
       break;
+   case schema_concentric_6_2_line:
+      if (ss->kind != s3x1dmd)
+         analyzer_result = schema_concentric_6_2;
+      break;
    case schema_concentric_2_6:
       switch (ss->kind) {
       case s3x4:
@@ -1268,9 +1273,9 @@ static calldef_schema concentrify(
       else
          analyzer_result = schema_concentric;
       break;
-   case schema_concentric_or_6_2:
+   case schema_concentric_or_6_2_line:
       if (ss->kind == s3x1dmd)
-         analyzer_result = schema_concentric_6_2;
+         analyzer_result = schema_concentric_6_2_line;
       else
          analyzer_result = schema_concentric;
       break;
@@ -1279,6 +1284,11 @@ static calldef_schema concentrify(
          analyzer_result = schema_concentric_2_4;
       else if (attr::slimit(ss) == 3)
          analyzer_result = schema_single_concentric;
+      else if (ss->kind == s3x4 && (livemask == 0xCF3 || livemask == 0xF3C)) {
+         analyzer_result = schema_in_out_triple;
+         analyzer = schema_in_out_triple;
+         inverting ^= 1;
+      }
       else
          analyzer_result = schema_concentric;
       break;
@@ -1565,6 +1575,7 @@ static calldef_schema concentrify(
          case schema_concentric_4_2:
             fail("Can't find 4 centers and 2 ends in this formation.");
          case schema_concentric_6_2:
+         case schema_concentric_6_2_line:
             fail("Can't find 6 centers and 2 ends in this formation.");
          case schema_concentric_6p:
          case schema_1221_concentric:
@@ -1833,24 +1844,43 @@ static bool fix_empty_outers(
          result_outer->rotation = orig_elong_flags & 1;
       }
       else {
-         /* Otherwise, we can save the day only if we
-            can convince ourselves that they did the call "nothing".  We make use
-            of the fact that "concentrify" did NOT flush them, so we still know
-            what their starting setup was.
-            This is what makes split phantom diamonds diamond chain through work
-            from columns far apart. */
+         // Otherwise, we can save the day only if we can convince
+         // ourselves that they did the call "nothing", or a very few
+         // other calls.  We make use of the fact that "concentrify"
+         // did NOT flush them, so we still know what their starting
+         // setup was.  This is what makes split phantom diamonds
+         // diamond chain through work from columns far apart, among
+         // other things.
 
-         /* Make sure these people go to the same spots, and remove possibly misleading info. */
+         // Make sure these people go to the same spots, and remove possibly misleading info.
          localmods1 |= DFM1_CONC_FORCE_SPOTS;
          localmods1 &= ~(DFM1_CONC_FORCE_LINES | DFM1_CONC_FORCE_COLUMNS | DFM1_CONC_FORCE_OTHERWAY);
 
-         if (begin_outer->cmd.callspec &&
-             (begin_outer->cmd.callspec->the_defn.schema == schema_nothing))
-            ;        /* It's OK, the call was "nothing" */
-         else if (cmdout && (begin_outer->cmd.callspec == base_calls[base_call_trade]))
-            ;        /* It's OK, the call was "trade" */
+         call_with_name *the_call = begin_outer->cmd.callspec;   // Might be null pointer.
+
+         if (the_call && the_call->the_defn.schema == schema_nothing)
+            ;        // It's OK, the call was "nothing"
+         else if (the_call == base_calls[base_call_trade])
+            ;        // It's OK, the call was "trade"
+         else if (the_call == base_calls[base_call_circulate] &&
+                  cmdout && cmdout->cmd_final_flags.test_heritbit(INHERITFLAG_HALF) &&
+                  cmdout->cmd_frac_flags == CMD_FRAC_NULL_VALUE) {
+            // The call is "1/2 circulate".  We assume it goes to a diamond.
+            // We don't check that the facing directions are such that this is
+            // actually true.  Too bad.
+            // Well, it actually goes to a star.  It's the best we can do, given that
+            // we don't know facing directions.  In practice, that's good enough.
+            localmods1 &= ~DFM1_CONC_FORCE_SPOTS;  // We don't want this after all.
+            result_outer->kind = s_star;
+         }
+         else if ((the_call == base_calls[base_base_hinge_and_then_trade] ||
+                   the_call == base_calls[base_base_hinge_and_then_trade_for_breaker]) &&
+                  ((orig_elong_flags+1) & 2)) {
+            result_outer->kind = s1x4;
+            result_outer->rotation = (orig_elong_flags & 1) ^ 1;
+         }
          else if (center_arity > 1)
-            ;        /* It's OK. */
+            ;        // It's OK.
          else {
             /* We simply have no idea where the outsides should be.  We
                simply contract the setup to a 4-person setup (or whatever),
@@ -1895,15 +1925,16 @@ static bool fix_empty_inners(
    setup *result_inner,
    setup *result)
 {
-   clear_people(result_inner);    // This is always safe.
-   result_inner->result_flags = 0;
+   for (int i=0 ; i<center_arity ; i++) {
+      clear_people(&result_inner[i]);    // This is always safe.
+      result_inner[i].result_flags = 0;
+   }
 
    // If the schema is one of the special ones, we will know what to do.
    if (analyzer == schema_conc_star ||
        analyzer == schema_ckpt_star ||
        analyzer == schema_conc_star12 ||
        analyzer == schema_conc_star16 ||
-       analyzer == schema_in_out_triple_squash ||
        analyzer == schema_in_out_triple ||
        analyzer == schema_sgl_in_out_triple_squash ||
        analyzer == schema_sgl_in_out_triple ||
@@ -1914,6 +1945,12 @@ static bool fix_empty_inners(
        analyzer == schema_in_out_quad ||
        analyzer == schema_in_out_12mquad) {
       // Take no action.
+   }
+   else if (analyzer == schema_in_out_triple_squash && center_arity == 2) {
+      result_inner[0].kind = s2x2;
+      result_inner[0].rotation = 0;
+      result_inner[1].kind = s2x2;
+      result_inner[1].rotation = 0;
    }
    else if (analyzer == schema_conc_bar && result_outer->kind == s2x3) {
       // Fix some quarter the deucey stuff.
@@ -1980,10 +2017,17 @@ static bool fix_empty_inners(
       result_inner->kind = s1x2;
       result_inner->rotation = result_outer->rotation;
    }
-   /* If the ends are a short6, (presumably the whole setup was a qtag or hrglass),
-         and the missing centers were an empty 1x2, we just restore that 1x2. */
+   // If the ends are a short6, (presumably the whole setup was a qtag or hrglass),
+   // and the missing centers were an empty 1x2, we just restore that 1x2.
    else if (result_outer->kind == s_short6 &&
-            analyzer == schema_concentric_2_6 &&
+            analyzer_result == schema_concentric_2_6 &&
+            begin_inner->kind == s1x2) {
+      *result_inner = *begin_inner;
+      result_inner->result_flags = 0;
+   }
+   // Similarly, for 6-person arrangements.
+   else if (result_outer->kind == s_star &&
+            analyzer_result == schema_concentric_2_4 &&
             begin_inner->kind == s1x2) {
       *result_inner = *begin_inner;
       result_inner->result_flags = 0;
@@ -2178,16 +2222,13 @@ extern void concentric_move(
    uint32 specialoffsetmapcode,
    setup *result) THROW_DECL
 {
-   uint32 localmods1, localmodsin1, localmodsout1;
    setup begin_inner[3];
    setup begin_outer;
    int begin_outer_elongation;
    int begin_xconc_elongation;
-   int final_elongation;
    int center_arity;
    uint32 rotstate, pointclip;
    calldef_schema analyzer_result;
-   int inverting = 0;
    int rotate_back = 0;
    setup result_inner[3];
    setup result_outer;
@@ -2252,16 +2293,6 @@ extern void concentric_move(
       final_outers_finish_directions[i] = 0;
    }
 
-   localmodsin1 = modifiersin1;
-   localmodsout1 = modifiersout1;
-
-   // But reverse them if doing "invert".
-   if (save_cmd_misc2_flags & CMD_MISC2__SAID_INVERT) {
-      inverting = 1;
-      localmodsin1 = modifiersout1;
-      localmodsout1 = modifiersin1;
-   }
-
    if (save_cmd_misc2_flags & CMD_MISC2__CTR_END_MASK) {
       if (save_cmd_misc2_flags & CMD_MISC2__CENTRAL_SNAG) {
          if (ss->cmd.cmd_frac_flags != CMD_FRAC_NULL_VALUE)
@@ -2275,6 +2306,8 @@ extern void concentric_move(
    if (analyzer == schema_single_concentric_together) {
       if (ss->kind == s1x8 || ss->kind == s_ptpd || attr::slimit(ss) == 3)
          analyzer = schema_single_concentric;
+      else if (ss->kind == s_bone6)
+         analyzer = schema_concentric_6p;
       else
          analyzer = schema_concentric;
    }
@@ -2284,10 +2317,24 @@ extern void concentric_move(
    begin_inner[2].cmd = ss->cmd;
    begin_outer.cmd = ss->cmd;
 
-   // This reads and writes to "analyzer", and writes to "crossing".
-   analyzer_result = concentrify(ss, analyzer, crossing,
+   int inverting = 0;
+
+   // This reads and writes to "analyzer" and "inverting", and writes to "crossing".
+   analyzer_result = concentrify(ss, analyzer, crossing, inverting,
                                  begin_inner, &begin_outer, &center_arity,
                                  &begin_outer_elongation, &begin_xconc_elongation);
+
+   // But reverse them if doing "invert".
+   if (save_cmd_misc2_flags & CMD_MISC2__SAID_INVERT)
+      inverting ^= 1;
+
+   uint32 localmodsin1 = modifiersin1;
+   uint32 localmodsout1 = modifiersout1;
+
+   if (inverting) {
+      localmodsin1 = modifiersout1;
+      localmodsout1 = modifiersin1;
+   }
 
    // Get initial info for the original ends.
    orig_outers_start_dirs = 0;
@@ -2811,6 +2858,26 @@ extern void concentric_move(
       }
    }
 
+   int final_elongation = crossing ? begin_xconc_elongation : begin_outer_elongation;
+
+   // Note: final_elongation might be -1 now, meaning that the people on the outside
+   // cannot determine their elongation from the original setup.  Unless their
+   // final setup is one that does not require knowing the value of final_elongation,
+   // it is an error.
+   // It might also have the "CONTROVERSIAL_CONC_ELONG" bit set, meaning that we should
+   // raise a warning if we use it.
+
+   // At this point, "final_elongation" actually has the INITIAL elongation of the
+   // people who finished on the outside.  That is, if they went from a wave or diamond
+   // to a 2x2, it has the elongation of their initial wave or diamond points.
+
+   // Exception: if the schema was conc_6_2 or conc_6_2_tri, and the centers are in a bone6,
+   // "final_elongation" has the elongation of that bone6.
+
+   // The elongation bits in their setup tells how they "naturally" wanted to end,
+   // based on the call they did, how it got divided up, whether it had the "parallel_conc_end"
+   // flag on, etc.
+
    if (analyzer == schema_in_out_triple_squash ||
        analyzer == schema_in_out_triple ||
        analyzer == schema_sgl_in_out_triple_squash ||
@@ -2830,7 +2897,7 @@ extern void concentric_move(
       // Try to turn inhomogeneous diamond/wave combinations into all diamonds,
       // if the waves are missing their centers or ends.  If the resulting diamonds
       // are nonisotropic (elongated differently), that's OK.
-      if (analyzer == schema_in_out_triple) {
+      if (analyzer == schema_in_out_triple && ((final_elongation+1) & 2) != 0) {
          if (result_outer.kind == sdmd && result_inner[0].kind == s1x4) {
             if (!(result_inner[0].people[0].id1 | result_inner[0].people[2].id1 |
                   result_inner[1].people[0].id1 | result_inner[1].people[2].id1)) {
@@ -2847,8 +2914,17 @@ extern void concentric_move(
             if (!(result_outer.people[1].id1 | result_outer.people[3].id1)) {
                result_outer.kind = sdmd;
             }
-            else if (!(result_outer.people[0].id1 | result_outer.people[2].id1) && !(result_outer.rotation & 1)) {
+            else if (!(result_outer.people[0].id1 | result_outer.people[2].id1) &&
+                     ((result_outer.rotation ^ final_elongation) & 1)) {
+               // Occurs in t00t@1462.
+               // The case we avoid with the rotation check above is bi02t@1045.
                expand::compress_setup(&s_1x4_dmd, &result_outer);
+            }
+            else if (!(result_inner[0].people[0].id1 | result_inner[0].people[2].id1 |
+                       result_inner[1].people[0].id1 | result_inner[1].people[2].id1) &&
+                     ((result_inner[0].rotation ^ final_elongation) & 1)) {
+               expand::expand_setup(&s_1x4_dmd, &result_inner[0]);
+               expand::expand_setup(&s_1x4_dmd, &result_inner[1]);
             }
          }
       }
@@ -2870,7 +2946,7 @@ extern void concentric_move(
    // to the demand info for the call that the original ends did.  Where this comes from
    // depends on whether the schema is cross concentric.
 
-   localmods1 = crossing ? localmodsin1 : localmodsout1;
+   uint32 localmods1 = crossing ? localmodsin1 : localmodsout1;
 
    if (orig_outers_start_kind == s2x2) {
       if (localmods1 & DFM1_CONC_DEMAND_LINES) {
@@ -2948,7 +3024,7 @@ extern void concentric_move(
    else if (result_inner[0].kind == nothing) {
       if (fix_empty_inners(orig_inners_start_kind, center_arity,
                            analyzer, analyzer_result, &begin_inner[0],
-                           &result_outer, &result_inner[0], result))
+                           &result_outer, result_inner, result))
          goto getout;
    }
 
@@ -2975,26 +3051,6 @@ extern void concentric_move(
 
    // Default: the ends just keep their original elongation.  This will often
    // mean that they stay on their spots.
-
-   final_elongation = crossing ? begin_xconc_elongation : begin_outer_elongation;
-
-   // Note: final_elongation might be -1 now, meaning that the people on the outside
-   // cannot determine their elongation from the original setup.  Unless their
-   // final setup is one that does not require knowing the value of final_elongation,
-   // it is an error.
-   // It might also have the "CONTROVERSIAL_CONC_ELONG" bit set, meaning that we should
-   // raise a warning if we use it.
-
-   // At this point, "final_elongation" actually has the INITIAL elongation of the
-   // people who finished on the outside.  That is, if they went from a wave or diamond
-   // to a 2x2, it has the elongation of their initial wave or diamond points.
-
-   // Exception: if the schema was conc_6_2 or conc_6_2_tri, and the centers are in a bone6,
-   // "final_elongation" has the elongation of that bone6.
-
-   // The elongation bits in their setup tells how they "naturally" wanted to end,
-   // based on the call they did, how it got divided up, whether it had the "parallel_conc_end"
-   // flag on, etc.
 
    // We will use both pieces of information to figure out how to elongate the outsides at
    // the conclusion of the call.  For example, if the word "concentric" was not spoken,
@@ -3694,7 +3750,7 @@ static const concmerge_thing merge_maps[] = {
    {s1x6,          s1x6, 066,      0, 0x2D, 0x1, schema_concentric,     s1x6,        s1x2,     warn__none, 0, 0, {0, 1, 2, 3, 4, 5},         {0, 3}},
    {s1x6,          s1x6, 0,      066, 0x2D, 0x0, schema_concentric,     s1x6,        s1x2,     warn__none, 0, 0, {0, 1, 2, 3, 4, 5},         {0, 3}},
    {s1x6,          s2x3, 0,        0, 0x0D, 0x0, schema_matrix,         s3x6,        nothing,  warn__none, 0, 1, {15, 16, 17, 6, 7, 8}, {12, 17, 2, 3, 8, 11}},
-   {s1x4,          s2x3, 0xA,      0, 0x0D, 0x1, schema_concentric,     s2x3,        s1x2,     warn__none, 0, 0, {0, 1, 2, 3, 4, 5},         {0, 2}},
+   {s1x4,          s2x3, 0xA,      0, 0x0C, 0x1, schema_concentric,     s2x3,        s1x2,     warn__none, 0, 0, {0, 1, 2, 3, 4, 5},         {0, 2}},
    {s_qtag,        s2x3, 0,      022, 0x0D, 0x1, schema_nothing,        nothing,     nothing,  warn__none, 0, 0, {5, -1, 0, 1, -1, 4},       {0}},
    {s_qtag,        s2x4, 0,     0x66, 0x0D, 0x1, schema_nothing,        nothing,     nothing,  warn__none, 0, 0, {5, -1, -1, 0, 1, -1, -1, 4}, {0}},
    {s_bone,        s2x4, 0,     0x66, 0x0E, 0x1, schema_nothing,        nothing,     nothing,  warn__none, 0, 0, {0, -1, -1, 1, 4, -1, -1, 5}, {0}},
@@ -4380,14 +4436,14 @@ extern void punt_centers_use_concept(setup *ss, setup *result) THROW_DECL
       this_one->cmd.cmd_misc_flags |= CMD_MISC__PHANTOMS;
 
       if (setupcount == 1 && (cmd2word & CMD_MISC2__ANY_WORK)) {
-         concept_kind kjunk;
+         parse_block *kstuff;
          uint32 njunk;
          parse_block **foop;
 
-         parseptrcopy = really_skip_one_concept(ss->cmd.parseptr, &kjunk, &njunk, &foop);
+         parseptrcopy = really_skip_one_concept(ss->cmd.parseptr, kstuff, njunk, &foop);
          this_one->cmd.parseptr = *foop;
 
-         if (kjunk == concept_supercall)
+         if (kstuff->concept->kind == concept_supercall)
             fail("A concept is required.");
       }
       else if (setupcount == 0 &&
@@ -4561,26 +4617,70 @@ extern void selective_move(
    cmd2thing = ss->cmd;
 
    if (indicator == selective_key_work_concept) {
-      /* This is "<anyone> work <concept>".  Pick out the concept to be skipped
-         by the unselected people. */
+      // This is "<anyone> work <concept>".  Pick out the concept to be skipped
+      // by the unselected people.
 
-      concept_kind k;
+      parse_block *kstuff;
       uint32 njunk;
       parse_block **foop;
 
-      (void) really_skip_one_concept(parseptr->next, &k, &njunk, &foop);
+      (void) really_skip_one_concept(parseptr->next, kstuff, njunk, &foop);
       cmd2thing.parseptr = *foop;
+
+      concept_kind k = kstuff->concept->kind;
 
       if (k == concept_supercall)
          fail("A concept is required.");
 
-      /* If this is a concept like "split phantom diamonds", we want to
-         refrain from the "centers" optimization.  That is, we don't want
-         to do this in terms of concentric_move.  Change the indicator
-         to indicate this */
+      // If this is a concept like "split phantom diamonds", we want to
+      // refrain from the "centers" optimization.  That is, we don't want
+      // to do this in terms of concentric_move.  Change the indicator
+      // to indicate this.
 
       if (concept_table[k].concept_prop & CONCPROP__SET_PHANTOMS)
          indicator = selective_key_work_no_concentric;
+
+      // Check for special case of "<anyone> work tandem", and change it to
+      // "<anyone> are tandem".
+
+      if ((kstuff->concept->kind == concept_tandem ||
+           kstuff->concept->kind == concept_frac_tandem) &&
+          kstuff->concept->arg1 == 0 &&
+          kstuff->concept->arg2 == 0 &&
+          (kstuff->concept->arg3 & ~0xF0) == 0 &&
+          (kstuff->concept->arg4 == tandem_key_cpls ||
+           kstuff->concept->arg4 == tandem_key_tand ||
+           kstuff->concept->arg4 == tandem_key_cpls3 ||
+           kstuff->concept->arg4 == tandem_key_tand3) &&
+          ss->cmd.cmd_final_flags.test_heritbits(INHERITFLAG_SINGLE |
+                                                 INHERITFLAG_MXNMASK |
+                                                 INHERITFLAG_NXNMASK |
+                                                 INHERITFLAG_TWISTED) == 0) {
+         ss->cmd.cmd_misc_flags |= CMD_MISC__NO_EXPAND_MATRIX;
+         ss->cmd.parseptr = cmd2thing.parseptr;  // Skip the tandem concept.
+         tandem_couples_move(ss, 
+                             parseptr->options.who,
+                             kstuff->concept->arg3 >> 4,
+                             kstuff->options.number_fields,
+                             0,
+                             (tandem_key) kstuff->concept->arg4,
+                             0,
+                             false,
+                             result);
+         return;
+      }
+      else if ((kstuff->concept->kind == concept_stable ||
+                kstuff->concept->kind == concept_frac_stable) &&
+               kstuff->concept->arg1 == 0) {
+         ss->cmd.parseptr = cmd2thing.parseptr;  // Skip the stable concept.
+         stable_move(ss,
+                     kstuff->concept->arg2 != 0,
+                     false,
+                     kstuff->options.number_fields,
+                     parseptr->options.who,
+                     result);
+         return;
+      }
    }
    else if (indicator != selective_key_snag_anyone)
       cmd2thing.parseptr = parseptr->subsidiary_root;
@@ -4938,7 +5038,7 @@ extern void inner_selective_move(
    }
 
    uint32 mask = ~(~0 << (sizem1+1));
-   ctr_end_mask_rec *ctr_end_masks_to_use = &dead_masks;
+   const ctr_end_mask_rec *ctr_end_masks_to_use = &dead_masks;
 
    switch (ss->kind) {
    case s3x4:
@@ -4970,8 +5070,7 @@ extern void inner_selective_move(
       }
       break;
    default:
-      ctr_end_masks_to_use = (ctr_end_mask_rec *)
-         &setup_attrs[ss->kind].setup_conc_masks.mask_normal;
+      ctr_end_masks_to_use = &setup_attrs[ss->kind].setup_conc_masks;
    }
 
    /* See if the user requested "centers" (or the equivalent people under some other
@@ -5030,6 +5129,19 @@ extern void inner_selective_move(
                   goto do_concentric_ctrs;
                if (selector_to_use == selector_outer2 || selector_to_use == selector_veryends)
                   goto do_concentric_ends;
+            }
+         }
+         else if (ss->kind == swqtag) {
+            // Check for center 6 in "hollow" occupation.
+            // Turn it into a "mini O", which we know how to handle.
+            if (llmask == 0x3DE &&
+                ssmask == 0x35A &&
+                orig_indicator == selective_key_plain &&
+                selector_to_use == selector_center6) {
+                  action = normalize_before_isolated_call;
+                  indicator = selective_key_mini_but_o;
+                  arg2 = LOOKUP_MINI_O;
+                  goto back_here;
             }
          }
          else if (ss->kind == sd2x5) {
@@ -5117,6 +5229,12 @@ extern void inner_selective_move(
       if (ctr_end_masks_to_use->mask_ctr_dmd) {
          schema = schema_concentric_diamonds;
          if (ssmask == ctr_end_masks_to_use->mask_ctr_dmd) goto do_concentric_ctrs;
+      }
+
+      if (ss->kind == s3x1dmd) {
+         schema = schema_concentric_6_2_line;
+         if (ssmask == 0xEE) goto do_concentric_ctrs;
+         else if (ssmask == 0x11) goto do_concentric_ends;
       }
 
       schema = schema_lateral_6;

@@ -1209,7 +1209,6 @@ static const checkitem checktable[] = {
    {0x00D10004, 0x28048202, sbigx, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00910004, 0x28048202, sbigx, 0, warn__none, (const coordrec *) 0, {127}},
    {0x01110004, 0x28048202, sbigx, 0, warn__none, (const coordrec *) 0, {127}},
-   {0x00E20026, 0x0808A006, swiderigger, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00A20066, 0x18108404, sdeepxwv, 0, warn__none, (const coordrec *) 0, {127}},
    // Someone trucked from a deep2x1dmd to a deepxwv.
    {0x006600B3, 0x0008800E, nothing, 1, warn__none, &truck_to_deepxwv, {127}},
@@ -1262,9 +1261,14 @@ static const checkitem checktable[] = {
     {-10, 6, -9, 6, -10, 2, -9, 2, -10, -6, -9, -6, -10, -2, -9, -2,
      10, 6, 9, 6, 10, 2, 9, 2, 10, -6, 9, -6, 10, -2, 9, -2}},
    {0x00E20026, 0x01440430, sbigbone, 0, warn__none, (const coordrec *) 0, {127}},
-   {0x01220026, 0x4000A004, sbigrig, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x01620026, 0x4A00A484, sdblbone, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x00E20026, 0x0800A404, sbigrig, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x01220026, 0x4800A404, sbigrig, 0, warn__none, (const coordrec *) 0, {127}},
    {0x01260055, 0x49002480, sbig3x1dmd, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00E60055, 0x49002480, sbig3x1dmd, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x01150026, 0x20048212, sbig1x3dmd, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x01550026, 0x20048212, sbig1x3dmd, 0, warn__none, (const coordrec *) 0, {127}},
+   {0x00E20026, 0x0808A006, swiderigger,0, warn__none, (const coordrec *) 0, {127}},
    {0x00460044, 0x41040010, s_323, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00660044, 0x41040410, s_343, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00860044, 0x49650044, s_525, 0, warn__none, (const coordrec *) 0, {127}},
@@ -1296,8 +1300,8 @@ static const checkitem checktable[] = {
    {0x00970067, 0x01080C60, shqtag, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00970057, 0x01080C60, shqtag, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00930057, 0x01080C60, shqtag, 0, warn__none, (const coordrec *) 0, {127}},
-   {0x00970055, 0x114008A0, sbighrgl, 0, warn__none, (const coordrec *) 0, {127}},
-
+   {0x00970055, 0x114008A0, sbighrgl,  0, warn__none, (const coordrec *) 0, {127}},
+   {0x00E70026, 0x20440230, sbigdhrgl, 0, warn__none, (const coordrec *) 0, {127}},
    {0x00510062, 0x02000004, s2x4, 1, warn__none, (const coordrec *) 0,
     {-5, 6, -2, 6, 5, 6, 2, 6, -5, -6, -2, -6, 5, -6, 2, -6, 127}},
 
@@ -3385,6 +3389,25 @@ extern void impose_assumption_and_move(setup *ss, setup *result) THROW_DECL
 
       ss->cmd.cmd_assume = t;
       ss->cmd.cmd_misc_flags &= ~CMD_MISC__VERIFY_MASK;
+
+      // If the assumption calls for a 1/4 tag sort of thing, and we are
+      // in a (suitably populated) 3x4, fix same.
+
+      switch (t.assumption) {
+      case cr_real_1_4_tag:
+      case cr_real_3_4_tag:
+      case cr_real_1_4_line:
+      case cr_real_3_4_line:
+      case cr_diamond_like:
+      case cr_qtag_like:
+         if (ss->kind == s3x4 &&
+             !(ss->people[0].id1 | ss->people[3].id1 |
+               ss->people[6].id1 | ss->people[9].id1)) {
+            expand::compress_setup(&s_qtg_3x4, ss);
+         }
+         break;
+      }
+
       move_perhaps_with_active_phantoms(ss, result);
    }
    else
@@ -5384,7 +5407,7 @@ static void move_with_real_call(
               the_schema == schema_concentric_6p_or_normal ||
               the_schema == schema_1221_concentric ||
               the_schema == schema_concentric_4_2 ||
-              the_schema == schema_concentric_or_6_2 ||
+              the_schema == schema_concentric_or_6_2_line ||
               the_schema == schema_concentric_4_2_or_normal ||
               the_schema == schema_concentric_2_4_or_normal ||
               the_schema == schema_conc_o) &&
@@ -5428,7 +5451,7 @@ static void move_with_real_call(
                case schema_concentric_2_4_or_normal:
                case schema_concentric_6p:
                case schema_1221_concentric:
-               case schema_concentric_or_6_2:
+               case schema_concentric_or_6_2_line:
                case schema_concentric_6p_or_normal:
                case schema_concentric_6p_or_sgltogether:
                case schema_cross_concentric_6p_or_normal:
@@ -5505,7 +5528,7 @@ static void move_with_real_call(
          case schema_concentric_4_2:
          case schema_concentric_4_2_or_normal:
          case schema_concentric_2_4_or_normal:
-         case schema_concentric_or_6_2:
+         case schema_concentric_or_6_2_line:
          case schema_concentric_6p:
          case schema_concentric_6p_or_sgltogether:
          case schema_concentric_6p_or_normal:
@@ -5754,7 +5777,7 @@ static void move_with_real_call(
               the_schema == schema_rev_checkpoint ||
               the_schema == schema_concentric_4_2 ||
               the_schema == schema_concentric_4_2_or_normal ||
-              the_schema == schema_concentric_or_6_2 ||
+              the_schema == schema_concentric_or_6_2_line ||
               the_schema == schema_concentric_6p ||
               the_schema == schema_concentric_6p_or_normal ||
               the_schema == schema_1221_concentric ||
@@ -6236,15 +6259,15 @@ extern void move(
    /* But if we have a pending "centers/ends work <concept>" concept, don't. */
 
    if (ss->cmd.cmd_misc2_flags & CMD_MISC2__ANY_WORK) {
-      concept_kind kjunk;
+      parse_block *kstuff;
       uint32 njunk;
 
       parse_block **foop;
 
-      (void) really_skip_one_concept(ss->cmd.parseptr, &kjunk, &njunk, &foop);
+      (void) really_skip_one_concept(ss->cmd.parseptr, kstuff, njunk, &foop);
       parseptrcopy = *foop;
 
-      if (kjunk == concept_supercall)
+      if (kstuff->concept->kind == concept_supercall)
          fail("A concept is required.");
    }
    else
@@ -6307,7 +6330,7 @@ extern void move(
          case schema_concentric_4_2:
          case schema_concentric_4_2_or_normal:
          case schema_concentric_2_4_or_normal:
-         case schema_concentric_or_6_2:
+         case schema_concentric_or_6_2_line:
          case schema_concentric_6p:
          case schema_concentric_6p_or_sgltogether:
          case schema_concentric_6p_or_normal:
@@ -6318,6 +6341,7 @@ extern void move(
             switch ((calldef_schema) (ss->cmd.cmd_misc2_flags & 0xFFF)) {
             case schema_concentric_6_2:
             case schema_cross_concentric_6_2:
+            case schema_concentric_6_2_line:
             case schema_concentric_2_6:
             case schema_cross_concentric_2_6:
             case schema_concentric_2_4:
@@ -6346,10 +6370,11 @@ extern void move(
             switch (this_call->the_defn.schema) {
             case schema_concentric:
             case schema_concentric_6_2:
+            case schema_concentric_6_2_line:
             case schema_concentric_2_6:
             case schema_concentric_4_2:
             case schema_concentric_4_2_or_normal:
-            case schema_concentric_or_6_2:
+            case schema_concentric_or_6_2_line:
             case schema_concentric_6p:
             case schema_concentric_6p_or_sgltogether:
             case schema_concentric_6p_or_normal:

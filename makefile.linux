@@ -59,12 +59,13 @@ X11_LIBS =
 #
 # Sorry about the flaming, but I'm really tired of this.
 #
-# So we statically bind the curses library.  We do not use "-lcurses".
+# So we statically bind the curses library.
 #
 # In fact, we statically bind all libraries, because there have been
 # other problems.  The Linux community, like the Unix community
 # before them, just can't get their act together.
-#TTY_LIBS = /usr/lib/libcurses.a
+# At least Linux knows where to find the library -- we don't have
+# to give the library pathname.
 TTY_LIBS = -static -lcurses
 
 SD_SRCS = sdmain.cpp sdutil.cpp sdbasic.cpp sdinit.cpp \

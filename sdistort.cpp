@@ -3667,7 +3667,7 @@ common_spot_map cmaps[] = {
     {      -1,      -1,       5,       6,      -1,      -1,       1,       2},
     {       0,       0, d_north, d_north,       0,       0, d_south, d_south}},
 
-   {0, nothing, nothing, 0, 0, {0}, {0}, {0}, {0}, {0}},
+   {0, nothing, nothing, 0, {0}, {0}, {0}, {0}, {0}},
 };
 
 

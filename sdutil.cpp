@@ -1086,10 +1086,10 @@ void print_recurse(parse_block *thing, int print_recurse_arg)
             comma_after_next_concept = request_comma_after_next_concept;
 
          if (comma_after_next_concept == 2 && next_cptr) {
-            concept_kind kjunk;
+            parse_block *pbjunk;
             uint32 njunk;
 
-            if (check_for_concept_group(next_cptr, &kjunk, &njunk))
+            if (check_for_concept_group(next_cptr, pbjunk, njunk))
                comma_after_next_concept = 3;    // Will try again later.
          }
 

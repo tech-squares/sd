@@ -49,15 +49,20 @@
 //     MAPPED_CACHE_FILE the_cache(3, sourcenames, sourcefiles, "xyz", 13);
 
 // This would use the given source files, and use the cache file
-// "alpha+beta+gamma.xyz".  In this example, the version number is 13.
-// You should change that whenever you modify the program in a way
-// that changes the format of the cache file.  Doing so will cause all
-// extant cache files to become obsolete.
+// "alpha+beta+gamma.xyz".  We strip off all the source file suffixes,
+// append the names by means of plus signs, and append the given suffix,
+// to make the cache file name.  You would be well advised not to give
+// your source files names that make this process ambiguous.
+
+// In this example, the version number is 13.  You should change that
+// whenever you modify the program in a way that changes the format
+// of the cache file.  Doing so will cause all extant cache files to
+// become obsolete.
 
 // The constructor can take an optional 6th argument, which is an
 // array of booleans, the same number as the number of source files.
 // Each boolean in the array tells whether the corresponding source
-// file is to be opened in binary mode.  If false, the file is opened
+// file is to be opened in binary mode.  If false, that file is opened
 // in text mode.  If the argument array is not given, all files are
 // opened in text mode.
 
@@ -77,10 +82,11 @@
 // After constructing a cache object, examine the map address first by
 // making a call to "map_address()".  If it is nonzero, we found and
 // opened the cache file and all the source files, and found that the
-// cache file matched the version numbers and the size and creation
+// cache file matched your given version number and the size and creation
 // times of the source files.  The contents of the cache file (other
-// than our header) are mapped at the returned address.  It will be
-// word-aligned.  The source files are also open.
+// than our header) are mapped at the address that we returned.  It
+// will be word-aligned.  (We consider a "word" to be 32 bits.)
+// The source files are also open.
 
 // At this point you may elect to look at the mapped memory and do
 // further validation of its contents, perhaps reading the source
@@ -89,12 +95,12 @@
 // source files at some point.
 
 // If the address returned by "map_address()" is zero, or if you don't
-// like what you see in the mapped memory, you need to rewrite the
-// cache file.  First, check the "srcfiles" array.  If any item is
-// zero, we couldn't even open that source file.  You should
-// presumably give some error message to that effect.  The other
-// source file descriptors, if any, might be nonzero.  You should
-// close them.
+// like what you see in the mapped memory, you need to recompute and
+// rewrite the cache file.  First, check the "srcfiles" array.  If any
+// item is zero, we couldn't even open that source file.  You should
+// presumably give some error message to that effect.  Also, you should
+// look to see whether any other source file descriptors are nonzero.
+// If so, you should close them.
 
 // If the address was zero and all the source files were successfully
 // opened, as indicated by the "srcfiles" array elements all being
@@ -106,14 +112,15 @@
 // of course, writeable.  It may be different from the former mapping
 // address.  That former address will no longer be valid.  You must
 // use the new address from a new call to "map_address()" made after
-// calling "map_for_writing".  After you have finished with the source
-// files, you should close them.  At this point you may use the new
-// mapped memory area into which you have written the cached data,
-// exactly as you would have used it if you had not rewritten the
-// cache file.  Don't modify it, as the cache file may not yet have
-// been written.
+// calling "map_for_writing".
 
-// The object destructor will remove the mapping and write and close
+// After you have finished with the source files, you should close
+// them.  At this point you may use the new mapped memory area into
+// which you have written the cached data, exactly as you would have
+// used it if you had not rewritten the cache file.  Don't modify it
+// further, as the cache file may not yet have been written.
+
+// The object destructor will remove the mapping, and write and close
 // the cache file.  The created cache file will be the size indicated
 // in the call to "map_for_writing", plus 20 bytes or so for our
 // header.  The destructor does *not* close the source files.  You
@@ -130,6 +137,10 @@
 // is questionable.  There may also be endian-ness or word size
 // problems that we do not catch, although we try to check that.  We
 // do not recommend moving cache files from one system to another.
+// When in doubt, delete the cache files.  In fact, we recommend making
+// your program have an option to ignore any existing cache file and
+// consider it to be stale.  To do that, simply act as though the value
+// returned by "map_address()" after object construction had been zero.
 
 // The Windows and Linux versions of this use the file mapping system
 // operations, and should be very efficient.

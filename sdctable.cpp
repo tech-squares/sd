@@ -870,6 +870,8 @@ conzept::concept_descriptor conzept::unsealed_concept_descriptor_table[] = {
     UC_none, phantest_impossible, CONCPROP__NEEDK_TWINDMD, CMD_MISC__VERIFY_DMD_LIKE, 1},
    {"TWIN PHANTOM POINT-TO-POINT DIAMOND SPOTS", concept_do_divided_diamonds, D, l_c4,
     UC_none, phantest_impossible, CONCPROP__NEEDK_4X6, 0, 1},
+   {"TWIN PHANTOM I's",                      concept_do_divided_bones,        D, l_c3x,
+    UC_none, phantest_impossible, 0, 0, 0},
    {"CRAZY PHANTOM COLUMNS",                 concept_phan_crazy,              D, l_c4,
     UC_none, 0, CONCPROP__NEEDK_4X4, CMD_MISC__VERIFY_COLS},
    {"REVERSE CRAZY PHANTOM COLUMNS",         concept_phan_crazy,              D, l_c4,

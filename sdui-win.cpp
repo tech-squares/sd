@@ -30,6 +30,9 @@
 
 // This file defines all the functions in class iofull.
 
+// Do this to get WM_MOUSEWHEEL defined in windows header files.
+#define _WIN32_WINNT 0x0400
+
 #define STRICT
 #define WIN32_LEAN_AND_MEAN
 #include <stdio.h>
@@ -1599,6 +1602,10 @@ LRESULT CALLBACK TranscriptWndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM l
    switch (iMsg) {
       HANDLE_MSG(hwnd, WM_PAINT, Transcript_OnPaint);
       HANDLE_MSG(hwnd, WM_VSCROLL, Transcript_OnScroll);
+   case WM_MOUSEWHEEL:
+      Transcript_OnScroll(hwnd, (HWND) lParam, SB_THUMBTRACK,
+                          nImageOffTop-(((int) (short int) HIWORD(wParam))*3/WHEEL_DELTA));
+      return 0;
    case WM_LBUTTONDOWN:
       /* User clicked mouse in the transcript area.  Presumably this
          is because she wishes to use the up/down arrow keys for scrolling.

@@ -118,7 +118,7 @@ extern bool parse_level(Cstring s)
 
    switch (s[0]) {
       case 'm': case 'M': calling_level = l_mainstream; return true;
-      case 'p': case 'P': calling_level = l_plus; return true;
+      case 'p': case 'P': case '+': calling_level = l_plus; return true;
       case 'a': case 'A':
          if (s[1] == '1' && len == 2) calling_level = l_a1;
          else if (s[1] == '2' && len == 2) calling_level = l_a2;

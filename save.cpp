@@ -92,7 +92,6 @@
    id_bit_table_3dmd_ctr1x4
    id_bit_table_4dmd_cc_ee
    id_bit_table_3ptpd
-   id_bit_table_wqtag_hollow
    id_bit_table_3x6_with_1x6
    setup_attrs
    map::spec_map_table
@@ -346,9 +345,7 @@ const expand::thing s_1x4_dmd = {{-1, 1, -1, 3}, 4, sdmd, s1x4, 1};
 /* s_qtg_3x4 is duplicated in the big table. */
 const expand::thing s_qtg_3x4 = {{1, 2, 4, 5, 7, 8, 10, 11}, 8, s_qtag, s3x4, 0};
 const expand::thing s_short6_2x3 = {{0, 1, 2, 3, 4, 5}, 6, s2x3, s_short6, 0};
-// This is duplicated in the big table.
-const expand::thing s_bigrig_dblbone = {{6, 7, 3, 2, 1, 12, 14, 15, 11, 10, 9, 4},
-                                        12, sbigrig, sdblbone, 0};
+
 
 // This isn't declared const!  Why not?  Because there are pointers
 // linking the hash chains, that get filled in during initialization.
@@ -594,7 +591,7 @@ expand::thing expand::init_table[] = {
    // s_2x3_qtg
    {{5, 7, 0, 1, 3, 4},
     6, s2x3, s_qtag, 1, 0UL, 0x44,
-    warn__none, warn__none, normalize_after_triple_squash, 0},
+    warn__none, warn__none, normalize_to_6, 0},
 
    {{10, 11, 4, 5},
      4, s1x4, s3x4, 0, 0UL, 01717,
@@ -1025,11 +1022,6 @@ expand::thing expand::init_table[] = {
     8, s_rigger,sbigrig,0, 0UL, 0303,
     warn__none, warn__none, simple_normalize, NEEDMASK(CONCPROP__NEEDK_CTR_2X2) |
                                               NEEDMASK(CONCPROP__NEEDK_END_1X4)},
-
-   {{6, 7, 3, 2, 1, 12, 14, 15, 11, 10, 9, 4},
-    12, sbigrig,sdblbone,0, 0UL, 0x2121,
-    warn__none, warn__none, simple_normalize, 0},
-
    {{2, 3, 4, 5, 8, 9, 10, 11},
     8, s3x1dmd,sbig3x1dmd,0, 0UL, 0303,
     warn__none, warn__none, simple_normalize, NEEDMASK(CONCPROP__NEEDK_CTR_DMD) |
@@ -1861,18 +1853,15 @@ map::map_thing map::map_init_table[] = {
    {{0, 1, 2, 3, 4, 5, 6, 7,           12, 13, 14, 15, 8, 9, 10, 11},
     s_spindle,2,MPKIND__SPLIT,0,  0,  sdblspindle, 0x000, 0},
 
-   {{0, 1, 2, 3, 4, 5, 6, 7,           12, 13, 14, 15, 8, 9, 10, 11},
-    s_bone,2,MPKIND__SPLIT,0,  0,  sdblbone, 0x000, 0},
-
    {{5, 0, 4, 9, 7, 8,                 3, 1, 2, 11, 6, 10},
     s_short6,2,MPKIND__SPLIT,0,   0, sdeepqtg,  0x000, 0},
 
    {{-1, 0, 7, 5, -1, 6,               1, -1, 2, -1, 4, 3},
     s_bone6,2,MPKIND__SPLIT,0,    0,  s_rigger,  0x000, 0},
-   /*  Not any more; see map 3 items above.
+
    {{-1, 0, 7, 6, 5, -1, -1, -1,       1, -1, -1, -1, -1, 4, 3, 2},
     s_bone,2,MPKIND__SPLIT,0,     0,  s_rigger,  0x000, 0},
-   */
+
    {{0, 1, 3, 2, 7, 6, 4, 5,           15, 14, 12, 13, 8, 9, 11, 10},
     s1x8,2,MPKIND__SPLIT,0,       0,  s1x16,      0x000, 0},
    {{15, 14, 12, 13, 8, 9, 11, 10,     0, 1, 3, 2, 7, 6, 4, 5},
@@ -2595,43 +2584,43 @@ full_expand::thing touch_init_table3[] = {
 //          insetup  outsetup    |  |  |  |   |      |
 
 conc_tables::cm_thing conc_tables::conc_init_table[] = {
-   {s_ptpd,         schema_nothing, {0, 2, 4, 6,    3, 1, 7, 5},
+   {s_ptpd,         schema_concentric, {0, 2, 4, 6,    3, 1, 7, 5},
              s1x4,     s2x2,     0, 1, 9, 1,  0x2F5, schema_rev_checkpoint},
-   {s_spindle,      schema_nothing, {7, 1, 3, 5,    6, 0, 2, 4},
+   {s_spindle,      schema_concentric, {7, 1, 3, 5,    6, 0, 2, 4},
              sdmd,     s2x2,     0, 1, 1, 1,  0x2F5, schema_rev_checkpoint},
-   {s_wingedstar,   schema_nothing, {0, 3, 4, 7,    1, 2, 5, 6},
+   {s_wingedstar,   schema_concentric, {0, 3, 4, 7,    1, 2, 5, 6},
              sdmd,     s1x4,     0, 0, 9, 1,  0x2FA, schema_ckpt_star},
-   {s_wingedstar,   schema_nothing, {1, 2, 5, 6,    7, 0, 3, 4},
+   {s_wingedstar,   schema_concentric, {1, 2, 5, 6,    7, 0, 3, 4},
              s1x4,     sdmd,     0, 1, 9, 1,  0x2F5, schema_conc_star},
-   {s_wingedstar,   schema_nothing, {1, 2, 5, 6,    0, 3, 4, 7},
+   {s_wingedstar,   schema_concentric, {1, 2, 5, 6,    0, 3, 4, 7},
              s1x4,     sdmd,     0, 0, 9, 1,  0x2FA, schema_conc_star},
-   {s_wingedstar,   schema_nothing, {1, 2, 5, 6,    7, 0, 3, 4},
+   {s_wingedstar,   schema_concentric, {1, 2, 5, 6,    7, 0, 3, 4},
              s1x4,     s_star,   0, 1, 9, 1,  0x2F5, schema_conc_star},
-   {s_wingedstar,   schema_nothing, {1, 2, 5, 6,    0, 3, 4, 7},
+   {s_wingedstar,   schema_concentric, {1, 2, 5, 6,    0, 3, 4, 7},
              s1x4,     s_star,   0, 0, 9, 1,  0x2FA, schema_conc_star},
-   {s_wingedstar12, schema_nothing, {11, 2, 3, 4, 9, 10, 5, 8,     0, 1, 6, 7},
+   {s_wingedstar12, schema_concentric, {11, 2, 3, 4, 9, 10, 5, 8,     0, 1, 6, 7},
              s_star,   s1x4,     1, 0, 1, 2,  0x2F5, schema_conc_star12},
-   {s_wingedstar16, schema_nothing, {4, 2, 3, 5, 15, 6, 7, 14, 11, 13, 12, 10,    0, 1, 8, 9},
+   {s_wingedstar16, schema_concentric, {4, 2, 3, 5, 15, 6, 7, 14, 11, 13, 12, 10,    0, 1, 8, 9},
              s_star,   s1x4,     1, 0, 1, 3,  0x2F5, schema_conc_star16},
-   {s_barredstar,   schema_nothing, {6, 9, 1, 4,    7, 8, 0, 2, 3, 5},
+   {s_barredstar,   schema_concentric, {6, 9, 1, 4,    7, 8, 0, 2, 3, 5},
              s_star,   s2x3,     1, 1, 2, 1,  0x2FB, schema_concentric},
-   {s2x4,           schema_nothing, {6, 5, 1, 2,      7, 0, 3, 4},
+   {s2x4,           schema_concentric, {6, 5, 1, 2,      7, 0, 3, 4},
              s1x2,     s2x2,     0, 1, 1, 2,  0x2F7, schema_concentric_others},
-   {s_qtag,         schema_nothing, {6, 7, 3, 2,      5, 0, 1, 4},
+   {s_qtag,         schema_concentric, {6, 7, 3, 2,      5, 0, 1, 4},
              s1x2,     s2x2,     0, 1, 1, 2,  0x2FD, schema_concentric_others},
-   {s2x6,           schema_nothing, {11, 0, 1, 10, 7, 4, 5, 6,           9, 2, 3, 8},
+   {s2x6,           schema_concentric, {11, 0, 1, 10, 7, 4, 5, 6,           9, 2, 3, 8},
              s2x2,     s2x2,     1, 1, 2, 2,  0x2FB, schema_in_out_triple},
-   {sbigdmd,        schema_nothing, {0, 1, 10, 11, 4, 5, 6, 7,           8, 9, 2, 3},
+   {sbigdmd,        schema_concentric, {0, 1, 10, 11, 4, 5, 6, 7,           8, 9, 2, 3},
              s2x2,     s1x4,     0, 1, 2, 2,  0x2F7, schema_in_out_triple},
-   {s_hrglass,      schema_nothing, {5, 0, 1, 4,       6, 3, 2, 7},
+   {s_hrglass,      schema_concentric, {5, 0, 1, 4,       6, 3, 2, 7},
              s2x2,     sdmd,     1, 0, 1, 1,  0x2F7, schema_in_out_triple},
-   {s_dhrglass,     schema_nothing, {0, 1, 4, 5,       6, 3, 2, 7},
+   {s_dhrglass,     schema_concentric, {0, 1, 4, 5,       6, 3, 2, 7},
              s2x2,     sdmd,     0, 0, 1, 1,  0x2FE, schema_in_out_triple},
-   {sbigdhrgl,      schema_nothing, {11, 0, 1, 10, 7, 4, 5, 6,           9, 2, 3, 8},
+   {sbigdhrgl,      schema_concentric, {11, 0, 1, 10, 7, 4, 5, 6,           9, 2, 3, 8},
              s2x2,     sdmd,     1, 0, 1, 2,  0x2FD, schema_in_out_triple},
-   {sbighrgl,       schema_nothing, {11, 0, 1, 10, 7, 4, 5, 6,           8, 9, 2, 3},
+   {sbighrgl,       schema_concentric, {11, 0, 1, 10, 7, 4, 5, 6,           8, 9, 2, 3},
              s2x2,     sdmd,     1, 1, 1, 2,  0x2FB, schema_in_out_triple},
-   {s4x4,           schema_nothing, {8, 6, 4, 5, 12, 13, 0, 14,          11, 15, 3, 7},
+   {s4x4,           schema_concentric, {8, 6, 4, 5, 12, 13, 0, 14,          11, 15, 3, 7},
              s1x4,     s2x2,     0, 1, 2, 2,  0x2FD, schema_in_out_triple},
    {s_crosswave,    schema_in_out_triple, {0, 1, 5, 4,      6, 7, 2, 3},
              s1x2,     s1x4,     0, 1, 1, 2,  0x1FE, schema_nothing},
@@ -2692,7 +2681,7 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
    {s_crosswave,    schema_nothing, {-1, 0, -1, 1, -1, 5, -1, 4,     6, 7, 2, 3},
              sdmd,     s1x4,     1, 1, 1, 2,  0x2FB, schema_in_out_triple},
    {s1x8,           schema_nothing, {-1, 0, -1, 1, -1, 5, -1, 4,     3, 2, 7, 6},
-             sdmd,     s1x4,     1, 0, 1, 2,  0x2FD, schema_in_out_triple},
+             sdmd,     s1x4,     1, 0, 1, 2,  0x2F5, schema_in_out_triple},
    {s1x8,           schema_nothing, {0, 1,     5, 4,     3, 2, 7, 6},
              s1x2,     s1x4,     0, 0, 1, 2,  0x2FA, schema_in_out_triple},
    {s_rigger,       schema_nothing, {-1, 6, -1, 7, -1, 3, -1, 2,     0, 1, 4, 5},
@@ -2750,13 +2739,13 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x6,     s2x6,     0, 0, 1, 1,  0x2FB, schema_concentric},
    {s3x6,           schema_nothing, {12, 17, 2, 3, 8, 11,    15, 16, 6, 7},
              s2x3,     s1x4,     1, 0, 1, 1,  0x2DD, schema_concentric},
-   {s4x4,           schema_nothing, {11, 15, 3, 7,    12, 13, 14, 0, 4, 5, 6, 8},
+   {s4x4,           schema_concentric, {11, 15, 3, 7,    12, 13, 14, 0, 4, 5, 6, 8},
              s2x2,     s2x4,     1, 0, 2, 1,  0x2F7, schema_concentric},
-   {s4x4,           schema_nothing, {15, 3, 7, 11,     12, 13, 14, 0, 4, 5, 6, 8},
+   {s4x4,           schema_concentric, {15, 3, 7, 11,     12, 13, 14, 0, 4, 5, 6, 8},
              s2x2,     s2x4,     0, 0, 2, 1,  0x2FB, schema_concentric},
-   {s2x6,           schema_nothing, {9, 2, 3, 8,    0, 1, 4, 5, 6, 7, 10, 11},
+   {s2x6,           schema_concentric, {9, 2, 3, 8,    0, 1, 4, 5, 6, 7, 10, 11},
              s2x2,     s2x4,     1, 0, 9, 1,  0x2FD, schema_concentric},
-   {s2x6,           schema_nothing, {2, 3, 8, 9,    0, 1, 4, 5, 6, 7, 10, 11},
+   {s2x6,           schema_concentric, {2, 3, 8, 9,    0, 1, 4, 5, 6, 7, 10, 11},
              s2x2,     s2x4,     0, 0, 9, 1,  0x2FE, schema_concentric},
    {s3dmd,          schema_3x3_concentric, {9, 10, 11, 3, 4, 5,    0, 1, 2, 6, 7, 8},
              s1x6,     s2x3,     0, 0, 2, 1,  0x0FB, schema_concentric},
@@ -2778,15 +2767,15 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x8,     s2x4,     0, 0, 2, 1,  0x0FB, schema_concentric},
    {s4dmd,          schema_4x4_lines_concentric, {12, 13, 15, 14, 4, 5, 7, 6,    0, 1, 2, 3, 8, 9, 10, 11},
              s1x8,     s2x4,     0, 0, 2, 1,  0x100, schema_nothing},
-   {sbigrig,        schema_nothing, {11, 4, 5, 10,     0, 1, 3, 2, 6, 7, 9, 8},
+   {sbigrig,        schema_concentric, {11, 4, 5, 10,     0, 1, 3, 2, 6, 7, 9, 8},
              s2x2,     s1x8,     1, 0, 9, 1,  0x2F5, schema_concentric},
-   {sbigrig,        schema_nothing, {4, 5, 10, 11,     0, 1, 3, 2, 6, 7, 9, 8},
+   {sbigrig,        schema_concentric, {4, 5, 10, 11,     0, 1, 3, 2, 6, 7, 9, 8},
              s2x2,     s1x8,     0, 0, 9, 1,  0x2FA, schema_concentric},
    {sbig3x1dmd,     schema_nothing, {11, 4, 5, 10,     0, 1, 3, 2, 6, 7, 9, 8},
              sdmd,     s1x8,     1, 0, 9, 1,  0x2F5, schema_concentric},
    {sbig1x3dmd,     schema_nothing, {4, 5, 10, 11,     0, 1, 3, 2, 6, 7, 9, 8},
              sdmd,     s1x8,     0, 0, 9, 1,  0x2FA, schema_concentric},
-   {s_bone6,        schema_nothing, {5, 2,    4, 0, 1, 3},
+   {s_bone6,        schema_concentric, {5, 2,    4, 0, 1, 3},
              s1x2,     s2x2,     0, 1, 2, 1,  0x2F7, schema_concentric},
    {s_bone6,        schema_concentric_6p, {5, 2,    0, 1, 3, 4},
              s1x2,     s2x2,     0, 0, 1, 1,  0x0FE, schema_concentric},
@@ -2804,30 +2793,30 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x2,     s_star,   0, 0, 1, 1,  0x0FA, schema_concentric},
    {s_2x1dmd,       schema_concentric_2_4, {1, 4,    5, 0, 2, 3},
              s1x2,     s_star,   0, 1, 1, 1,  0x0F5, schema_concentric},
-   {s_1x2dmd,       schema_nothing, {1, 2, 4, 5,    0, 3},
+   {s_1x2dmd,       schema_concentric, {1, 2, 4, 5,    0, 3},
              sdmd,     s1x2,     0, 0, 1, 1,  0x2FA, schema_concentric},
-   {s1x6,           schema_nothing, {2, 5,    0, 1, 3, 4},
+   {s1x6,           schema_concentric, {2, 5,    0, 1, 3, 4},
              s1x2,     s1x4,     0, 0, 1, 1,  0x2FA, schema_concentric},
    {s1x6,           schema_concentric_4_2, {1, 2, 4, 5,    0, 3},
              s1x4,     s1x2,     0, 0, 1, 1,  0x0FA, schema_concentric},
    {s_2x1dmd,       schema_concentric_4_2, {0, 1, 3, 4,    5, 2},
              s1x4,     s1x2,     0, 1, 1, 1,  0x0F5, schema_concentric},
-   {s_2x1dmd,       schema_nothing, {5, 1, 2, 4,    0, 3},
+   {s_2x1dmd,       schema_concentric, {5, 1, 2, 4,    0, 3},
              sdmd,     s1x2,     1, 0, 1, 1,  0x2F5, schema_concentric},
    // Next two are duplicate.
-   {s_wingedstar,   schema_nothing, {7, 2, 3, 6,    0, 1, 4, 5},
+   {s_wingedstar,   schema_concentric, {7, 2, 3, 6,    0, 1, 4, 5},
              s_star,   s1x4,     1, 0, 1, 1,  0x2F5, schema_conc_star},
-   {s_wingedstar,   schema_nothing, {7, 2, 3, 6,    0, 1, 4, 5},
+   {s_wingedstar,   schema_concentric, {7, 2, 3, 6,    0, 1, 4, 5},
              s_star,   s1x4,     1, 0, 1, 1,  0x2F5, schema_concentric},
-   {s_rigger,       schema_nothing, {5, 0, 1, 4,    6, 7, 2, 3},
+   {s_rigger,       schema_concentric, {5, 0, 1, 4,    6, 7, 2, 3},
              s2x2,     s1x4,     1, 0, 1, 1,  0x2F5, schema_concentric},
-   {s_qtag,         schema_nothing, {0, 1, 3, 4, 5, 7,    6, 2},
+   {s_qtag,         schema_concentric, {0, 1, 3, 4, 5, 7,    6, 2},
              s_bone6,  s1x2,     0, 0, 1, 1,  0x2FA, schema_concentric_6_2_tgl},
-   {sbigdmd,        schema_nothing, {9, 3,     0, 1, 2, -1, 4, 5, 6, 7, 8, -1, 10, 11},
+   {sbigdmd,        schema_concentric, {9, 3,     0, 1, 2, -1, 4, 5, 6, 7, 8, -1, 10, 11},
              s1x2,     sbigdmd, 1, 0, 2, 1,  0x2FD, schema_concentric},
-   {sbighrgl,       schema_nothing, {9, 3,      0, 1, 2, -1, 4, 5, 6, 7, 8, -1, 10, 11},
+   {sbighrgl,       schema_concentric, {9, 3,      0, 1, 2, -1, 4, 5, 6, 7, 8, -1, 10, 11},
              s1x2,     sbigdmd, 0, 0, 2, 1,  0x2FE, schema_concentric},
-   {sbigdhrgl,      schema_nothing, {8, 2,      0, 1, 9, -1, 4, 5, 6, 7, 3, -1, 10, 11},
+   {sbigdhrgl,      schema_concentric, {8, 2,      0, 1, 9, -1, 4, 5, 6, 7, 3, -1, 10, 11},
              s1x2,    sbigbone, 1, 0, 2, 1,  0x2FD, schema_concentric},
    {sdeepxwv,       schema_nothing, {5, 4, 1, 3, 2, 11, 10, 7, 9, 8,    0, 6},
              sdeep2x1dmd, s1x2,  1, 0, 2, 1,  0x2F5, schema_concentric},
@@ -2837,21 +2826,23 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x2, sdeep2x1dmd,  0, 0, 2, 1,  0x2FE, schema_concentric},
    {sdeepxwv,       schema_concentric_8_4, {5, 4, 3, 2, 11, 10, 9, 8,    0, 1, 6, 7},
              s2x4, s1x4,  1, 0, 1, 1,  0x0FD, schema_concentric},
-   {s_crosswave,    schema_nothing, {0, 1, 3, 4, 5, 7,    6, 2},
+   {s3x1dmd,        schema_nothing, {1, 2, 3, 5, 6, 7,    0, 4},
+             s_2x1dmd, s1x2,     0, 0, 1, 1,  0x2FA, schema_concentric},
+   {s_crosswave,    schema_concentric, {0, 1, 3, 4, 5, 7,    6, 2},
              s_1x2dmd, s1x2,     0, 1, 1, 1,  0x2F5, schema_concentric},
-   {s2x4,           schema_nothing, {1, 2, 5, 6,    7, 0, 3, 4},
+   {s2x4,           schema_concentric, {1, 2, 5, 6,    7, 0, 3, 4},
              s2x2,     s2x2,     0, 1, 9, 1,  0x2F7, schema_concentric},
-   {s2x4,           schema_nothing, {6, 1, 2, 5,    0, 3, 4, 7},
+   {s2x4,           schema_concentric, {6, 1, 2, 5,    0, 3, 4, 7},
              s2x2,     s2x2,     1, 0, 9, 1,  0x2FD, schema_concentric},
-   {s2x4,           schema_nothing, {6, 1, 2, 5,    7, 0, 3, 4},
+   {s2x4,           schema_concentric, {6, 1, 2, 5,    7, 0, 3, 4},
              s2x2,     s2x2,     1, 1, 9, 1,  0x2FB, schema_concentric},
-   {s_bone,         schema_nothing, {6, 7, 2, 3,    5, 0, 1, 4},
+   {s_bone,         schema_concentric, {6, 7, 2, 3,    5, 0, 1, 4},
              s1x4,     s2x2,     0, 1, 9, 1,  0x2F7, schema_concentric},
-   {s_qtag,         schema_nothing, {6, 7, 2, 3,    5, 0, 1, 4},
+   {s_qtag,         schema_concentric, {6, 7, 2, 3,    5, 0, 1, 4},
              s1x4,     s2x2,     0, 1, 9, 1,  0x2FD, schema_concentric},
-   {s_dhrglass,     schema_nothing, {6, 3, 2, 7,    5, 0, 1, 4},
+   {s_dhrglass,     schema_concentric, {6, 3, 2, 7,    5, 0, 1, 4},
              sdmd,     s2x2,     0, 1, 9, 1,  0x2F7, schema_concentric},
-   {s_hrglass,      schema_nothing, {6, 3, 2, 7,    5, 0, 1, 4},
+   {s_hrglass,      schema_concentric, {6, 3, 2, 7,    5, 0, 1, 4},
              sdmd,     s2x2,     0, 1, 9, 1,  0x2FD, schema_concentric},
    {s_crosswave,    schema_concentric_diamonds, {1, 3, 5, 7,    0, 2, 4, 6},
              sdmd,     sdmd,     0, 0, 1, 1,  0x0FA, schema_concentric},
@@ -2862,29 +2853,31 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
    // by having the centers partner tag in left-hand waves.  This means that certain
    // Bakerisms involving concentric diamonds, in which each diamond must remember
    // its own elongation, are not possible.  Too bad.
-   {s_crosswave,    schema_nothing, {1, 3, 5, 7,    6, 0, 2, 4},
+   {s_crosswave,    schema_concentric, {1, 3, 5, 7,    6, 0, 2, 4},
              sdmd,     sdmd,     0, 1, 9, 1,  0x2F5, schema_concentric},
    {s3x1dmd,        schema_nothing, {1, 2, 5, 6,    7, 0, 3, 4},
              s1x4,     sdmd,     0, 1, 9, 1,  0x2F5, schema_concentric},
    {s3x1dmd,        schema_concentric_diamond_line, {1, 2, 5, 6,    0, 3, 4, 7},
              s1x4,     sdmd,     0, 0, 1, 1,  0x0FA, schema_concentric},
-   {s_galaxy,       schema_nothing, {7, 1, 3, 5,    0, 2, 4, 6},
+   {s_galaxy,       schema_concentric, {7, 1, 3, 5,    0, 2, 4, 6},
              s2x2,     sdmd,     1, 0, 9, 1,  0x2F5, schema_concentric},
-   {s_galaxy,       schema_nothing, {1, 3, 5, 7,    0, 2, 4, 6},
+   {s_galaxy,       schema_concentric, {1, 3, 5, 7,    0, 2, 4, 6},
              s2x2,     sdmd,     0, 0, 9, 1,  0x2FA, schema_concentric},
-   {s_crosswave,    schema_nothing, {1, 3, 5, 7,    6, 0, 2, 4},
+   {s_crosswave,    schema_concentric, {1, 3, 5, 7,    6, 0, 2, 4},
              sdmd,     s_star,   0, 1, 9, 1,  0x2F5, schema_concentric},
-   {s_crosswave,    schema_nothing, {1, 3, 5, 7,    0, 2, 4, 6},
+   {s_crosswave,    schema_concentric, {1, 3, 5, 7,    0, 2, 4, 6},
              sdmd,     s_star,   0, 0, 9, 1,  0x2FA, schema_concentric},
    {s3x1dmd,        schema_nothing, {1, 2, 5, 6,    7, 0, 3, 4},
              s1x4,     s_star,   0, 1, 9, 1,  0x2F5, schema_concentric},
    {s3x1dmd,        schema_nothing, {1, 2, 5, 6,    0, 3, 4, 7},
              s1x4,     s_star,   0, 0, 1, 1,  0x2FA, schema_concentric},
+   {s3x1dmd,        schema_concentric_6_2_with_line, {0, 1, 2, 4, 5, 6,    7, 3},
+             s1x6,     s1x2,     0, 1, 1, 1,  0x0F5, schema_concentric},
    {sbigh,          schema_concentric, {4, 5, 10, 11,    0, 9, 6, 3},
              s1x4,     s2x2,     0, 0, 3, 1,  0x0EF, schema_concentric},
    {s3dmd,          schema_concentric, {10, 11, 4, 5,    0, 2, 6, 8},
              s1x4,     s2x2,     0, 0, 3, 1,  0x0EF, schema_concentric},
-   {s3dmd,          schema_nothing, {10, 11, 4, 5,    8, 0, 2, 6},
+   {s3dmd,          schema_concentric, {10, 11, 4, 5,    8, 0, 2, 6},
              s1x4,     s2x2,     0, 1, 3, 1,  0x2DF, schema_concentric},
    {s4x4,           schema_concentric, {15, 3, 7, 11,    12, 0, 4, 8},
              s2x2,     s2x2,     0, 0, 3, 1,  0x0CF, schema_concentric},
@@ -2915,7 +2908,7 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x2,     s1x2,     0, 0, 1, 3,  0x0FA, schema_concentric_others},
    {s1x6,           schema_concentric_others, {1, 2, 5, 4,    0, 3},
              s1x2,     s1x2,     0, 0, 1, 2,  0x0FA, schema_concentric_others},
-   {s_spindle,      schema_nothing, {6, 0, 5, 1, 4, 2,    7, 3},
+   {s_spindle,      schema_concentric, {6, 0, 5, 1, 4, 2,    7, 3},
              s1x2,     s1x2,     1, 0, 1, 3,  0x2F5, schema_concentric_others},
    {s_spindle,      schema_concentric_others, {0, 1, 2, 4, 5, 6,    7, 3},
              s2x3,     s1x2,     0, 0, 1, 1,  0x100, schema_nothing},
@@ -2978,15 +2971,15 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s2x4,     s1x8,     0, 0, 2, 2,  0x2FB, schema_4x4_in_out_triple},
    {s_1x2dmd,       schema_nothing, {0, 1, 4, 3,       5, 2},
              s1x2,     s1x2,     0, 1, 1, 2,  0x2F7, schema_sgl_in_out_triple},
-   {s_qtag,         schema_nothing, {5, 4, 0, 1,     6, 7, 2, 3},
+   {s_qtag,         schema_concentric, {5, 4, 0, 1,     6, 7, 2, 3},
              s1x2,     s1x4,     0, 0, 1, 2,  0x2FB, schema_in_out_triple},
-   {s4dmd,          schema_nothing, {11, 12, 0, 13, 8, 5, 3, 4,    10, -1, -1, 1, 2, -1, -1, 9},
+   {s4dmd,          schema_concentric, {11, 12, 0, 13, 8, 5, 3, 4,    10, -1, -1, 1, 2, -1, -1, 9},
              sdmd,     s2x4,     1, 1, 1, 2,  0x2FB, schema_in_out_quad},
-   {shqtag,         schema_nothing, {3, 2, 0, 1, 8, 9, 11, 10,    4, 5, 6, 7, 12, 13, 14, 15},
+   {shqtag,         schema_concentric, {3, 2, 0, 1, 8, 9, 11, 10,    4, 5, 6, 7, 12, 13, 14, 15},
              s1x4,     s_qtag,   1, 0, 1, 2,  0x2FD, schema_in_out_quad},
-   {swqtag,         schema_nothing, {9, 4,     0, 1, 2, 3, 5, 6, 7, 8},
+   {swqtag,         schema_concentric, {9, 4,     0, 1, 2, 3, 5, 6, 7, 8},
              s1x2,     s_rigger,     0, 0, 1, 1,  0x2FB, schema_concentric},
-   {swhrglass,      schema_nothing, {9, 4,     0, 1, 2, 3, 5, 6, 7, 8},
+   {swhrglass,      schema_concentric, {9, 4,     0, 1, 2, 3, 5, 6, 7, 8},
              s1x2,     s_rigger,     1, 0, 1, 1,  0x2F7, schema_concentric},
    {sd2x5,          schema_concentric, {4, 3, 2, 9, 8, 7,     0, 6, 5, 1}, \
              s2x3,     s2x2,     1, 0, 1, 1,  0x0FD, schema_concentric},
@@ -2996,10 +2989,6 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s2x3,     s2x2,     0, 1, 2, 1,  0x0F7, schema_concentric},
    {s2x5,           schema_concentric, {1, 2, 3, 6, 7, 8,     0, 4, 5, 9},
              s2x3,     s2x2,     0, 0, 1, 1,  0x0FE, schema_concentric},
-   {s2x5,           schema_checkpoint, {-1, 2, 4, -1, 7, 9,     1, 3, 6, 8},
-             s2x3,     s2x2,     0, 0, 1, 1,  0x100, schema_nothing},
-   {s2x5,           schema_checkpoint, {0, 2, -1, 5, 7, -1,     1, 3, 6, 8},
-             s2x3,     s2x2,     0, 0, 1, 1,  0x100, schema_nothing},
    {s1x16,          schema_in_out_quad, {0, 1, 3, 2, 11, 10, 8, 9,
                                          4, 5, 7, 6, 12, 13, 15, 14},
              s1x4,     s1x8,     0, 0, 1, 2,  0x0FE, schema_in_out_quad},
@@ -3014,13 +3003,13 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x4,     s1x4,     0, 1, 1, 2,  0x0F7, schema_in_out_triple},
    {sbigh,          schema_in_out_triple, {3, 2, 0, 1, 6, 7, 9, 8,         4, 5, 10, 11},
              s1x4,     s1x4,     1, 0, 1, 2,  0x0FD, schema_in_out_triple},
-   {sbigbone,       schema_nothing, {11, 0, 1, 10, 7, 4, 5, 6,          2, 3, 8, 9},
+   {sbigbone,       schema_concentric, {11, 0, 1, 10, 7, 4, 5, 6,          2, 3, 8, 9},
              s2x2,     s1x4,     1, 0, 1, 2,  0x2FD, schema_in_out_triple},
    {sbigbone,       schema_in_out_triple, {0, 1, 10, 11, 4, 5, 6, 7,       2, 3, 8, 9},
              s2x2,     s1x4,     0, 0, 1, 2,  0x0FE, schema_in_out_triple},
    {sbigrig,        schema_in_out_triple, {0, 1, 3, 2, 9, 8, 6, 7,         4, 5, 10, 11},
              s1x4,     s2x2,     0, 0, 1, 2,  0x0FE, schema_in_out_triple},
-   {sbigrig,        schema_nothing, {0, 1, 3, 2, 9, 8, 6, 7,             11, 4, 5, 10},
+   {sbigrig,        schema_concentric, {0, 1, 3, 2, 9, 8, 6, 7,             11, 4, 5, 10},
              s1x4,     s2x2,     0, 1, 1, 2,  0x2F7, schema_in_out_triple},
    {sbig3x1dmd,     schema_in_out_triple, {0, 1, 3, 2, 9, 8, 6, 7,         11, 4, 5, 10},
              s1x4,     sdmd,     0, 1, 1, 2,  0x0F7, schema_in_out_triple},
@@ -3137,8 +3126,6 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x4,     s1x2,     0, 1, 1, 1,  0x0F5, schema_concentric},
    {s3x1dmd,        schema_concentric_6_2, {1, 2, 3, 5, 6, 7,    0, 4},
              s_2x1dmd, s1x2,     0, 0, 1, 1,  0x0FA, schema_concentric},
-   {s3x1dmd,        schema_concentric_6_2_line, {0, 1, 2, 4, 5, 6,    7, 3},
-             s1x6,     s1x2,     0, 1, 1, 1,  0x0F5, schema_concentric},
    {s_crosswave,    schema_concentric_6_2, {6, 7, 1, 2, 3, 5,    0, 4},
              s_2x1dmd, s1x2,     1, 0, 1, 1,  0x0F5, schema_concentric},
    {s1x3dmd,        schema_concentric_6_2, {1, 2, 3, 5, 6, 7,    0, 4},
@@ -3219,7 +3206,7 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
    {s_galaxy,       schema_concentric, {1, 3, 5, 7,    0, 2, 4, 6},
              s2x2,     s_star,   0, 0, 1, 1,  0x0FA, schema_concentric},
    // Next two are duplicate, for multiple synthesis.
-   {s_wingedstar,   schema_nothing, {2, 3, 6, 7,    0, 1, 4, 5},
+   {s_wingedstar,   schema_concentric, {2, 3, 6, 7,    0, 1, 4, 5},
              s_star,   s1x4,     0, 0, 1, 1,  0x2FA, schema_conc_star},
    {s_wingedstar,   schema_concentric, {2, 3, 6, 7,    0, 1, 4, 5},
              s_star,   s1x4,     0, 0, 1, 1,  0x0FA, schema_concentric},
@@ -3242,7 +3229,7 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
    {s_qtag,         schema_concentric, {6, 7, 2, 3,    0, 1, 4, 5},
              s1x4,     s2x2,     0, 0, 2, 1,  0x0FB, schema_concentric},
 
-   {nothing, schema_nothing, {0}, nothing, nothing},
+   {nothing, schema_concentric, {0}, nothing, nothing},
 };
 
 
@@ -3906,14 +3893,6 @@ static const coordrec thingdblspindle = {sdblspindle, 4,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1,  7,  0,  1,  2,  3, 11, 12, 13, 14, 15, -1, -1, -1,
       -1, -1, -1, -1,  6,  5,  4, -1, -1, 10,  9,  8, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
-
-static const coordrec thingdblbone = {sdblbone, 4,
-   {-22,  -2,  -6, -10,  -2, -22, -18, -14,  22,   2,   6,  10,   2,  22,  18,  14},
-   {  2,   2,   0,   0,  -2,  -2,   0,   0,  -2,  -2,   0,   0,   2,   2,   0,   0}, {
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1,  0,  6,  7,  3,  2,  1, 12, 10, 11, 15, 14, 13, -1, -1,
-      -1, -1,  5, -1, -1, -1, -1,  4,  9, -1, -1, -1, -1,  8, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
 static const coordrec thingnptrglcw = {s_nptrglcw, 3,
@@ -5354,7 +5333,6 @@ static const id_bit_table id_bit_table_nxtrglccw[] = {
    NOBIT(  ID2_CTR6),
    NOBIT(  ID2_OUTR2)};
 
-// This is used only if the center line of 6 is full.
 static const id_bit_table id_bit_table_wqtag[] = {
    NOBIT(  ID2_NCTR1X6),
    NOBIT(  ID2_NCTR1X6),
@@ -5366,19 +5344,6 @@ static const id_bit_table id_bit_table_wqtag[] = {
    WESTBIT(ID2_CTR1X6),
    EASTBIT(ID2_CTR1X6),
    WESTBIT(ID2_CTR1X6)};
-
-// This is used only if the center 2 people are absent.
-id_bit_table id_bit_table_wqtag_hollow[] = {
-   WESTBIT(ID2_CTR6),
-   EASTBIT(ID2_CTR6),
-   EASTBIT(ID2_OUTR2),
-   WESTBIT(ID2_CTR6),
-   NOBIT(0),
-   EASTBIT(ID2_CTR6),
-   WESTBIT(ID2_CTR6),
-   WESTBIT(ID2_OUTR2),
-   EASTBIT(ID2_CTR6),
-   NOBIT(0)};
 
 // This is only accepted if the outer pairs are occupied.
 static const id_bit_table id_bit_table_deepxwv[] = {
@@ -5423,7 +5388,6 @@ static const id_bit_table id_bit_table_2x1dmd[] = {
    WESTBIT(ID2_CTRDMD  | ID2_CTR1X4),
    NOBIT(  ID2_CTRDMD  | ID2_NCTR1X4)};
 
-/*   Used to be this ...
 static const id_bit_table id_bit_table_3x1dmd[] = {
    WESTBIT(ID2_OUTR2| ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_NCTR1X4),
    EASTBIT(ID2_CTR6|  ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_CTR1X4),
@@ -5433,19 +5397,6 @@ static const id_bit_table id_bit_table_3x1dmd[] = {
    WESTBIT(ID2_CTR6|  ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_CTR1X4),
    EASTBIT(ID2_CTR6|  ID2_CTR2|  ID2_CTR4|   ID2_CENTER| ID2_CTR1X6|  ID2_CTRDMD  | ID2_CTR1X4),
    NOBIT(  ID2_CTR6|  ID2_OUTR6| ID2_CTR4|   ID2_CENTER| ID2_NCTR1X6| ID2_CTRDMD  | ID2_NCTR1X4)};
-*/
-
-// Now changed to this, so the "center 6" are the 1x6.
-static const id_bit_table id_bit_table_3x1dmd[] = {
-   WESTBIT(ID2_OUTR2| ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_NCTR1X4),
-   EASTBIT(ID2_CTR6|  ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_CTR1X4),
-   WESTBIT(ID2_CTR6|  ID2_CTR2|  ID2_CTR4|   ID2_CENTER| ID2_CTR1X6|  ID2_CTRDMD  | ID2_CTR1X4),
-   NOBIT(  ID2_CTR6|  ID2_OUTR6| ID2_CTR4|   ID2_CENTER| ID2_NCTR1X6| ID2_CTRDMD  | ID2_NCTR1X4),
-   EASTBIT(ID2_OUTR2| ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_NCTR1X4),
-   WESTBIT(ID2_CTR6|  ID2_OUTR6| ID2_OUTRPAIRS| ID2_END| ID2_CTR1X6|  ID2_NCTRDMD | ID2_CTR1X4),
-   EASTBIT(ID2_CTR6|  ID2_CTR2|  ID2_CTR4|   ID2_CENTER| ID2_CTR1X6|  ID2_CTRDMD  | ID2_CTR1X4),
-   NOBIT(  ID2_CTR6|  ID2_OUTR6| ID2_CTR4|   ID2_CENTER| ID2_NCTR1X6| ID2_CTRDMD  | ID2_NCTR1X4)};
-
 
 /* If center diamond is fully occupied and outer diamonds have only points, use this. */
 static const id_bit_table id_bit_table_3dmd[] = {
@@ -5627,9 +5578,8 @@ static const id_bit_table id_bit_table_4x5[] = {
 //
 // 5 - space equivalent to 1/2 glyph.
 // 6 - space equivalent to 1 full glyph.
-// 7 - ONLY AFTER @ SIGN - @7 means 1/2 line feed instead of full line feed for @.
 // 8 - Like 5, but one space less if doing ASCII.
-//     (Exactly same as 5 if doing checkers.)
+//     (Exactly same as 5 if doing checkers.
 // 9 - space equivalent to 3/4 glyph.
 
 // BEWARE!!  This list is keyed to the definition of "setup_kind" in database.h
@@ -5857,7 +5807,7 @@ const setup_attr setup_attrs[] = {
    {7,                      // s3x1dmd
     &thing3x1dmd,
     &thing3x1dmd,
-    {0x33, 0x77, 0x22, 0},
+    {0x33, 0xEE, 0, 0},
     {b_3x1dmd, b_p3x1dmd},
     {0, 0},
     false,
@@ -5892,8 +5842,8 @@ const setup_attr setup_attrs[] = {
     {0, 0},
     false,
     id_bit_table_dhrglass,
-    {"a 6 d 6 b@76 g 6 c@7f 6 h 6 e",
-     "fa@@5g@@hd@@5c@@eb"}},
+    {"a 6 d 6 b@6 g 6 c@f 6 h 6 e",
+     "f  a@@5 g@@h  d@@5 c@@e  b"}},
    {11,                     // s_hyperglass
     (const coordrec *) 0,
     (const coordrec *) 0,
@@ -6824,16 +6774,6 @@ const setup_attr setup_attrs[] = {
     id_bit_table_dblspindle,
     {"6a b c6 6m n o@7h6 6 6d l6 6 6p@76g f e6 6k j i",
      "5h@ga@fb@ec@5d@5l@km@jn@io@5p"}},
-   {15,                     // sdblbone
-    &thingdblbone,
-    &thingdblbone,
-    {0, 0, 0, 0},
-    {b_dblbone, b_pdblbone},
-    {0, 0},
-    false,
-    (const id_bit_table *) 0,
-    {"a6 6 6 6b m6 6 6 6n@76g h d c6 6k l p o@7f6 6 6 6e j6 6 6 6i",
-     "fa@5g@5h@5d@5c@eb@jm@5k@5l@5p@5o@in"}},
    {-1,                     // s_dead_concentric
     (const coordrec *) 0,
     (const coordrec *) 0,
@@ -6865,12 +6805,12 @@ const setup_attr setup_attrs[] = {
    @7   only 1/2 line feed if using checkers, must be careful not to overlap
 */
 
-const ctr_end_mask_rec dead_masks = {0, 0, 0, 0};
-const ctr_end_mask_rec masks_for_3x4 = {0, 0, 0x041, 0};        // Only used if occupied as "H".
-const ctr_end_mask_rec masks_for_3dmd_ctr2 = {0, 0, 00101, 0};  // Only if ctr 2 / outer 1x3's
-const ctr_end_mask_rec masks_for_3dmd_ctr4 = {00303, 0, 0, 0};  // Only if ctr 1x4 / outer points
-const ctr_end_mask_rec masks_for_bigh_ctr4 = {00303, 0, 0, 0};  // Only if ctr 1x4 / outer points
-const ctr_end_mask_rec masks_for_4x4 = {0x1111, 0, 0, 0};       // Only used if occupied as butterfly
+ctr_end_mask_rec dead_masks = {0, 0, 0, 0};
+ctr_end_mask_rec masks_for_3x4 = {0, 0, 0x041, 0};        // Only used if occupied as "H".
+ctr_end_mask_rec masks_for_3dmd_ctr2 = {0, 0, 00101, 0};  // Only if ctr 2 / outer 1x3's
+ctr_end_mask_rec masks_for_3dmd_ctr4 = {00303, 0, 0, 0};  // Only if ctr 1x4 / outer points
+ctr_end_mask_rec masks_for_bigh_ctr4 = {00303, 0, 0, 0};  // Only if ctr 1x4 / outer points
+ctr_end_mask_rec masks_for_4x4 = {0x1111, 0, 0, 0};       // Only used if occupied as butterfly
 
 
 /* BEWARE!!  This list is keyed to the definition of "begin_kind" in database.h . */
@@ -7050,9 +6990,7 @@ int begin_sizes[] = {
    16,         /* b_dblxwave */
    16,         /* b_pdblxwave */
    16,         /* b_dblspindle */
-   16,         /* b_pdblspindle */
-   16,         /* b_dblbone */
-   16};        /* b_pdblbone */
+   16};        /* b_pdblspindle */
 
 
 // The following 8 definitions are taken verbatim from sdinit.c
@@ -7218,7 +7156,6 @@ select::fixer select::fixer_init_table[] = {
    {fx_f4x4rzza,s1x2, s2x6,        0, 0, 0x100+2,   fx0,   fx_f4x4nw,           fx0,          fx0, fx0,          fx0,    fx0,          fx0,          {4, 5, 11, 10}},
    {fx_f3x4outer, s1x3, s3x4,        1, 0, 2,       fx_f3x4outer, fx0,          fx0,          fx0, fx0,          fx0,    fx0,          fx0,          {0, 10, 9, 3, 4, 6}},
    {fx_f3dmouter, s1x3, s3dmd,       0, 0, 2,       fx_f3dmouter, fx0,          fx0,          fx0, fx0,          fx0,    fx0,          fx0,          {8, 7, 6, 0, 1, 2}},
-   {fx_f3ptpdin,  s1x2, s3ptpd,      0, 0, 2,       fx0,          fx0,          fx0,          fx0, fx0,          fx0,    fx0,          fx0,          {10, 11, 5, 4}},
    {fx_fdhrgl, s_trngl,s_dhrglass,0x2A03,0, 2,       fx_f323,      fx0,          fx0,          fx0, fx0,  fx_specspindle, fx0,          fx0,          {6, 5, 0, 2, 1, 4}},
    {fx_specspindle, s_trngl,s_spindle,0x2A01, 0, 2, fx_specspindle,fx0,          fx0,          fx0, fx0,    fx_fdhrgl,    fx0,          fx0,          {7, 0, 6, 3, 4, 2}},
    {fx_specfix3x40, s_trngl,s_ptpd,0x00AB,0,2,  fx_specfix3x40,    fx0,          fx0,          fx0, fx0,  fx_specfix3x41, fx0,          fx0,          {0, 1, 3, 4, 5, 7}},
@@ -7829,9 +7766,6 @@ select::sel_item select::sel_init_table[] = {
    {LOOKUP_NONE,               s1x8,        0x55,   fx_f1x855,     fx0, -1},
    {LOOKUP_NONE,               s3x4,        03131,  fx_f3x4outer,  fx0, -1},
    {LOOKUP_NONE,               s3dmd,       00707,  fx_f3dmouter,  fx0, -1},
-
-   {LOOKUP_NONE,               s3ptpd,      06060,  fx_f3ptpdin,   fx0, -1},
-
    {LOOKUP_NONE,               s_dhrglass,   0x77,  fx_fdhrgl,     fx0, -1},
    {LOOKUP_NONE,               s_ptpd,       0xBB,  fx_specfix3x40,fx0, -1},
    {LOOKUP_NONE,               s_bone,       0x77,  fx_specfix3x41,fx0, -1},

@@ -1,6 +1,8 @@
 #ifndef SORT_H
 #define SORT_H
 
+//  Copyright (C) 2003  William B. Ackerman.
+//
 // This is a template for a general sort procedure, using the
 // "heapsort" algorithm.  It is typically used thusly:
 //

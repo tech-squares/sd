@@ -336,6 +336,7 @@ enum concept_kind {
    concept_do_phantom_stag_qtg,
    concept_do_phantom_diag_qtg,
    concept_do_divided_diamonds,
+   concept_do_divided_bones,
    concept_distorted,
    concept_single_diagonal,
    concept_double_diagonal,
@@ -811,6 +812,12 @@ struct parse_block {
                                   // (shifted down) for a modification block
    bool no_check_call_level;      // if true, don't check whether this call
                                   // is at the level
+
+   // We allow static instantiation of these things with just
+   // the "concept" field filled in.
+   parse_block(const conzept::concept_descriptor *ccc) : concept(ccc) {}
+   // Which of course means we need to provide the default constructor too.
+   parse_block() {}
 };
 
 // For ui_command_select:
@@ -895,7 +902,7 @@ enum command_kind {
 /* BEWARE!!  This list must track the array "startup_resources" in sdui-x11.c . */
 /* BEWARE!!!!!!!!  Lots of implications for "centersp" and all that! */
 /* BEWARE!!  If change this next definition, be sure to update the definition of
-   "startinfolist" in sdtables.c, and also necessary stuff in the user interfaces.
+   "startinfolist" in sdtables.cpp, and also necessary stuff in the user interfaces.
    The latter includes the definition of "start_choices" in sd.dps
    in the Domain/Dialog system, and the corresponding CNTLs in *.rsrc
    in the Macintosh system.  You may also need changes in create_controls() in
@@ -1232,7 +1239,7 @@ struct setup_command {
 
 
 /* Warning!  Do not rearrange these fields without good reason.  There are data
-   initializers instantiating these in sdinit.cpp (test_setup_*) and in sdtables.c
+   initializers instantiating these in sdinit.cpp (test_setup_*) and in sdtables.cpp
    (startinfolist) that will need to be rewritten. */
 struct setup {
    setup_kind kind;
@@ -1403,6 +1410,7 @@ class select {
       fx_f4x4rzza,
       fx_f3x4outer,
       fx_f3dmouter,
+      fx_f3ptpdin,
       fx_fdhrgl,
       fx_specspindle,
       fx_specfix3x40,
@@ -2968,7 +2976,7 @@ static const dance_level phantom_tandem_level = l_c4a;
 
    cmd_frac_flags
       If nonzero, fractionalization info controlling the execution of the call.
-      See the comments in front of "get_fraction_info" in sdmoves.c for details.
+      See the comments in front of "get_fraction_info" in sdmoves.cpp for details.
 
    cmd_assume
       Any "assume waves" type command.
@@ -2984,36 +2992,38 @@ static const dance_level phantom_tandem_level = l_c4a;
       the elongation is east-west.  A 2 means the elongation is north-south.
       A zero means there was no elongation. */
 
-static const uint32 CMD_FRAC_NULL_VALUE      = 0x00000111UL;
-static const uint32 CMD_FRAC_HALF_VALUE      = 0x00000112UL;
-static const uint32 CMD_FRAC_LASTHALF_VALUE  = 0x00001211UL;
+enum {
+   // See the comments in front of "get_fraction_info" in sdmoves.cpp for details.
+   CMD_FRAC_NULL_VALUE      = 0x00000111UL,
+   CMD_FRAC_HALF_VALUE      = 0x00000112UL,
+   CMD_FRAC_LASTHALF_VALUE  = 0x00001211UL,
+   CMD_FRAC_PART_BIT        = 0x00010000UL,
+   CMD_FRAC_PART_MASK       = 0x00070000UL,
+   CMD_FRAC_THISISLAST      = 0x00080000UL,
+   CMD_FRAC_REVERSE         = 0x00100000UL,
+   CMD_FRAC_CODE_MASK       = 0x00E00000UL,    // This is a 3 bit field.
 
-static const uint32 CMD_FRAC_PART_BIT        = 0x00010000UL;
-static const uint32 CMD_FRAC_PART_MASK       = 0x00070000UL;
-static const uint32 CMD_FRAC_THISISLAST      = 0x00080000UL;
-static const uint32 CMD_FRAC_REVERSE         = 0x00100000UL;
-static const uint32 CMD_FRAC_CODE_MASK       = 0x00E00000UL;    // This is a 3 bit field.
+   // Here are the codes that can be inside.  We require that CMD_FRAC_CODE_ONLY be zero.
+   // We require that the PART_MASK field be nonzero (we use 1-based part numbering)
+   // when these are in use.  If the PART_MASK field is zero, the code must be zero
+   // (that is, CMD_FRAC_CODE_ONLY), and this stuff is not in use.
 
-/* Here are the codes that can be inside.  We require that CMD_FRAC_CODE_ONLY be zero.
-   We require that the PART_MASK field be nonzero (we use 1-based part numbering)
-   when these are in use.  If the PART_MASK field is zero, the code must be zero
-   (that is, CMD_FRAC_CODE_ONLY), and this stuff is not in use. */
+   CMD_FRAC_CODE_ONLY           = 0x00000000UL,
+   CMD_FRAC_CODE_ONLYREV        = 0x00200000UL,
+   CMD_FRAC_CODE_FROMTO         = 0x00400000UL,
+   CMD_FRAC_CODE_FROMTOREV      = 0x00600000UL,
+   CMD_FRAC_CODE_FROMTOREVREV   = 0x00800000UL,
+   CMD_FRAC_CODE_FROMTOMOST     = 0x00A00000UL,
+   CMD_FRAC_CODE_LATEFROMTOREV  = 0x00C00000UL,
 
-static const uint32 CMD_FRAC_CODE_ONLY           = 0x00000000UL;
-static const uint32 CMD_FRAC_CODE_ONLYREV        = 0x00200000UL;
-static const uint32 CMD_FRAC_CODE_FROMTO         = 0x00400000UL;
-static const uint32 CMD_FRAC_CODE_FROMTOREV      = 0x00600000UL;
-static const uint32 CMD_FRAC_CODE_FROMTOREVREV   = 0x00800000UL;
-static const uint32 CMD_FRAC_CODE_FROMTOMOST     = 0x00A00000UL;
-static const uint32 CMD_FRAC_CODE_LATEFROMTOREV  = 0x00C00000UL;
-
-static const uint32 CMD_FRAC_PART2_BIT       = 0x01000000UL;
-static const uint32 CMD_FRAC_PART2_MASK      = 0x07000000UL;
-static const uint32 CMD_FRAC_IMPROPER_BIT    = 0x08000000UL;
-static const uint32 CMD_FRAC_BREAKING_UP     = 0x10000000UL;
-static const uint32 CMD_FRAC_FORCE_VIS       = 0x20000000UL;
-static const uint32 CMD_FRAC_LASTHALF_ALL    = 0x40000000UL;
-static const uint32 CMD_FRAC_FIRSTHALF_ALL   = 0x80000000UL;
+   CMD_FRAC_PART2_BIT       = 0x01000000UL,
+   CMD_FRAC_PART2_MASK      = 0x07000000UL,
+   CMD_FRAC_IMPROPER_BIT    = 0x08000000UL,
+   CMD_FRAC_BREAKING_UP     = 0x10000000UL,
+   CMD_FRAC_FORCE_VIS       = 0x20000000UL,
+   CMD_FRAC_LASTHALF_ALL    = 0x40000000UL,
+   CMD_FRAC_FIRSTHALF_ALL   = 0x80000000UL
+};
 
 
 /* Flags that reside in the "cmd_misc_flags" word of a setup BEFORE a call is executed.
@@ -3254,10 +3264,10 @@ enum normalize_action {
    normalize_after_exchange_boxes,
    normalize_before_isolated_call,
    normalize_before_isolate_not_too_strict,
+   normalize_after_triple_squash,    // ***** this used to be after normalize_to_2.
    normalize_to_6,
    normalize_to_4,
    normalize_to_2,
-   normalize_after_triple_squash,
    normalize_after_disconnected,
    normalize_before_merge,
    normalize_strict_matrix,
@@ -3751,12 +3761,12 @@ extern predicate_descriptor pred_table[];                           /* in SDPRED
 extern int selector_preds;                                          /* in SDPREDS */
 
 
-extern ctr_end_mask_rec dead_masks;                       /* in SDTABLES */
-extern ctr_end_mask_rec masks_for_3x4;                    /* in SDTABLES */
-extern ctr_end_mask_rec masks_for_3dmd_ctr2;              /* in SDTABLES */
-extern ctr_end_mask_rec masks_for_3dmd_ctr4;              /* in SDTABLES */
-extern ctr_end_mask_rec masks_for_bigh_ctr4;              /* in SDTABLES */
-extern ctr_end_mask_rec masks_for_4x4;                    /* in SDTABLES */
+extern const ctr_end_mask_rec dead_masks;                 /* in SDTABLES */
+extern const ctr_end_mask_rec masks_for_3x4;              /* in SDTABLES */
+extern const ctr_end_mask_rec masks_for_3dmd_ctr2;        /* in SDTABLES */
+extern const ctr_end_mask_rec masks_for_3dmd_ctr4;        /* in SDTABLES */
+extern const ctr_end_mask_rec masks_for_bigh_ctr4;        /* in SDTABLES */
+extern const ctr_end_mask_rec masks_for_4x4;              /* in SDTABLES */
 extern int begin_sizes[];                                 /* in SDTABLES */
 
 extern const coordrec tgl3_0;
@@ -3801,6 +3811,7 @@ extern id_bit_table id_bit_table_3dmd_ctr1x6[];                     /* in SDTABL
 extern id_bit_table id_bit_table_3dmd_ctr1x4[];                     /* in SDTABLES */
 extern id_bit_table id_bit_table_4dmd_cc_ee[];                      /* in SDTABLES */
 extern id_bit_table id_bit_table_3ptpd[];                           /* in SDTABLES */
+extern id_bit_table id_bit_table_wqtag_hollow[];                    /* in SDTABLES */
 extern id_bit_table id_bit_table_3x6_with_1x6[];                    /* in SDTABLES */
 extern const expand::thing s_qtg_2x4;
 extern const expand::thing s_4x4_4x6a;
@@ -3812,6 +3823,7 @@ extern const expand::thing s_c1phan_4x4b;
 extern const expand::thing s_1x4_dmd;
 extern const expand::thing s_qtg_3x4;
 extern const expand::thing s_short6_2x3;
+extern const expand::thing s_bigrig_dblbone;
 
 
 extern full_expand::thing rear_1x2_pair;
@@ -4347,6 +4359,14 @@ extern bool do_big_concept(
    setup *ss,
    setup *result) THROW_DECL;
 
+void stable_move(
+   setup *ss,
+   bool fractional,
+   bool everyone,
+   int howfar,
+   selector_kind who,
+   setup *result) THROW_DECL;
+
 /* In SDTAND */
 
 extern void tandem_couples_move(
@@ -4448,10 +4468,11 @@ void initialize_sdlib();
 
 extern void crash_print(const char *filename, int linenum) THROW_DECL;
 
+// This writes over its 2nd and 3rd arguments.
 extern bool check_for_concept_group(
    parse_block *parseptrcopy,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p = (parse_block ***) 0) THROW_DECL;
 
 NORETURN1 void fail(const char s[]) THROW_DECL NORETURN2;
@@ -4525,10 +4546,11 @@ extern parse_block *process_final_concepts(
    const char *filename,
    int linenum) THROW_DECL;
 
+// This writes over its 2nd and 3rd arguments.
 extern parse_block *really_skip_one_concept(
    parse_block *incoming,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p) THROW_DECL;
 
 extern bool fix_n_results(int arity, int goal, setup z[],

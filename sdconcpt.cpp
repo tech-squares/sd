@@ -12,8 +12,9 @@
 
     This is for version 34. */
 
-/* This defines the following function:
+/* This defines the following functions:
    do_big_concept
+   stable_move
 
 and the following external variables:
    global_tbonetest
@@ -2056,11 +2057,29 @@ static void do_concept_do_divided_diamonds(
 
    // If arg4 is nonzero, this is point-to-point diamonds.
 
-
    divided_setup_move(ss,
                       parseptr->concept->arg4 ?
                       MAPCODE(s_ptpd,2,MPKIND__SPLIT,1) :
                       MAPCODE(s_qtag,2,MPKIND__SPLIT,1),
+                      (phantest_kind) parseptr->concept->arg1, true, result);
+}
+
+
+static void do_concept_do_divided_bones(
+   setup *ss,
+   parse_block *parseptr,
+   setup *result) THROW_DECL
+{
+   // We expand, first to a bigrig, and then to a dblbone.
+   // Either or both of these may be unnecessary and may fail.
+
+   setup tempsetup = *ss;
+
+   do_matrix_expansion(&tempsetup, CONCPROP__NEEDK_END_1X4, false);
+   if (tempsetup.kind == sbigrig) expand::expand_setup(&s_bigrig_dblbone, &tempsetup);
+
+   divided_setup_move(&tempsetup,
+                      MAPCODE(s_bone,2,MPKIND__SPLIT,0),
                       (phantest_kind) parseptr->concept->arg1, true, result);
 }
 
@@ -3329,32 +3348,28 @@ static void do_concept_fan(
    result->result_flags = finalresultflags & ~3;
 }
 
-
-
-static void do_concept_stable(
+void stable_move(
    setup *ss,
-   parse_block *parseptr,
+   bool fractional,
+   bool everyone,
+   int howfar,
+   selector_kind who,
    setup *result) THROW_DECL
 {
-   uint32 directions[32];
-   bool selected[32];
-   setup_kind kk;
-   int n, i, rot, howfar, orig_rotation;
-
-   bool fractional = parseptr->concept->arg2 != 0;
-   bool everyone = parseptr->concept->arg1 == 0;
-   selector_kind saved_selector = current_options.who;
-
-   current_options.who = parseptr->options.who;
-
-   howfar = parseptr->options.number_fields;
    if (fractional && howfar > 4)
       fail("Can't do fractional stable more than 4/4.");
 
-   n = attr::slimit(ss);
+   selector_kind saved_selector = current_options.who;
+   current_options.who = who;
+
+   int n = attr::slimit(ss);
    if (n < 0) fail("Sorry, can't do stable starting in this setup.");
 
-   for (i=0; i<=n; i++) {           /* Save current facing directions. */
+   uint32 directions[32];
+   bool selected[32];
+
+   int i;
+   for (i=0; i<=n; i++) {           // Save current facing directions.
       uint32 p = ss->people[i].id1;
       if (p & BIT_PERSON) {
          directions[(p >> 6) & 037] = p;
@@ -3369,11 +3384,11 @@ static void do_concept_stable(
 
    current_options.who = saved_selector;
 
-   orig_rotation = ss->rotation;
+   int orig_rotation = ss->rotation;
    move(ss, false, result);
-   rot = ((orig_rotation - result->rotation) & 3) * 011;
+   int rot = ((orig_rotation - result->rotation) & 3) * 011;
 
-   kk = result->kind;
+   setup_kind kk = result->kind;
 
    if (kk == s_dead_concentric)
       kk = result->inner.skind;
@@ -3381,27 +3396,51 @@ static void do_concept_stable(
    n = attr::klimit(kk);
    if (n < 0) fail("Sorry, can't do stable going to this setup.");
 
-   for (i=0; i<=n; i++) {           /* Restore facing directions of selected people. */
+   for (i=0; i<=n; i++) {      // Restore facing directions of selected people.
       uint32 p = result->people[i].id1;
       if (p & BIT_PERSON) {
          if (selected[(p >> 6) & 037]) {
+            uint32 stop_amount;
             if (fractional) {
+               stop_amount = (p & (STABLE_VBIT*3)) / STABLE_VBIT;
+
                if (!(p & STABLE_ENAB))
                   fail("fractional stable not supported for this call.");
-               result->people[i].id1 =
-                  rotperson(p, ((0 - ((p & (STABLE_VBIT*3)) / STABLE_VBIT)) & 3) * 011);
+               p = rotperson(p, ((0 - stop_amount) & 3) * 011);
             }
             else {
-               result->people[i].id1 = rotperson(
-                     (p & ~(d_mask | STABLE_MASK)) |
-                        (directions[(p >> 6) & 037] & (d_mask | STABLE_MASK)),
-                     rot);
+               stop_amount = 1;   // So that roll will be turned off.
+
+               p = rotperson(
+                  (p & ~(d_mask | STABLE_MASK)) |
+                  (directions[(p >> 6) & 037] & (d_mask | STABLE_MASK)),
+                  rot);
             }
+
+            // If this was fractional stable, roll is turned off
+            // only if the person was actually stopped from turning.
+            if (stop_amount) p = (p & ~ROLL_DIRMASK) | ROLL_IS_M;
          }
-         if (fractional)
-            result->people[i].id1 &= ~STABLE_MASK;
+
+         if (fractional) p &= ~STABLE_MASK;
+
+         result->people[i].id1 = p;
       }
    }
+}
+
+
+static void do_concept_stable(
+   setup *ss,
+   parse_block *parseptr,
+   setup *result) THROW_DECL
+{
+   stable_move(ss,
+               parseptr->concept->arg2 != 0,
+               parseptr->concept->arg1 == 0,
+               parseptr->options.number_fields,
+               parseptr->options.who,
+               result);
 }
 
 
@@ -3659,11 +3698,14 @@ static void do_concept_checkerboard(
    move(&a1, false, &res1);
 
    // Look at the rotation coming out of the move.  If the setup is 1x4, we require it to be
-   // even (checkerboard lockit not allowed).  Otherwise, allow any rotation.  This means
-   // we allow diamonds that are oriented rather peculiarly!
-
-   if ((res1.rotation != 0) && res1.kind == s1x4)
-      fail("'Checker' call went to 1x4 setup oriented wrong way.");
+   // even (checkerboard lockit not allowed).  Otherwise, allow any rotation.
+   // But we give a warning for peculiarly oriented diamonds.
+   if (res1.rotation != 0) {
+      if (res1.kind == s1x4)
+         fail("'Checker' call went to 1x4 setup oriented wrong way.");
+      if (res1.kind == sdmd)
+         warn(warn_controversial);
+   }
 
    rot = res1.rotation * 011;
 
@@ -4323,7 +4365,7 @@ static void do_concept_inner_outer(
             else                      fail("There are no triple columns here.");
          }
          goto ready;
-      case sbigh: case sbigx: case sbigrig: case shsqtag: case sbig3x1dmd:
+      case sbigh: case sbigx: case sbigrig: case shsqtag: case sbig3x1dmd: case sbig1x3dmd:
          goto verify_clw;
       }
 
@@ -4457,7 +4499,7 @@ static void do_concept_inner_outer(
       switch (ss->kind) {
       case s3dmd: case s3ptpd: case s_3mdmd: case s_3mptpd: case s3x1dmd: case s1x3dmd:
       case shsqtag: case s_hrglass: case s_dhrglass: case sbighrgl: case sbigdhrgl:
-      case sbig3x1dmd:
+      case sbig3x1dmd: case sbig1x3dmd:
          goto ready;
       }
 
@@ -4785,6 +4827,10 @@ static void do_concept_mini_but_o(
    case s_rigger:
       if (is_an_o) mask = 0xBB;
       break;
+   case swqtag:
+      // We require the center two missing.
+      if (is_an_o && (ss->people[4].id1 | ss->people[9].id1) == 0) mask = 0x16B;
+      break;
    case s3x4:
       if (is_an_o) mask = 02626;
       break;
@@ -4883,17 +4929,26 @@ static void do_concept_triple_formations(
       break;
    case 1:
       switch (tempsetup.kind) {
-      case s3x1dmd: case s_hrglass: need_prop = CONCPROP__NEEDK_END_1X4; break;
+      case s3x1dmd: case s1x3dmd: case s_hrglass: need_prop = CONCPROP__NEEDK_END_1X4; break;
       }
 
       do_matrix_expansion(&tempsetup, need_prop, false);
 
-      if (tempsetup.kind != sbig3x1dmd && tempsetup.kind != shsqtag)
+      if (tempsetup.kind != sbig3x1dmd && tempsetup.kind != sbig1x3dmd &&
+          tempsetup.kind != shsqtag)
          fail("Can't do this concept in this setup.");
       break;
    default:
-      // The last one isn't done yet.
-      fail("Sorry, can't do this concept.");
+
+      switch (tempsetup.kind) {
+      case s_dhrglass: case s_hrglass: need_prop = CONCPROP__NEEDK_END_2X2; break;
+      }
+
+      do_matrix_expansion(&tempsetup, need_prop, false);
+
+      if (tempsetup.kind != sbighrgl && tempsetup.kind != sbigdhrgl)
+         fail("Can't do this concept in this setup.");
+      break;
    }
 
    do_triple_formation(&tempsetup, parseptr, ~0UL, result);
@@ -5359,7 +5414,7 @@ static void do_concept_meta(
        key != meta_key_revorder &&
        key != meta_key_shift_n &&
        key != meta_key_shift_half) {
-      concept_kind k;
+      parse_block *kstuff;
       uint32 need_to_restrain;
       parse_block *parseptrcopy;
 
@@ -5372,9 +5427,10 @@ static void do_concept_meta(
       parse_block **foop;
       parse_block **fooq;
 
-      parseptrcopy = really_skip_one_concept(parseptr->next, &k,
-                                             &need_to_restrain, &foop);
+      parseptrcopy = really_skip_one_concept(parseptr->next, kstuff,
+                                             need_to_restrain, &foop);
       parseptr_skip = *foop;
+      concept_kind k = kstuff->concept->kind;
 
       yescmd.parseptr = parseptrcopy;
 
@@ -6514,9 +6570,16 @@ static void do_concept_so_and_so_begin(
    // See if we are being requested to do only stuff that does not
    // include the first part.  If so, we just do it.
 
-   if (((ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_ONLY ||
+   // We check for either part selection indicating the first part isn't involved ...
+   if ((((ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_ONLY ||
         (ss->cmd.cmd_frac_flags & CMD_FRAC_CODE_MASK) == CMD_FRAC_CODE_FROMTOREV) &&
-       (ss->cmd.cmd_frac_flags & CMD_FRAC_PART_MASK) >= CMD_FRAC_PART_BIT*2) {
+       (ss->cmd.cmd_frac_flags & CMD_FRAC_PART_MASK) >= CMD_FRAC_PART_BIT*2)
+       ||
+       // or fraction selection indicating the same.
+       // That is, code="only", part=0, reverse off, and starting frac != 0.
+       (((ss->cmd.cmd_frac_flags & (CMD_FRAC_CODE_MASK|CMD_FRAC_PART_MASK|CMD_FRAC_REVERSE))
+         == CMD_FRAC_CODE_ONLY)
+        && (ss->cmd.cmd_frac_flags & 0xF000) != 0)) {
       move(ss, false, result);
       return;
    }
@@ -7098,6 +7161,13 @@ concept_table_item concept_table[] = {
    {CONCPROP__NEED_ARG2_MATRIX | CONCPROP__NO_STEP | CONCPROP__GET_MASK |
     Nostandard_matrix_phantom,
     do_concept_do_divided_diamonds},                        // concept_do_divided_diamonds
+
+
+   {CONCPROP__NO_STEP | CONCPROP__GET_MASK |
+    Nostandard_matrix_phantom,
+    do_concept_do_divided_bones},                           // concept_do_divided_bones
+
+
    {CONCPROP__STANDARD,
     do_concept_distorted},                                  // concept_distorted
    {CONCPROP__NO_STEP | CONCPROP__GET_MASK,

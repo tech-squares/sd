@@ -369,6 +369,12 @@ extern void update_id_bits(setup *ss)
       5, d_east, 7, d_west,
       ~0};
 
+   static unsigned short int face_1x4[] = {
+      2, d_west, 3, d_east,
+      3, d_west, 1, d_east,
+      1, d_west, 0, d_east,
+      ~0};
+
    static unsigned short int face_2x4[] = {
       3, d_west, 2, d_east,
       2, d_west, 1, d_east,
@@ -506,6 +512,8 @@ extern void update_id_bits(setup *ss)
       face_list = face_qtg; break;
    case s_spindle:
       face_list = face_spindle; break;
+   case s1x4:
+      face_list = face_1x4; break;
    case s2x4:
       face_list = face_2x4; break;
    case s1x8:
@@ -655,20 +663,25 @@ extern void update_id_bits(setup *ss)
       if ((livemask & 00303UL) != 00303UL) ptr = (id_bit_table *) 0;
       break;
    case swqtag:
-      // We recognize the center 1x6 if it is are fully populated.
-      if ((livemask & 0x39CUL) != 0x39CUL) ptr = (id_bit_table *) 0;
+      // We recognize "center 6" if the center 2 spots are empty,
+      // so that there is a "short 6".
+      // Otherwise, we recognize the center 1x6 if it is fully populated.
+      if (livemask == 0x1EF)
+         ptr = id_bit_table_wqtag_hollow;
+      else if ((livemask & 0x39CUL) != 0x39CUL)
+         ptr = (id_bit_table *) 0;
       break;
    case s3dmd:
-      /* The standard table requires all points, and centers of center diamond only, occupied.
-         But first we look for a few other configurations. */
+      // The standard table requires all points, and centers of center diamond only, occupied.
+      // But first we look for a few other configurations.
 
       // Look for center 1x6 occupied.
       if ((livemask & 0xE38UL) == 0xE38UL) ptr = id_bit_table_3dmd_ctr1x6;
-      /* Look for center 1x6 having center 1x4 occupied. */
+      // Look for center 1x6 having center 1x4 occupied.
       else if ((livemask & 0xC30UL) == 0xC30UL) ptr = id_bit_table_3dmd_ctr1x4;
-      /* Look for center 1x4 and outer points. */
+      // Look for center 1x4 and outer points.
       else if (livemask == 06565UL) ptr = id_bit_table_3dmd_in_out;
-      /* Otherwise, see whether to accept default or reject everything. */
+      // Otherwise, see whether to accept default or reject everything.
       else if (livemask != 04747UL) ptr = (id_bit_table *) 0;
       break;
    case s4dmd:
@@ -2845,21 +2858,26 @@ static bool check_for_supercall(parse_block *parseptrcopy)
    return false;
 }
 
+static parse_block pbend(&conzept::mark_end_of_list);
+static parse_block pbsuper(&conzept::marker_concept_supercall);
 
+// This writes over its 2nd and 3rd arguments.
 extern bool check_for_concept_group(
    parse_block *parseptrcopy,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p) THROW_DECL
 {
    concept_kind k;
+   parse_block *kk;
    bool retval = false;
    parse_block *parseptr_skip;
    parse_block *next_parseptr;
 
    parse_block *first_arg = parseptrcopy;
 
-   *need_to_restrain_p = 0;
+   kkk = &pbend;
+   need_to_restrain = 0;
 
  try_again:
 
@@ -2868,22 +2886,24 @@ extern bool check_for_concept_group(
    parseptr_skip = parseptrcopy->next;
 
    if (parseptrcopy->concept) {
-      k = parseptrcopy->concept->kind;
+      kk = parseptrcopy;
 
       if (check_for_supercall(parseptrcopy))
-         k = concept_supercall;
+         kk = &pbsuper;
    }
    else
-      k = marker_end_of_list;
+      kk = &pbend;
+
+   k = kk->concept->kind;
 
    if (!retval) {
-      *k_p = k;
+      kkk = kk;
 
       if (k == concept_crazy ||
           k == concept_frac_crazy ||
           k == concept_n_times_const ||
           k == concept_n_times)
-         *need_to_restrain_p |= 2;
+         need_to_restrain |= 2;
    }
 
    // We do these even if we aren't the first concept.
@@ -2898,7 +2918,7 @@ extern bool check_for_concept_group(
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_rev_echo) ||
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_revorder) ||
        (k == concept_meta && parseptrcopy->concept->arg1 == meta_key_finish))
-      *need_to_restrain_p |= 1;
+      need_to_restrain |= 1;
 
 
    // If skipping "phantom", maybe it's "phantom tandem", so we need to skip both.
@@ -3692,10 +3712,11 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
                }
             }
 
-            call_restriction kkk;      /* gets set to the qualifier corresponding to
-                                          what we have. */
             uint32 t1;
             uint32 t2;
+            uint32 ndir = d_north;
+            uint32 sdir = d_south;
+            uint32 tb;
             bool b1 = true;
             bool b2 = true;
 
@@ -3709,6 +3730,23 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
                t1 = 0; t2 = 3; break;
             case s_bone6:
                t1 = 5; t2 = 2; break;
+            case s_short6:
+               // This one has the people facing sideways.
+               ndir = d_east; sdir = d_west;
+               t1 = 1; t2 = 4; break;
+            case s_star:
+               // This has to look at headliner-sideliner-ness.  It
+               // will screw up if people are T-boned.
+               tb = (ss->people[0].id1 | ss->people[1].id1 |
+                  ss->people[2].id1 | ss->people[3].id1) & 011;
+               if (tb == 1) {
+                  ndir = d_east; sdir = d_west;
+                  t1 = 1; t2 = 3; break;
+               }
+               else if (tb == 010) {
+                  t1 = 0; t2 = 2; break;
+               }
+               else goto bad;
             default:
                goto bad;
             }
@@ -3716,14 +3754,16 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec) THROW_DECL
             t1 = ss->people[t1].id1;
             t2 = ss->people[t2].id1;
 
-            if (t1 && (t1 & d_mask)!=d_north) b1 = false;
-            if (t2 && (t2 & d_mask)!=d_south) b1 = false;
-            if (t1 && (t1 & d_mask)!=d_south) b2 = false;
-            if (t2 && (t2 & d_mask)!=d_north) b2 = false;
+            if (t1 && (t1 & d_mask)!=ndir) b1 = false;
+            if (t2 && (t2 & d_mask)!=sdir) b1 = false;
+            if (t1 && (t1 & d_mask)!=sdir) b2 = false;
+            if (t2 && (t2 & d_mask)!=ndir) b2 = false;
 
             if (b1 == b2) goto bad;
-            kkk = b1 ? cr_ctr_pts_rh : cr_ctr_pts_lh;
-            if (this_qualifier == kkk) goto good;
+
+            if (this_qualifier ==
+                (b1 ? cr_ctr_pts_rh : cr_ctr_pts_lh))
+               goto good;
          }
          goto bad;
       case cr_line_ends_looking_out:
@@ -4361,10 +4401,11 @@ extern parse_block *process_final_concepts(
 }
 
 
+// This writes over its 2nd and 3rd arguments.
 extern parse_block *really_skip_one_concept(
    parse_block *incoming,
-   concept_kind *k_p,
-   uint32 *need_to_restrain_p,   // 1=(if not doing echo), 2=(yes, always)
+   parse_block * & kkk,
+   uint32 & need_to_restrain,   // 1=(if not doing echo), 2=(yes, always)
    parse_block ***parseptr_skip_p) THROW_DECL
 {
    final_and_herit_flags junk_concepts;
@@ -4388,13 +4429,13 @@ extern parse_block *really_skip_one_concept(
 
       if (check_for_supercall(parseptrcopy)) {
          *parseptr_skip_p = &parseptrcopy->next->subsidiary_root;
-         *k_p = concept_supercall;
+         kkk = &pbsuper;
 
          /* We don't restrain for echo with supercalls, because echo doesn't pull parts
             apart, and supercalls don't work with multiple-part calls as the target
             for which they are restraining the concept. */
 
-         *need_to_restrain_p = 1;
+         need_to_restrain = 1;
          return parseptrcopy;
       }
 
@@ -4406,7 +4447,7 @@ extern parse_block *really_skip_one_concept(
          fail("Can't use a concept that takes a second call.");
    }
 
-   (void) check_for_concept_group(parseptrcopy, k_p, need_to_restrain_p, parseptr_skip_p);
+   (void) check_for_concept_group(parseptrcopy, kkk, need_to_restrain, parseptr_skip_p);
 
    return parseptrcopy;
 }

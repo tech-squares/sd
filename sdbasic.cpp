@@ -2523,68 +2523,48 @@ static int divide_the_setup(
    case s2x2:
       ss->cmd.cmd_misc_flags |= CMD_MISC__NO_EXPAND_MATRIX;
 
-      /* Any 2x2 -> 2x2 call that acts by dividing itself into 1x2's
-         is presumed to want the people in each 1x2 to stay near each other.
-         We signify that by reverting to the original elongation,
-         overriding anything that may have been in the call definition. */
+      // Any 2x2 -> 2x2 call that acts by dividing itself into 1x2's
+      // is presumed to want the people in each 1x2 to stay near each other.
+      // We signify that by reverting to the original elongation,
+      // overriding anything that may have been in the call definition.
 
-      /* Tentatively choose a map.  We may change it later to "map_2x2v". */
+      // Tentatively choose a map.  We may change it later to "spcmap_2x2v".
       division_code = MAPCODE(s1x2,2,MPKIND__SPLIT,1);
 
       if ((newtb & 011) == 011) {
-         /* The situation is serious.  If the call has both 1x2 and 2x1 definitions,
-            we can do it, by guessing correctly which way to divide the setup.
-            Otherwise, if it has either a 1x2 or a 2x1 definition, but not both,
-            we lose, because the call presumably wants to use same.
-            But if the call has neither 1x2 nor 2x1 definitions, but does have
-            a 1x1 definition, we can do it.  Just divide the setup arbitrarily. */
+         // The situation is serious.  If the call has both 1x2 and 2x1 definitions,
+         // we can do it, by guessing correctly which way to divide the setup.
+         // Otherwise, if it has either a 1x2 or a 2x1 definition, but not both,
+         // we lose, because the call presumably wants to use same.
+         // But if the call has neither 1x2 nor 2x1 definitions, but does have
+         // a 1x1 definition, we can do it.  Just divide the setup arbitrarily.
 
-         bool losing = false;
+         // If the "lateral_to_selectees" flag is on (that is, the call is "run"),
+         // We decide what to do according to the direction of the selectees.
+         // There must be at least one, they must be collectively consistent.
+         // Otherwise, we look at the manner in which the setup is T-boned
+         // in order to figure out how to divide the setup.
 
-         if (assoc(b_2x1, ss, calldeflist)) {
-            if (assoc(b_1x2, ss, calldeflist)) {
-               /* The call has both definitions.
-                  If the "lateral_to_selectees" flag is on (that is, the call is "run"),
-                  We decide what to do according to the direction of the selectees.
-                  There must be at least one, they must be collectively consistent.
-                  Otherwise, we look at the manner in which the setup is T-boned
-                  in order to figure out how to divide the setup. */
+         if (calldeflist->callarray_flags & CAF__LATERAL_TO_SELECTEES) {
+            uint32 selmask = 0;
 
-               if (calldeflist->callarray_flags & CAF__LATERAL_TO_SELECTEES) {
-                  uint32 selmask = 0;
+            for (i=0 ; i<4 ; i++) if (selectp(ss, i)) selmask |= ss->people[i].id1;
 
-                  for (i=0 ; i<4 ; i++) if (selectp(ss, i)) selmask |= ss->people[i].id1;
-
-                  if (selmask == 0 || (selmask & 011) == 011)
-                     fail("People are not working with each other in a consistent way.");
-                  else if (selmask & 1)
-                     { division_code = spcmap_2x2v; }
-               }
-               else {
-                  if ((((ss->people[0].id1 | ss->people[3].id1) & 011) != 011) &&
-                      (((ss->people[1].id1 | ss->people[2].id1) & 011) != 011))
-                     { division_code = spcmap_2x2v; }
-                  else if ((((ss->people[0].id1 | ss->people[1].id1) & 011) == 011) ||
-                           (((ss->people[2].id1 | ss->people[3].id1) & 011) == 011))
-                     fail("Can't figure out who should be working with whom.");
-               }
-
-               goto divide_us_no_recompute;
-            }
-            else
-               losing = true;
-         }
-         else if (assoc(b_1x2, ss, calldeflist))
-            losing = true;
-         else if (assoc(b_1x1, ss, calldeflist))
-            goto divide_us_no_recompute;
-
-         if (losing) {
-            if (ss->cmd.cmd_misc_flags & CMD_MISC__PHANTOMS)
-               fail("Sorry, should have people do their own part, but don't know how.");
-            else
+            if (selmask == 0 || (selmask & 011) == 011)
                fail("People are not working with each other in a consistent way.");
+            else if (selmask & 1)
+               { division_code = spcmap_2x2v; }
          }
+         else {
+            if ((((ss->people[0].id1 | ss->people[3].id1) & 011) != 011) &&
+                (((ss->people[1].id1 | ss->people[2].id1) & 011) != 011))
+               { division_code = spcmap_2x2v; }
+            else if ((((ss->people[0].id1 | ss->people[1].id1) & 011) == 011) ||
+                     (((ss->people[2].id1 | ss->people[3].id1) & 011) == 011))
+               fail("Can't figure out who should be working with whom.");
+         }
+
+         goto divide_us_no_recompute;
       }
       else {
          /* People are not T-boned.  Check for a 2x1 or 1x2 definition.
@@ -2595,7 +2575,7 @@ static int divide_the_setup(
 
          unsigned long int elong = 0;
 
-            // If this is "run" and people aren't T-boned, just ignore the 2x1 definition.
+         // If this is "run" and people aren't T-boned, just ignore the 2x1 definition.
 
          if (!(calldeflist->callarray_flags & CAF__LATERAL_TO_SELECTEES) &&
              assoc(b_2x1, ss, calldeflist))

@@ -21,7 +21,7 @@
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 212
+#define DATABASE_FORMAT_VERSION 217
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -46,8 +46,10 @@ enum base_call_index {
    base_call_slither,
    base_call_maybegrandslither,
    base_base_prepare_to_drop,
+   base_base_hinge_and_then_trade,
+   base_base_hinge_and_then_trade_for_breaker,
    base_call_two_o_circs,
-   /* The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
+   // The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group.
    base_call_tagger0,
    base_call_tagger1_noref,
    base_call_tagger2_noref,
@@ -380,10 +382,12 @@ enum setup_kind {
    sbigdmd,
    sbigptpd,
    sbig3x1dmd,
+   sbig1x3dmd,
    sbig3dmd,
    sbig4dmd,
    sdblxwave,
    sdblspindle,
+   sdblbone,
    s_dead_concentric,
    s_normal_concentric
 };
@@ -559,6 +563,8 @@ enum begin_kind {
    b_pbigptpd,
    b_big3x1dmd,
    b_pbig3x1dmd,
+   b_big1x3dmd,
+   b_pbig1x3dmd,
    b_big3dmd,
    b_pbig3dmd,
    b_big4dmd,
@@ -566,7 +572,9 @@ enum begin_kind {
    b_dblxwave,
    b_pdblxwave,
    b_dblspindle,
-   b_pdblspindle
+   b_pdblspindle,
+   b_dblbone,
+   b_pdblbone
 };
 
 // These bits are used in the "callarray_flags" field of a "callarray".
@@ -754,9 +762,10 @@ enum calldef_schema {
    schema_concentric_zs,
    schema_cross_concentric_zs,
    schema_concentric_or_diamond_line,
-   schema_concentric_or_6_2,
+   schema_concentric_or_6_2_line,
    schema_concentric_6_2,
    schema_cross_concentric_6_2,
+   schema_concentric_6_2_line,
    schema_concentric_2_6,
    schema_cross_concentric_2_6,
    schema_concentric_2_4,

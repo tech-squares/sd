@@ -215,6 +215,8 @@ int begin_sizes[] = {
    12,         /* b_pbigptpd */
    12,         /* b_big3x1dmd */
    12,         /* b_pbig3x1dmd */
+   12,         /* b_big1x3dmd */
+   12,         /* b_pbig1x3dmd */
    18,         /* b_big3dmd */
    18,         /* b_pbig3dmd */
    24,         /* b_big4dmd */
@@ -222,7 +224,10 @@ int begin_sizes[] = {
    16,         /* b_dblxwave */
    16,         /* b_pdblxwave */
    16,         /* b_dblspindle */
-   16};        /* b_pdblspindle */
+   16,         /* b_pdblspindle */
+   16,         /* b_dblbone */
+   16};        /* b_pdblbone */
+
 
 
 FILE *db_input = NULL;
@@ -622,6 +627,8 @@ char *sstab[] = {
    "pbigptpd",
    "big3x1dmd",
    "pbig3x1dmd",
+   "big1x3dmd",
+   "pbig1x3dmd",
    "big3dmd",
    "pbig3dmd",
    "big4dmd",
@@ -630,6 +637,8 @@ char *sstab[] = {
    "pdblxwave",
    "dblspindle",
    "pdblspindle",
+   "dblbone",
+   "pdblbone",
    ""};
 
 /* This table is keyed to "setup_kind". */
@@ -748,10 +757,12 @@ char *estab[] = {
    "bigdmd",
    "bigptpd",
    "big3x1dmd",
+   "big1x3dmd",
    "big3dmd",
    "big4dmd",
    "dblxwave",
    "dblspindle",
+   "dblbone",
    "???",
    "normal_concentric",
    ""};
@@ -789,9 +800,10 @@ char *schematab[] = {
    "conc_zs",
    "crossconc_zs",
    "conc_or_diamond_line",
-   "conc_or_6_2",
+   "conc_or_6_2_line",
    "conc6_2",
    "crossconc6_2",
+   "conc6_2_line",
    "conc2_6",
    "crossconc2_6",
    "conc2_4",
@@ -1451,6 +1463,8 @@ tagtabitem tagtabinit[num_base_call_indices] = {
       {0, "slither"},
       {0, "maybegrandslither"},
       {0, "prepare_to_drop"},
+      {0, "hinge_then_trade"},
+      {0, "hinge_then_trade_for_breaker"},
       {0, "two_o_circs_for_frac"},
       /* The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
       {0, "tagnullcall0"},
