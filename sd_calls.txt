@@ -32,7 +32,7 @@
     General Public License if you distribute the file.
 */
 
-version "32.8"
+version "32.81"
 
 call "nothing" mainstream tag nullcall
             dont_use_in_resolve
@@ -17418,7 +17418,7 @@ call "_finish plenty" dontshow tag finishplenty
    conc cfinplenty [] ctr_rot_roll [conc_force_otherway endscando]
 
 call "_finish little more" dontshow tag finlilmore
-   conc box_circulate_maybe_diamond [] ctr_rot [conc_force_otherway]
+   conc box_circulate_maybe_diamond [] nullcall []
 
 call "little" c1 tag little
             fudge_to_q_tag left_means_mirror intlk_is_inherited
@@ -17432,31 +17432,19 @@ call "little, ends face @h" c1 tag little_ends_face_dir
             fudge_to_q_tag intlk_is_inherited
    conc stepnfold [inherit_intlk] endslittledir [conc_force_otherway endscando]
 
-call "_start little more" dontshow tag startlilmore
-            fudge_to_q_tag left_means_mirror intlk_is_inherited
-   conc stepnfold [inherit_intlk] quarter_right [conc_force_spots inherit_left endscando]
-
-call "_start little more, ends face @h" dontshow tag startlilmoredir
-            fudge_to_q_tag intlk_is_inherited
-   conc stepnfold [inherit_intlk] quarter_maybe [endscando]
-
-call "_start little more, ends go as you are" dontshow tag startlilmoreasare
-            fudge_to_q_tag intlk_is_inherited
-   conc stepnfold [inherit_intlk] nullcall []
-
 call "little more" c2 tag lilmore
             fudge_to_q_tag left_means_mirror intlk_is_inherited visible_fractions
-   seq startlilmore [inherit_intlk inherit_left]
+   seq little [inherit_intlk inherit_left]
    seq finlilmore []
 
 call "little more, ends go as you are" c2 tag lilmore_ends_as_are
             fudge_to_q_tag intlk_is_inherited      /* No visible fractions. */
-   seq startlilmoreasare [inherit_intlk]
+   seq little_ends_as_are [inherit_intlk]
    seq finlilmore []
 
 call "little more, ends face @h" c2 tag lilmore_ends_face_dir
             fudge_to_q_tag intlk_is_inherited visible_fractions
-   seq startlilmoredir [inherit_intlk inherit_left]
+   seq little_ends_face_dir [inherit_intlk inherit_left]
    seq finlilmore []
 
 call "plenty@S" c1 tag plenty

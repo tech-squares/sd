@@ -1374,8 +1374,8 @@ Private void do_concept_grand_working(
 {
    int cstuff;
    uint32 tbonetest;
-   uint32 m1, m2, m3;
-   uint32 masks[3];
+   uint32 m0, m1, m2, m3, m4;
+   uint32 masks[8];
    setup_kind kk;
    int arity = 2;
 
@@ -1392,34 +1392,82 @@ Private void do_concept_grand_working(
 
    if (ss->kind == s2x4) {
       if (cstuff < 4) {      /* Working forward/back/right/left. */
-         tbonetest = ss->people[1].id1 | ss->people[2].id1 | ss->people[5].id1 | ss->people[6].id1;
+         tbonetest =
+            ss->people[1].id1 | ss->people[2].id1 |
+            ss->people[5].id1 | ss->people[6].id1;
          if ((tbonetest & 010) && (!(cstuff & 1))) fail("Must indicate left/right.");
          if ((tbonetest & 001) && (cstuff & 1)) fail("Must indicate forward/back.");
 
          /* Look at the center 4 people and put each one in the correct group. */
 
-         m1 = 0x9; m2 = 0x9; m3 = 0xF;
+         m0 = 0x9; m1 = 0x9; m2 = 0xF;
          cstuff <<= 2;
 
-         if (((ss->people[1].id1 + 6) ^ cstuff) & 8) { m1 |= 0x2 ; m2 &= ~0x1; };
-         if (((ss->people[6].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x8; };
-         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m2 |= 0x2 ; m3 &= ~0x1; };
-         if (((ss->people[5].id1 + 6) ^ cstuff) & 8) { m2 |= 0x4 ; m3 &= ~0x8; };
+         if (((ss->people[1].id1 + 6) ^ cstuff) & 8) { m0 |= 0x2 ; m1 &= ~0x1; };
+         if (((ss->people[6].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x8; };
+         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m1 |= 0x2 ; m2 &= ~0x1; };
+         if (((ss->people[5].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x8; };
       }
       else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
          /* Put each of the center 4 people in the correct group, no need to look. */
 
          if (cstuff & 1) {
-            m1 = 0xB; m2 = 0xA; m3 = 0xE;
+            m0 = 0xB; m1 = 0xA; m2 = 0xE;
          }
          else {
-            m1 = 0xD; m2 = 0x5; m3 = 0x7;
+            m0 = 0xD; m1 = 0x5; m2 = 0x7;
          }
       }
       else        /* Working as-ends or as-centers. */
          fail("May not specify as-ends/as-centers here.");
 
       kk = s2x2;
+   }
+   else if (ss->kind == s2x6 &&
+            ((ss->cmd.cmd_misc_flags & CMD_MISC__EXPLICIT_MATRIX) ||
+             (ss->cmd.cmd_final_flags.her8it & INHERITFLAG_12_MATRIX))) {
+
+      ss->cmd.cmd_final_flags.her8it &= ~INHERITFLAG_12_MATRIX;
+
+      if (cstuff < 4) {      /* Working forward/back/right/left. */
+         tbonetest =
+            ss->people[1].id1 | ss->people[2].id1 |
+            ss->people[3].id1 | ss->people[4].id1 |
+            ss->people[7].id1 | ss->people[8].id1 |
+            ss->people[9].id1 | ss->people[10].id1;
+         if ((tbonetest & 010) && (!(cstuff & 1))) fail("Must indicate left/right.");
+         if ((tbonetest & 001) && (cstuff & 1)) fail("Must indicate forward/back.");
+
+         /* Look at the center 8 people and put each one in the correct group. */
+
+         m0 = m1 = m2 = m3 = 0x9; m4 = 0xF;
+         cstuff <<= 2;
+
+         if (((ss->people[1].id1  + 6) ^ cstuff) & 8) { m0 |= 0x2 ; m1 &= ~0x1; };
+         if (((ss->people[10].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x8; };
+         if (((ss->people[2].id1  + 6) ^ cstuff) & 8) { m1 |= 0x2 ; m2 &= ~0x1; };
+         if (((ss->people[9].id1  + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x8; };
+         if (((ss->people[3].id1  + 6) ^ cstuff) & 8) { m2 |= 0x2 ; m3 &= ~0x1; };
+         if (((ss->people[8].id1  + 6) ^ cstuff) & 8) { m2 |= 0x4 ; m3 &= ~0x8; };
+         if (((ss->people[4].id1  + 6) ^ cstuff) & 8) { m3 |= 0x2 ; m4 &= ~0x1; };
+         if (((ss->people[7].id1  + 6) ^ cstuff) & 8) { m3 |= 0x4 ; m4 &= ~0x8; };
+      }
+      else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
+         /* Put each of the center 4 people in the correct group, no need to look. */
+
+         if (cstuff & 1) {
+            m0 = 0xB; m1 = m2 = m3 = 0xA; m4 = 0xE;
+         }
+         else {
+            m0 = 0xD; m1 = m2 = m3 = 0x5; m4 = 0x7;
+         }
+      }
+      else        /* Working as-ends or as-centers. */
+         fail("May not specify as-ends/as-centers here.");
+
+      masks[3] = m3; masks[4] = m4;
+      kk = s2x2;
+      arity = 4;
    }
    else if (ss->kind == s2x3) {
       if (cstuff < 4) {      /* Working forward/back/right/left. */
@@ -1429,19 +1477,19 @@ Private void do_concept_grand_working(
 
          /* Look at the center 2 people and put each one in the correct group. */
 
-         m1 = 0x9; m2 = 0xF;
+         m0 = 0x9; m1 = 0xF;
          cstuff <<= 2;
 
-         if (((ss->people[1].id1 + 6) ^ cstuff) & 8) { m1 |= 0x2 ; m2 &= ~0x1; };
-         if (((ss->people[4].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x8; };
+         if (((ss->people[1].id1 + 6) ^ cstuff) & 8) { m0 |= 0x2 ; m1 &= ~0x1; };
+         if (((ss->people[4].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x8; };
       }
       else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
-         m3 = 0;
+         m2 = 0;
          if (cstuff & 1) {
-            m1 = 0xB; m2 = 0xE;
+            m0 = 0xB; m1 = 0xE;
          }
          else {
-            m1 = 0xD; m2 = 0x7;
+            m0 = 0xD; m1 = 0x7;
          }
       }
       else        /* Working as-ends or as-centers. */
@@ -1449,6 +1497,44 @@ Private void do_concept_grand_working(
 
       kk = s2x2;
       arity = 1;
+   }
+   else if (ss->kind == s2x5) {
+      /* **** Should actually put in test for explicit matrix or "10 matrix",
+         but don't have the latter. */
+      if (cstuff < 4) {      /* Working forward/back/right/left. */
+         tbonetest =
+            ss->people[2].id1 | ss->people[7].id1;
+         if ((tbonetest & 010) && (!(cstuff & 1))) fail("Must indicate left/right.");
+         if ((tbonetest & 001) && (cstuff & 1)) fail("Must indicate forward/back.");
+
+         /* Look at the center 6 people and put each one in the correct group. */
+
+         m0 = m1 = m2 = 0x9; m3 = 0xF;
+         cstuff <<= 2;
+
+         if (((ss->people[1].id1 + 6) ^ cstuff) & 8) { m0 |= 0x2 ; m1 &= ~0x1; };
+         if (((ss->people[8].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x8; };
+         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m1 |= 0x2 ; m2 &= ~0x1; };
+         if (((ss->people[7].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x8; };
+         if (((ss->people[3].id1 + 6) ^ cstuff) & 8) { m2 |= 0x2 ; m3 &= ~0x1; };
+         if (((ss->people[6].id1 + 6) ^ cstuff) & 8) { m2 |= 0x4 ; m3 &= ~0x8; };
+      }
+      else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
+         /* Put each of the center 4 people in the correct group, no need to look. */
+
+         if (cstuff & 1) {
+            m0 = 0xB; m1 = m2 = 0xA; m3 = 0xE;
+         }
+         else {
+            m0 = 0xD; m1 = m2 = 0x5; m3 = 0x7;
+         }
+      }
+      else        /* Working as-ends or as-centers. */
+         fail("May not specify as-ends/as-centers here.");
+
+      masks[3] = m3;
+      kk = s2x2;
+      arity = 3;
    }
    else if (ss->kind == s1x8) {
       if (cstuff < 4) {      /* Working forward/back/right/left. */
@@ -1458,13 +1544,13 @@ Private void do_concept_grand_working(
 
          /* Look at the center 4 people and put each one in the correct group. */
 
-         m1 = 0x3; m2 = 0x3; m3 = 0xF;
+         m0 = 0x3; m1 = 0x3; m2 = 0xF;
          cstuff <<= 2;
 
-         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x2; };
-         if (((ss->people[3].id1 + 6) ^ cstuff) & 8) { m1 |= 0x8 ; m2 &= ~0x1; };
-         if (((ss->people[7].id1 + 6) ^ cstuff) & 8) { m2 |= 0x4 ; m3 &= ~0x2; };
-         if (((ss->people[6].id1 + 6) ^ cstuff) & 8) { m2 |= 0x8 ; m3 &= ~0x1; };
+         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x2; };
+         if (((ss->people[3].id1 + 6) ^ cstuff) & 8) { m0 |= 0x8 ; m1 &= ~0x1; };
+         if (((ss->people[7].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x2; };
+         if (((ss->people[6].id1 + 6) ^ cstuff) & 8) { m1 |= 0x8 ; m2 &= ~0x1; };
       }
       else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
          fail("Must have a 2x3 or 2x4 setup for this concept.");
@@ -1473,10 +1559,10 @@ Private void do_concept_grand_working(
          /* Put each of the center 4 people in the correct group, no need to look. */
 
          if (cstuff & 1) {
-            m1 = 0x7; m2 = 0x5; m3 = 0xD;
+            m0 = 0x7; m1 = 0x5; m2 = 0xD;
          }
          else {
-            m1 = 0xB; m2 = 0xA; m3 = 0xE;
+            m0 = 0xB; m1 = 0xA; m2 = 0xE;
          }
       }
 
@@ -1490,22 +1576,22 @@ Private void do_concept_grand_working(
 
          /* Look at the center 2 people and put each one in the correct group. */
 
-         m1 = 0x3; m2 = 0xF; m3 = 0;
+         m0 = 0x3; m1 = 0xF; m2 = 0;
          cstuff <<= 2;
 
-         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m1 |= 0x8 ; m2 &= ~0x1; };
-         if (((ss->people[5].id1 + 6) ^ cstuff) & 8) { m1 |= 0x4 ; m2 &= ~0x2; };
+         if (((ss->people[2].id1 + 6) ^ cstuff) & 8) { m0 |= 0x8 ; m1 &= ~0x1; };
+         if (((ss->people[5].id1 + 6) ^ cstuff) & 8) { m0 |= 0x4 ; m1 &= ~0x2; };
       }
       else if (cstuff < 10) {      /* Working clockwise/counterclockwise. */
          fail("Must have a 2x3 or 2x4 setup for this concept.");
       }
       else {      /* Working as-ends or as-centers. */
-         m3 = 0;
+         m2 = 0;
          if (cstuff & 1) {
-            m1 = 0x7; m2 = 0xD;
+            m0 = 0x7; m1 = 0xD;
          }
          else {
-            m1 = 0xB; m2 = 0xE;
+            m0 = 0xB; m1 = 0xE;
          }
       }
 
@@ -1515,7 +1601,7 @@ Private void do_concept_grand_working(
    else
       fail("Must have a 2x3, 2x4, 1x6, or 1x8 setup for this concept.");
 
-   masks[0] = m1; masks[1] = m2; masks[2] = m3;
+   masks[0] = m0; masks[1] = m1; masks[2] = m2;
    new_overlapped_setup_move(ss, MAPCODE(kk,arity+1,MPKIND__OVERLAP,0), masks, result);
 }
 
