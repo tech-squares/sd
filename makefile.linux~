@@ -3,7 +3,7 @@
 # This gives the compiler name and any switches that it needs to make
 # it operate the way we want (ANSI language, standards conformance,
 # target hardware, etc.)
-CC = g++
+CC = gcc
 
 # This gives any "-D" switches that we always need to send to the compiler.
 DEFS = -Wall -Wno-switch -Wno-uninitialized -Wno-char-subscripts
@@ -26,7 +26,7 @@ X11_FLAGS =
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
 # of the system-dependent part of the TTY user interface (sdui-ttu.cpp).
-# "-DNO_CURSES" - disable compilation with curses.
+# "-DNO_CURSES"       - disable compilation with curses.
 #
 TTY_FLAGS =
 
