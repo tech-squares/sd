@@ -1998,24 +1998,28 @@ Private void do_concept_trace(
       (void) copy_person(&a1, 2, ss, 7);
       (void) copy_person(&a1, 3, ss, 6);
       a1.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a1);
       move(&a1, parseptr->next, NULLCALLSPEC, 0, FALSE, &res1);
       finalsetupflags |= res1.setupflags;
 
       (void) copy_person(&a2, 2, ss, 4);
       (void) copy_person(&a2, 3, ss, 5);
       a2.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a2);
       move(&a2, parseptr->subsidiary_root, NULLCALLSPEC, 0, FALSE, &res2);
       finalsetupflags |= res2.setupflags;
 
       (void) copy_person(&a3, 0, ss, 3);
       (void) copy_person(&a3, 1, ss, 2);
       a3.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a3);
       move(&a3, parseptr->next, NULLCALLSPEC, 0, FALSE, &res3);
       finalsetupflags |= res3.setupflags;
 
       (void) copy_person(&a4, 0, ss, 0);
       (void) copy_person(&a4, 1, ss, 1);
       a4.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a4);
       move(&a4, parseptr->subsidiary_root, NULLCALLSPEC, 0, FALSE, &res4);
       finalsetupflags |= res4.setupflags;
    }
@@ -2023,24 +2027,28 @@ Private void do_concept_trace(
       (void) copy_person(&a1, 0, ss, 0);
       (void) copy_person(&a1, 1, ss, 1);
       a1.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a1);
       move(&a1, parseptr->subsidiary_root, NULLCALLSPEC, 0, FALSE, &res1);
       finalsetupflags |= res1.setupflags;
 
       (void) copy_person(&a2, 0, ss, 6);
       (void) copy_person(&a2, 1, ss, 7);
       a2.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a2);
       move(&a2, parseptr->next, NULLCALLSPEC, 0, FALSE, &res2);
       finalsetupflags |= res2.setupflags;
 
       (void) copy_person(&a3, 2, ss, 4);
       (void) copy_person(&a3, 3, ss, 5);
       a3.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a3);
       move(&a3, parseptr->subsidiary_root, NULLCALLSPEC, 0, FALSE, &res3);
       finalsetupflags |= res3.setupflags;
 
       (void) copy_person(&a4, 2, ss, 2);
       (void) copy_person(&a4, 3, ss, 3);
       a4.setupflags = ss->setupflags | SETUPFLAG__DISTORTED;
+      update_id_bits(&a4);
       move(&a4, parseptr->next, NULLCALLSPEC, 0, FALSE, &res4);
       finalsetupflags |= res4.setupflags;
    }
