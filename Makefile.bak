@@ -81,7 +81,7 @@ sd_doc.PS: sd_doc-sorted.dvi
 
 
 sdui-x11.o: sdui-x11.c
-	$(CC) $(CFLAGS) -I/usr/include/X11R5 -c sdui-x11.c
+	$(CC) $(CFLAGS) $(UICFLAGS) -c sdui-x11.c
 
 mkcalls.o sdmain.o sdsi.o sdui-x11.o: paths.h
 
