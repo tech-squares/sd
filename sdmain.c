@@ -21,8 +21,8 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "31.83"
-#define TIME_STAMP "wba@apollo.hp.com  11 Jan 97 $"
+#define VERSION_STRING "31.84"
+#define TIME_STAMP "wba@apollo.hp.com  09 Feb 97 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -374,6 +374,7 @@ extern parse_block *get_parse_block(void)
    item->options.tagger = -1;
    item->options.circcer = -1;
    item->replacement_key = 0;
+   item->no_check_call_level = 0;
    item->subsidiary_root = (parse_block *) 0;
    item->next = (parse_block *) 0;
 
