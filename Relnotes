@@ -1,0 +1,47 @@
+		    RELEASE NOTES FOR SD VERSION 29.2
+       Database version = 29.1, format = 40, X11 UI version 1.14.
+
+
+WARNING!  This is not a major release!  It is being distributed for
+the purpose of testing the user interface changes.
+
+
+Finally added the "magic_outroller_is_cw" predicate, so that magic outroll
+circulate now works as well as magic inroll circulate.
+
+New calls: [magic] in/out/zoom roll circulate from 2x3 setups.
+
+There is a new command "toggle concept levels" that affects whether
+concepts that are illegal at the current level will be presented.
+This condition is normally off, meaning that off-level concepts
+are not presented to the matcher in sdtty (i.e. they aren't recognized
+when you type them, and aren't presented when you type "?").  In the
+future, the X11 interface may also deactivate off-level concepts on
+the menus.  Also, the "resolve", "reconcile", "do_anything", and
+"nice_setup" commands will not generate off-level concepts.  When the
+"concept levels" switch is on, all concepts are presented, and made
+available to the resolver, regardless of their level, though a warning
+will be printed on the sequence whenever an off-level concept is used.
+The "toggle concept levels" command toggles the state of this switch.
+It is an icon in the X11 version, and a typed command in sdtty.
+
+USER INTERFACE CHANGES:
+
+The program "sdtty" has been extensively rewritten for PC's and Unix
+systems.  The PC behavior has not been tested; differences from the
+previous version are difficult to characterize.  The Unix behavior
+now uses the "curses" display access mechanism.  It should make
+effective use of the screen-editing features of the terminal (VT-100
+or emulation of same, or whatever) to keep the screen updated.
+
+You should be able to turn off the use of insert/delete line
+capabilities by giving the command-line switch "-no_line_delete" at
+program startup.
+
+You should be able to turn the "curses" mechanism off completely by giving
+the command-line switch "-no_cursor" at program startup.  This should even
+make it possible to use the program from a printing device.
+
+===============================================================================
+
+See the file "oldnotes" for notes relating to older versions.
