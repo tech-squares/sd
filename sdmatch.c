@@ -55,7 +55,7 @@ typedef struct {
     int exact_match;       /* true if an exact match has been found */
     int showing;           /* we are only showing the matching patterns */
     show_function sf;      /* function to call with matching command (if showing) */
-    int verify;            /* nonzero => verify calls before showing */
+    long_boolean verify;   /* true => verify calls before showing */
     int space_ok;          /* space is a legitimate next input character */
     match_result result;   /* value of the first or exact matching pattern */
 } match_state;
@@ -330,7 +330,7 @@ add_call_to_menu(char ***menu, int call_menu_index, int menu_size,
 
 extern int
 match_user_input(char *user_input, int which_commands, match_result *mr,
-                 char *extension, show_function sf, int show_verify)
+                 char *extension, show_function sf, long_boolean show_verify)
 {
     match_state ss;
     input_matcher *f;
@@ -425,13 +425,13 @@ call_matcher(match_state *sp)
 static void
 selector_matcher(match_state *sp)
 {
-    search_menu(sp, &selector_names[1], last_selector_kind, 0);
+    search_menu(sp, &selector_names[1], last_selector_kind, (uims_reply) 0);
 }
 
 static void
 direction_matcher(match_state *sp)
 {
-    search_menu(sp, &direction_names[1], last_direction_kind, 0);
+    search_menu(sp, &direction_names[1], last_direction_kind, (uims_reply) 0);
 }
 
 static void
@@ -815,6 +815,7 @@ verify_call_with_selector(callspec_block *call, selector_kind sel)
     history[history_ptr+1].warnings.bits[1] = bits1;
     longjmp_ptr = &longjmp_buffer;    /* restore the global error handler */
     initializing_database = FALSE;
+    not_interactive = FALSE;
     return result;
 }
 
@@ -829,7 +830,9 @@ try_call_with_selector(callspec_block *call, selector_kind sel)
     if (setjmp(my_longjmp_buffer.the_buf)) {
         return FALSE;
     }
+
     initializing_database = TRUE; /* so deposit_call doesn't ask user for info */
+    not_interactive = TRUE;
     selector_for_initialize = sel; /* if selector needed, use this one */
     (void) deposit_call(call);
     if (parse_state.parse_stack_index != 0) {

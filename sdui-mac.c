@@ -40,7 +40,7 @@ static char *sdui_version = "1.96";
    uims_do_neglect_popup
    uims_do_selector_popup
    uims_do_direction_popup
-   uims_do_quantifier_popup
+   uims_get_number_fields
    uims_do_modifier_popup
    uims_do_concept_popup
    uims_add_new_line
@@ -168,7 +168,7 @@ get_user_command(int which)
             user_match = menu_match;
             return;
         }
-        matches = match_user_input(user_input, which, &user_match, extended_input, (show_function) 0, 0);
+        matches = match_user_input(user_input, which, &user_match, extended_input, (show_function) 0, FALSE);
         if (c == ' ') {
             /* extend only to one space, inclusive */
             p = extended_input;
@@ -299,22 +299,32 @@ uims_do_direction_popup(void)
     }
 }    
 
-extern int
-uims_do_quantifier_popup(void)
-{
-    int n;
-    char buffer[200];
 
-    if (user_match.valid && (user_match.howmanynumbers >= 1)) {
-        n = user_match.number_fields & 0xF;
-        user_match.number_fields >>= 4;
-        user_match.howmanynumbers--;
-        return n;
-    }
-    else {
-        return mac_do_quantifier_popup();
-    }
+extern unsigned int
+uims_get_number_fields(int howmany)
+{
+   int i;
+   unsigned int number_list = 0;
+
+   for (i=0 ; i<howmany ; i++) {
+      unsigned int this_num;
+
+      if (user_match.valid && (user_match.howmanynumbers >= 1)) {
+          this_num = user_match.number_fields & 0xF;
+          user_match.number_fields >>= 4;
+          user_match.howmanynumbers--;
+      }
+      else {
+          this_num =  mac_do_quantifier_popup();
+      }
+
+      if (this_num == 0) return 0;    /* User waved the mouse away. */
+      number_list |= (this_num << (i*4));
+   }
+
+   return number_list;
 }
+
 
 extern int
 uims_do_concept_popup(int kind)
