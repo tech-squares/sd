@@ -100,30 +100,30 @@ ID2_OUTR1X3|ID2_NOUTR1X3|ID2_CTR4|ID2_OUTRPAIRS)
    on the card.
 */
 
-/* The two low bits are used for result elongation, so we start with 0x00000004. */
-#define RESULTFLAG__DID_LAST_PART        0x00000004UL
-#define RESULTFLAG__PARTS_ARE_KNOWN      0x00000008UL
-#define RESULTFLAG__EXPAND_TO_2X3        0x00000010UL
-#define RESULTFLAG__NEED_DIAMOND         0x00000020UL
-#define RESULTFLAG__IMPRECISE_ROT        0x00000040UL
-/* This is a six bit field. */
-#define RESULTFLAG__SPLIT_AXIS_FIELDMASK 0x00001F80UL
-#define RESULTFLAG__SPLIT_AXIS_XMASK     0x00000380UL
-#define RESULTFLAG__SPLIT_AXIS_XBIT      0x00000080UL
-#define RESULTFLAG__SPLIT_AXIS_YMASK     0x00001C00UL
-#define RESULTFLAG__SPLIT_AXIS_YBIT      0x00000400UL
-#define RESULTFLAG__SPLIT_AXIS_SEPARATION  3
+// The two low bits are used for result elongation, so we start with 0x00000004.
+static const uint32 RESULTFLAG__DID_LAST_PART        = 0x00000004UL;
+static const uint32 RESULTFLAG__PARTS_ARE_KNOWN      = 0x00000008UL;
+static const uint32 RESULTFLAG__EXPAND_TO_2X3        = 0x00000010UL;
+static const uint32 RESULTFLAG__NEED_DIAMOND         = 0x00000020UL;
+static const uint32 RESULTFLAG__IMPRECISE_ROT        = 0x00000040UL;
+// This is a six bit field.
+static const uint32 RESULTFLAG__SPLIT_AXIS_FIELDMASK = 0x00001F80UL;
+static const uint32 RESULTFLAG__SPLIT_AXIS_XMASK     = 0x00000380UL;
+static const uint32 RESULTFLAG__SPLIT_AXIS_XBIT      = 0x00000080UL;
+static const uint32 RESULTFLAG__SPLIT_AXIS_YMASK     = 0x00001C00UL;
+static const uint32 RESULTFLAG__SPLIT_AXIS_YBIT      = 0x00000400UL;
+static const uint32 RESULTFLAG__SPLIT_AXIS_SEPARATION= 3;
 
-static Const uint32 RESULTFLAG__ACTIVE_PHANTOMS_ON  = 0x00002000UL;
-static Const uint32 RESULTFLAG__ACTIVE_PHANTOMS_OFF = 0x00004000UL;
-static Const uint32 RESULTFLAG__SECONDARY_DONE      = 0x00008000UL;
-static Const uint32 RESULTFLAG__YOYO_FINISHED       = 0x00010000UL;
-static Const uint32 RESULTFLAG__TWISTED_FINISHED    = 0x00020000UL;
-static Const uint32 RESULTFLAG__SPLIT_FINISHED      = 0x00040000UL;
-static Const uint32 RESULTFLAG__NO_REEVALUATE       = 0x00080000UL;
-static Const uint32 RESULTFLAG__DID_Z_COMPRESSION   = 0x00100000UL;
-static Const uint32 RESULTFLAG__VERY_ENDS_ODD       = 0x00200000UL;
-static Const uint32 RESULTFLAG__VERY_CTRS_ODD       = 0x00400000UL;
+static const uint32 RESULTFLAG__ACTIVE_PHANTOMS_ON   = 0x00002000UL;
+static const uint32 RESULTFLAG__ACTIVE_PHANTOMS_OFF  = 0x00004000UL;
+static const uint32 RESULTFLAG__SECONDARY_DONE       = 0x00008000UL;
+static const uint32 RESULTFLAG__YOYO_FINISHED        = 0x00010000UL;
+static const uint32 RESULTFLAG__TWISTED_FINISHED     = 0x00020000UL;
+static const uint32 RESULTFLAG__SPLIT_FINISHED       = 0x00040000UL;
+static const uint32 RESULTFLAG__NO_REEVALUATE        = 0x00080000UL;
+static const uint32 RESULTFLAG__DID_Z_COMPRESSION    = 0x00100000UL;
+static const uint32 RESULTFLAG__VERY_ENDS_ODD        = 0x00200000UL;
+static const uint32 RESULTFLAG__VERY_CTRS_ODD        = 0x00400000UL;
 
 typedef struct glonk {
    char txt[MAX_TEXT_LINE_LENGTH];
@@ -149,7 +149,7 @@ typedef struct glonk {
 #define CONCPARSE_PARSE_G_TYPE 0x20
 
 
-/* BEWARE!!  This list must track the array "warning_strings" in sdutil.cpp . */
+/* BEWARE!!  This list must track the array "warning_strings" in sdtables.c . */
 typedef enum {
    warn__none,
    warn__do_your_part,
@@ -175,7 +175,9 @@ typedef enum {
    warn__each1x2,
    warn__take_right_hands,
    warn__ctrs_are_dmd,
+   warn__1_4_pgram,
    warn__full_pgram,
+   warn__3_4_pgram,
    warn__offset_gone,
    warn__overlap_gone,
    warn__to_o_spots,

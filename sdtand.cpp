@@ -1177,7 +1177,10 @@ extern void tandem_couples_move(
          else
             fail("Can't find these triangles.");
       }
-      else if (special_mask == 0x44 || special_mask == 0x1212 || special_mask == 0x22 || special_mask == 0x11) {
+      else if ((special_mask == 0x44 && ss->kind != s_rigger) ||
+               special_mask == 0x1212 ||
+               special_mask == 0x22 ||
+               special_mask == 0x11) {
          ewmask = 0;
          nsmask = allmask;
       }

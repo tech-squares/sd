@@ -1400,6 +1400,22 @@ Private int divide_the_setup(
          }
 
          goto divide_us_no_recompute;
+      case s2x7:
+         // The call has no applicable 2x7 or 7x2 definition.
+         // Check for a 75% offset parallelogram,
+
+         switch (livemask) {
+            case 0x3C78:
+               division_code = MAPCODE(s1x4,2,MPKIND__OFFS_R_THRQ,1);
+               warn(warn__each1x4);
+               goto divide_us_no_recompute;
+            case 0x078F:
+               division_code = MAPCODE(s1x4,2,MPKIND__OFFS_L_THRQ,1);
+               warn(warn__each1x4);
+               goto divide_us_no_recompute;
+         }
+
+         break;
       case sdeepqtg:
          /* Check whether it has short6/pshort6 definitions, and divide the setup if so,
             and if the call permits it. */
@@ -2790,6 +2806,17 @@ Private int divide_the_setup(
          else if (assoc(b_1x1, ss, calldeflist))
             goto divide_us_no_recompute;
 
+         switch (livemask) {
+            case 0x3DE:
+               division_code = MAPCODE(s1x4,2,MPKIND__OFFS_R_ONEQ,1);
+               warn(warn__each1x4);
+               goto divide_us_no_recompute;
+            case 0x1EF:
+               division_code = MAPCODE(s1x4,2,MPKIND__OFFS_L_ONEQ,1);
+               warn(warn__each1x4);
+               goto divide_us_no_recompute;
+         }
+
          break;
       case s1x4:
          /* See if the call has a 1x2, 2x1, or 1x1 definition,
@@ -3084,7 +3111,7 @@ extern void basic_move(
    long_boolean mirror,
    setup *result)
 {
-   int i, j, k;
+   int j, k;
    callarray *calldeflist;
    long_boolean funny;
    uint32 division_code;
@@ -3181,13 +3208,17 @@ extern void basic_move(
 
                /* Find out who are facing each other directly and will therefore start. */
 
-               if (((ss->people[2].id1 & d_mask) == d_west) && ((ss->people[3].id1 & d_mask) == d_east))
+               if (((ss->people[2].id1 & d_mask) == d_west) &&
+                   ((ss->people[3].id1 & d_mask) == d_east))
                   i1 = 0;
-               else if (((ss->people[3].id1 & d_mask) == d_north) && ((ss->people[0].id1 & d_mask) == d_south))
+               else if (((ss->people[3].id1 & d_mask) == d_north) &&
+                        ((ss->people[0].id1 & d_mask) == d_south))
                   i1 = 1;
-               else if (((ss->people[0].id1 & d_mask) == d_east) && ((ss->people[1].id1 & d_mask) == d_west))
+               else if (((ss->people[0].id1 & d_mask) == d_east) &&
+                        ((ss->people[1].id1 & d_mask) == d_west))
                   i1 = 2;
-               else if (((ss->people[1].id1 & d_mask) == d_south) && ((ss->people[2].id1 & d_mask) == d_north))
+               else if (((ss->people[1].id1 & d_mask) == d_south) &&
+                        ((ss->people[2].id1 & d_mask) == d_north))
                   i1 = 3;
                else
                   fail("People are not in correct position for split call.");
@@ -3936,25 +3967,38 @@ foobar:
       lilresult_mask[1] = 0;
 
       if (funny) {
-         if ((ss->kind != result->kind) || result->rotation || inconsistent_rotation || inconsistent_setup)
+         if ((ss->kind != result->kind) || result->rotation ||
+             inconsistent_rotation || inconsistent_setup)
             fail("Can't do 'funny' shape-changer.");
       }
 
       /* Check for people cutting through or working around an elongated 2x2 setup. */
-      if (     ss->kind == s2x2 &&
-               (orig_elongation & 0x3F) != 0 &&
-               !(ss->cmd.cmd_misc_flags & CMD_MISC__NO_CHK_ELONG)) {
-         if (callspec->callflags1 & CFLAG1_NO_ELONGATION_ALLOWED) {
-            fail("Call can't be done around the outside of the set.");
+      if (ss->kind == s2x2) {
+         uint32 groovy_elongation = orig_elongation >> 8;
+
+         if ((groovy_elongation & 0x3F) != 0 &&
+             (goodies->callarray_flags & CAF__NO_FACING_ENDS)) {
+            for (int i=0; i<4; i++) {
+               uint32 p = ss->people[i].id1;
+               if (p != 0 && ((p-i-1) & 2) != 0 && ((p ^ groovy_elongation) & 1) == 0)
+                  fail("Centers aren't staying in the center.");
+            }
          }
-         else if (goodies->callarray_flags & CAF__NO_CUTTING_THROUGH) {
-            if (result->kind == s1x4)
-               check_peeloff_migration = TRUE;
-            else {
-               for (i=0; i<4; i++) {
-                  uint32 p = ss->people[i].id1;
-                  if (p != 0 && ((p-i-1) & 2) == 0 && ((p ^ orig_elongation) & 1) == 0)
-                     fail("Call has outsides cutting through the middle of the set.");
+
+         if ((orig_elongation & 0x3F) != 0 &&
+             !(ss->cmd.cmd_misc_flags & CMD_MISC__NO_CHK_ELONG)) {
+            if (callspec->callflags1 & CFLAG1_NO_ELONGATION_ALLOWED)
+               fail("Call can't be done around the outside of the set.");
+
+            if (goodies->callarray_flags & CAF__NO_CUTTING_THROUGH) {
+               if (result->kind == s1x4)
+                  check_peeloff_migration = TRUE;
+               else {
+                  for (int i=0; i<4; i++) {
+                     uint32 p = ss->people[i].id1;
+                     if (p != 0 && ((p-i-1) & 2) == 0 && ((p ^ orig_elongation) & 1) == 0)
+                        fail("Call has outsides cutting through the middle of the set.");
+                  }
                }
             }
          }
@@ -4282,11 +4326,13 @@ foobar:
                permuter = j23translatev;
                rotator = 1;
             }
-            else if ((lilresult_mask[0] & 0xFFF1FFF1) == 0) {    /* Check horiz 1x6 spots. */
+            else if ((lilresult_mask[0] & 0xFFF1FFF1) == 0) {
+               // Check horiz 1x6 spots.
                result->kind = s1x6;
                permuter = s1x6translateh;
             }
-            else if ((lilresult_mask[0] & 0xF1FFF1FF) == 0) {    /* Check vert 1x6 spots. */
+            else if ((lilresult_mask[0] & 0xF1FFF1FF) == 0) {
+               // Check vert 1x6 spots.
                result->kind = s1x6;
                permuter = s1x6translatev;
                rotator = 1;
@@ -4309,37 +4355,46 @@ foobar:
                permuter = qtgtranslatev;
                rotator = 1;
             }
-            else if ((lilresult_mask[0] & 0xF3F9F3F9) == 0) {    /* Check horiz xwv spots. */
+            else if ((lilresult_mask[0] & 0xF3F9F3F9) == 0) {
+               // Check horiz xwv spots.
                result->kind = s_crosswave;
                permuter = sxwvtranslateh;
             }
-            else if ((lilresult_mask[0] & 0xF9F3F9F3) == 0) {    /* Check vert xwv spots. */
+            else if ((lilresult_mask[0] & 0xF9F3F9F3) == 0) {
+               // Check vert xwv spots.
                result->kind = s_crosswave;
                permuter = sxwvtranslatev;
                rotator = 1;
             }
-            else if ((lilresult_mask[0] & 0xFDF1FDF1) == 0) {    /* Check horiz 3x1dmd spots w/points out far. */
+            else if ((lilresult_mask[0] & 0xFDF1FDF1) == 0) {
+               // Check horiz 3x1dmd spots w/points out far.
                result->kind = s3x1dmd;
                permuter = s3dmftranslateh;
             }
-            else if ((lilresult_mask[0] & 0xF1FDF1FD) == 0) {    /* Check vert 3x1dmd spots w/points out far. */
+            else if ((lilresult_mask[0] & 0xF1FDF1FD) == 0) {
+               // Check vert 3x1dmd spots w/points out far.
                result->kind = s3x1dmd;
                permuter = s3dmftranslatev;
                rotator = 1;
             }
-            else if ((lilresult_mask[0] & 0xFBF1FBF1) == 0) {    /* Check horiz 3x1dmd spots w/points in close. */
+            else if ((lilresult_mask[0] & 0xFBF1FBF1) == 0) {
+               // Check horiz 3x1dmd spots w/points in close.
                result->kind = s3x1dmd;
                permuter = s3dmntranslateh;
             }
-            else if ((lilresult_mask[0] & 0xF1FBF1FB) == 0) {    /* Check vert 3x1dmd spots w/points in close. */
+            else if ((lilresult_mask[0] & 0xF1FBF1FB) == 0) {
+               // Check vert 3x1dmd spots w/points in close.
                result->kind = s3x1dmd;
                permuter = s3dmntranslatev;
                rotator = 1;
             }
-            else if (vacate && (lilresult_mask[0] & 0xF7F1F7F1) == 0 && (lilresult_mask[0] & 0x00080008) == 0x00080008) {
-               /* Check for star in the middle that can be disambiguated by having someone vacate it. */
-               /* We have to mark this as controversial -- the center star is actually isotropic, and
-                  we are fudging it so that T-boned coordinate will work. */
+            else if (vacate &&
+                     (lilresult_mask[0] & 0xF7F1F7F1) == 0 &&
+                     (lilresult_mask[0] & 0x00080008) == 0x00080008) {
+               // Check for star in the middle that can be disambiguated
+               // by having someone vacate it.  We have to mark this
+               // as controversial -- the center star is actually isotropic,
+               // and we are fudging it so that T-boned coordinate will work.
                warn(warn_controversial);
                result->kind = s1x3dmd;
                permuter = s_vacate_star;
@@ -4650,8 +4705,11 @@ foobar:
                collision_mask |= (1 << k);
                collision_index = k;        /* In case we need to report a mundane collision. */
 
-               if (  (callspec->callflags1 & CFLAG1_TAKE_RIGHT_HANDS) ||
-                     (  (callspec->callflags1 & CFLAG1_ENDS_TAKE_RIGHT_HANDS) && result->kind == s1x4 && !(k&1)  )) {
+               if ((callspec->callflags1 & CFLAG1_TAKE_RIGHT_HANDS) ||
+                   ((callspec->callflags1 & CFLAG1_ENDS_TAKE_RIGHT_HANDS) &&
+                    ((result->kind == s1x4 && !(k&1)) ||
+                     (result->kind == s2x4 && !((k+1)&2)) ||
+                     (result->kind == s_qtag && !(k&2))))) {
                /* Collisions are legal. */
                }
                else {
@@ -4691,11 +4749,11 @@ foobar:
       if (((orig_elongation ^ result->rotation) & 1) == 0)
          fail("People are too far apart to work with each other on this call.");
 
-      for (i=0; i<4; i++) {
+      for (int i=0; i<4; i++) {
          int z = (i-result->rotation+1) & 2;
          uint32 p = ss->people[i].id1;
-         if (     (((p ^ result->people[z].id1) & PID_MASK) != 0) &&
-                  (((p ^ result->people[z+1].id1) & PID_MASK) != 0))
+         if ((((p ^ result->people[z  ].id1) & PID_MASK) != 0) &&
+             (((p ^ result->people[z+1].id1) & PID_MASK) != 0))
             fail("Call can't be done around the outside of the set.");
       }
    }

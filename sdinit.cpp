@@ -1202,7 +1202,7 @@ extern void initialize_menus(call_list_mode_t call_list_mode)
                alphabetized before the '@' escapes were expanded.  It
                is no longer in alphabetical order. */
             for (i=0; i<number_of_calls[call_list_any]; i++) {
-               if (!strcmp(abridge_call, main_call_lists[call_list_any][i]->name)) {
+               if (!strcmp(abridge_call, main_call_lists[call_list_any][i]->menu_name)) {
                   /* Delete this call and move all subsequent calls down one position. */
                   for (j=i+1; j<number_of_calls[call_list_any]; j++) {
                      main_call_lists[call_list_any][j-1] = main_call_lists[call_list_any][j];

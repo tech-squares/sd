@@ -21,10 +21,25 @@
 #define MAX_PEOPLE 24
 
 
+
 typedef struct {
    uint32 her8it;
    uint32 final;
 } uint64;
+
+
+typedef struct {
+   int no_graphics;       // 1 = "no_checkers"; 2 = "no_graphics"
+   int no_intensify;
+   int reverse_video;     // 0 = black-on-white (default); 1 = white-on-black
+   int pastel_color;      // 1 = use pastel red/grn for color by gender;
+                          // 0 = bold colors.  Color by couple or color by corner
+                          // are always done with bold colors.
+   int no_color;          // 0 = default (by gender); 1 = none at all;
+                          // 2 = by_couple; 3 = by_corner
+   int no_sound;
+} ui_option_type;
+
 
 /* BEWARE!!  This list must track the array "concept_table" in sdconcpt.c . */
 typedef enum {
@@ -61,6 +76,7 @@ typedef enum {
    concept_interlocked,
    concept_yoyo,
    concept_fractal,
+   concept_fast,
    concept_straight,
    concept_twisted,
    concept_12_matrix,
@@ -173,6 +189,7 @@ typedef enum {
    concept_fractional,
    concept_rigger,
    concept_common_spot,
+   concept_drag,
    concept_dblbent,
    concept_supercall,
    concept_diagnose
@@ -189,12 +206,20 @@ typedef enum {
    MPKIND__CONCPHAN,
    MPKIND__NONISOTROPIC,
    MPKIND__NONISOTROP1,
+   MPKIND__OFFS_L_ONEQ,
+   MPKIND__OFFS_R_ONEQ,
    MPKIND__OFFS_L_HALF,
    MPKIND__OFFS_R_HALF,
+   MPKIND__OFFS_L_THRQ,
+   MPKIND__OFFS_R_THRQ,
    MPKIND__OFFS_L_FULL,
    MPKIND__OFFS_R_FULL,
+   MPKIND__OFFS_L_ONEQ_SPECIAL,
+   MPKIND__OFFS_R_ONEQ_SPECIAL,
    MPKIND__OFFS_L_HALF_SPECIAL,
    MPKIND__OFFS_R_HALF_SPECIAL,
+   MPKIND__OFFS_L_THRQ_SPECIAL,
+   MPKIND__OFFS_R_THRQ_SPECIAL,
    MPKIND__OFFS_L_FULL_SPECIAL,
    MPKIND__OFFS_R_FULL_SPECIAL,
    MPKIND__LILZCCW,
@@ -469,8 +494,8 @@ typedef struct glock {
 
 /* For ui_command_select: */
 /* BEWARE!!  This next definition must be keyed to the array "title_string"
-   in sdgetout.c, and maybe stuff in the UI.  For example, see "command_menu"
-   in sdtables.c. */
+   in sdgetout.cpp, and maybe stuff in the UI.  For example, see "command_menu"
+   in sdutil.cpp. */
 /* BEWARE!!  The order is slightly significant -- all search-type commands
    are >= command_resolve, and all "create some setup" commands
    are >= command_create_any_lines.  Certain tests are made easier by this. */
@@ -500,6 +525,9 @@ typedef enum {
    command_toggle_retain_after_error,
    command_toggle_nowarn_mode,
    command_toggle_singleclick_mode,
+   command_select_print_font,
+   command_print_current,
+   command_print_any,
    command_refresh,
    command_resolve,            /* Search commands start here */
    command_normalize,
@@ -535,6 +563,42 @@ typedef enum {
 } command_kind;
 #define NUM_COMMAND_KINDS (((int) command_create_tidal_wave)+1)
 
+/* In each case, an integer or enum is deposited into the global variable uims_menu_index.  Its interpretation
+   depends on which of the replies above was given.  For some of the replies, it gives the index
+   into a menu.  For "ui_start_select" it is a start_select_kind.
+   For other replies, it is one of the following constants: */
+
+/* BEWARE!!  This list must track the array "startup_resources" in sdui-x11.c . */
+/* BEWARE!!!!!!!!  Lots of implications for "centersp" and all that! */
+/* BEWARE!!  If change this next definition, be sure to update the definition of
+   "startinfolist" in sdtables.c, and also necessary stuff in the user interfaces.
+   The latter includes the definition of "start_choices" in sd.dps
+   in the Domain/Dialog system, and the corresponding CNTLs in *.rsrc
+   in the Macintosh system.  You may also need changes in create_controls() in
+   macstuff.c. */
+typedef enum {
+   start_select_exit,        /* Don't start a sequence; exit from the program. */
+   start_select_h1p2p,       /* Start with Heads 1P2P. */
+   start_select_s1p2p,       /* Etc. */
+   start_select_heads_start,
+   start_select_sides_start,
+   start_select_as_they_are,
+   start_select_toggle_conc,
+   start_select_toggle_act,
+   start_select_toggle_retain,
+   start_select_toggle_nowarn_mode,
+   start_select_toggle_singleclick_mode,
+   start_select_toggle_singer,
+   start_select_toggle_singer_backward,
+   start_select_select_print_font,
+   start_select_print_current,
+   start_select_print_any,
+   start_select_init_session_file,
+   start_select_change_outfile,
+   start_select_change_header_comment
+} start_select_kind;
+#define NUM_START_SELECT_KINDS (((int) start_select_change_header_comment)+1)
+
 /* For ui_resolve_select: */
 /* BEWARE!!  This list must track the array "resolve_resources" in sdui-x11.c . */
 typedef enum {
@@ -554,6 +618,12 @@ typedef struct {
    command_kind action;
    int resource_id;
 } command_list_menu_item;
+
+typedef struct {
+   Cstring startup_name;
+   start_select_kind action;
+   int resource_id;
+} startup_list_menu_item;
 
 typedef struct {
    Cstring command_name;

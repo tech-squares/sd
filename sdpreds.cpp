@@ -169,6 +169,11 @@ extern long_boolean selectp(setup *ss, int place)
             else if (p2 == ID2_OUTRPAIRS) s = selector_outerpairs;
             else break;
          }
+         else if (ss->kind == s2x7) {
+            if (current_options.who == selector_center2)
+               return (pid2 & ID2_CTR2);
+            else break;
+         }
          else {
             p2 = pid2 & (ID2_CTR2|ID2_OUTR6);
             if      (p2 == ID2_CTR2)  s = selector_center2;
@@ -179,13 +184,16 @@ extern long_boolean selectp(setup *ss, int place)
       case selector_verycenters:    /* Gotta fix this stuff - use fall-through variable. */
          if (ss->kind == s1x6) {
             p2 = pid2 & (ID2_CTR2|ID2_OUTRPAIRS);
-            if      (p2 == ID2_CTR2)  s = selector_verycenters;
+            if      (p2 == ID2_CTR2) return TRUE;
             else if (p2 == ID2_OUTRPAIRS) s = selector_outerpairs;
             else break;
          }
+         else if (ss->kind == s2x7) {
+            return (pid2 & ID2_CTR2);
+         }
          else {
             p2 = pid2 & (ID2_CTR2|ID2_OUTR6);
-            if      (p2 == ID2_CTR2)  s = selector_verycenters;
+            if      (p2 == ID2_CTR2) return TRUE;
             else if (p2 == ID2_OUTR6) s = selector_outer6;
             else break;
          }
@@ -705,11 +713,12 @@ Private long_boolean x14_once_rem_couple(setup *real_people, int real_index,
 Private long_boolean lines_miniwave(setup *real_people, int real_index,
    int real_direction, int northified_index, Const long int *extra_stuff)
 {
-   if (real_people->cmd.cmd_assume.assumption == cr_wave_only)
+   switch (real_people->cmd.cmd_assume.assumption) {
+   case cr_wave_only: case cr_magic_only:
       return TRUE;
-   else if (real_people->cmd.cmd_assume.assumption == cr_2fl_only)
+   case cr_2fl_only:
       return FALSE;
-   else {
+   default:
       int this_person = real_people->people[real_index].id1;
       int other_person = real_people->people[real_index ^ 1].id1;
       if (real_people->kind == s1x6 && real_index >= 2)
@@ -722,11 +731,12 @@ Private long_boolean lines_miniwave(setup *real_people, int real_index,
 Private long_boolean lines_couple(setup *real_people, int real_index,
    int real_direction, int northified_index, Const long int *extra_stuff)
 {
-   if (real_people->cmd.cmd_assume.assumption == cr_wave_only)
+   switch (real_people->cmd.cmd_assume.assumption) {
+   case cr_wave_only: case cr_magic_only:
       return FALSE;
-   else if (real_people->cmd.cmd_assume.assumption == cr_2fl_only)
+   case cr_2fl_only:
       return TRUE;
-   else {
+   default:
       int this_person = real_people->people[real_index].id1;
       int other_person = real_people->people[real_index ^ 1].id1;
       if (real_people->kind == s1x6 && real_index >= 2)

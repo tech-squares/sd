@@ -21,8 +21,8 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "32.9"
-#define TIME_STAMP "wba@an.hp.com  16 Oct 99 $"
+#define VERSION_STRING "32.93"
+#define TIME_STAMP "wba@an.hp.com  5 Dec 99 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -46,6 +46,7 @@ and the following external variables:
    number_of_taggers
    number_of_circcers
    outfile_string
+   wrote_a_sequence
    header_comment
    need_new_header_comment
    sequence_number
@@ -143,6 +144,7 @@ int max_base_calls;
 uint32 number_of_taggers[NUM_TAGGER_CLASSES];
 uint32 number_of_circcers;
 char outfile_string[MAX_FILENAME_LENGTH] = SEQUENCE_FILENAME;
+long_boolean wrote_a_sequence = FALSE;
 char header_comment[MAX_TEXT_LINE_LENGTH];
 long_boolean need_new_header_comment = FALSE;
 call_list_mode_t glob_call_list_mode;
@@ -1167,7 +1169,7 @@ Private long_boolean backup_one_item(void)
 
 /* return TRUE if sequence was written */
 
-Private long_boolean write_sequence_to_file(void)
+static long_boolean write_sequence_to_file(void)
 {
    int getout_ind;
    char date[MAX_TEXT_LINE_LENGTH];
@@ -1193,12 +1195,10 @@ Private long_boolean write_sequence_to_file(void)
    open_file();
    enable_file_writing = TRUE;
    doublespace_file();
-
    get_date(date);
    writestuff(date);
    writestuff("     ");
    write_header_stuff(FALSE, history[history_ptr].state.result_flags);
-
    newline();
 
    if (!sequence_is_resolved()) {
@@ -1270,6 +1270,7 @@ Private long_boolean write_sequence_to_file(void)
    writestuff("\".");
    newline();
 
+   wrote_a_sequence = TRUE;
    global_age++;
    return TRUE;
 }
@@ -1439,13 +1440,14 @@ extern int sdmain(int argc, char *argv[])
       seeding the random number generator. */
    general_initialize();
 
-   // Initialize various static tables.
-
-   initialize_sdlib();
-   initialize_getout_tables();
-
-   /* Read the command line arguments and process the initialization file.
-      This will return TRUE if we are to cease execution immediately. */
+   // Read the command line arguments and process the initialization file.
+   // This will return TRUE if we are to cease execution immediately.
+   // If not, it will have called "initialize_misc_lists" to do lots
+   // of initialization of the internal workings, at the appropriate time.
+   // That appropriate time is after the level has been determined
+   // (so the "on-level concept lists" for the normalize command will
+   // be correct) but before the database is analyzed (the internal workings
+   // must be initialized before executing calls.)
 
    if (open_session(argc, argv)) goto normal_exit;
 
@@ -1513,8 +1515,6 @@ extern int sdmain(int argc, char *argv[])
    clear_screen();
 
    if (!diagnostic_mode) {
-      FILE *session;
-
       writestuff("SD -- square dance caller's helper.");
       newline();
       newline();
@@ -1526,6 +1526,8 @@ extern int sdmain(int argc, char *argv[])
       newline();
       writestuff("Copyright (c) 1995, Robert E. Cays");
       newline();
+      writestuff("Copyright (c) 1996, Charles Petzold");
+      newline();
       writestuff("SD comes with ABSOLUTELY NO WARRANTY;");
       newline();
       writestuff("   for details see the license.");
@@ -1535,9 +1537,9 @@ extern int sdmain(int argc, char *argv[])
       writestuff("   welcome to redistribute it.");
       newline();
       newline();
-      uims_display_ui_intro_text();   /* Sdtty shows additional stuff about typing question mark. */
+      uims_display_ui_intro_text();   // Sdtty shows additional stuff about typing question mark.
 
-      session = fopen(SESSION_FILENAME, "r");
+      FILE *session = fopen(SESSION_FILENAME, "r");
       if (session) {
          (void) fclose(session);
       }
@@ -1627,6 +1629,15 @@ extern int sdmain(int argc, char *argv[])
          singing_call_mode = 0;    /* Turn it off. */
       else
          singing_call_mode = 2;
+      goto new_sequence;
+   case start_select_select_print_font:
+      uims_choose_font(TRUE);
+      goto new_sequence;
+   case start_select_print_current:
+      uims_print_this(TRUE);
+      goto new_sequence;
+   case start_select_print_any:
+      uims_print_any(TRUE);
       goto new_sequence;
    case start_select_init_session_file:
       {
@@ -2188,6 +2199,15 @@ extern int sdmain(int argc, char *argv[])
          if (!write_sequence_to_file())
             goto start_cycle; /* user cancelled action */
          goto new_sequence;
+      case command_select_print_font:
+         uims_choose_font(FALSE);
+         goto start_cycle;
+      case command_print_current:
+         uims_print_this(FALSE);
+         goto start_cycle;
+      case command_print_any:
+         uims_print_any(FALSE);
+         goto start_cycle;
       default:     /* Should be some kind of search command. */
          /* If it wasn't, we have a serious problem. */
          if (((command_kind) uims_menu_index) < command_resolve) goto normal_exit;

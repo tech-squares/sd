@@ -73,7 +73,7 @@ extern void ttu_final_option_setup(int *use_escapes_for_drawing_people_p,
       for drawing pictures.  This only works on DJGPP. */
 
 #if defined(DJGPP)
-   if (no_graphics < 2)
+   if (ui_options.no_graphics < 2)
       *direc_p = "?\020?\021????\036?\037?????";
 #endif
 }

@@ -68,7 +68,11 @@ and the following external variables:
 /*  This is the line length beyond which we will take pity on
    whatever device has to print the result, and break the text line.
    It is presumably smaller than our internal text capacity. */
-# define MAX_PRINT_LENGTH 59
+
+// It is an observed fact that, with the default font (14 point Courier),
+// one can print 66 characters on 8.5 x 11 inch paper.
+
+#define MAX_PRINT_LENGTH 59
 
 /* These variables are external. */
 
@@ -194,6 +198,9 @@ command_list_menu_item command_menu[] = {
    {"toggle retain after error",      command_toggle_retain_after_error, -1},
    {"toggle nowarn mode",             command_toggle_nowarn_mode, -1},
    {"toggle singleclick mode",        command_toggle_singleclick_mode, -1},
+   {"choose font for printing",       command_select_print_font, ID_FILE_CHOOSE_FONT},
+   {"print current file",             command_print_current, ID_FILE_PRINTTHIS},
+   {"print any file",                 command_print_any, ID_FILE_PRINTFILE},
    {"undo last call",                 command_undo, ID_COMMAND_UNDO},
    {"discard entered concepts",       command_erase, ID_COMMAND_DISCARD_CONCEPT},
    {"abort this sequence",            command_abort, ID_COMMAND_ABORTTHISSEQUENCE},
@@ -261,26 +268,27 @@ resolve_list_menu_item resolve_menu[] = {
    {"write this sequence",    resolve_command_write_this},
    {(Cstring) 0}};
 
-/* BEWARE!!  This list is keyed to the definition of "start_select_kind" in sdui.h . */
-Cstring startup_commands[] = {
-   "exit from the program",
-   "heads 1p2p",
-   "sides 1p2p",
-   "heads start",
-   "sides start",
-   "just as they are",
-   "toggle concept levels",
-   "toggle active phantoms",
-   "toggle retain after error",
-   "toggle nowarn mode",
-   "toggle singleclick mode",
-   "toggle singing call",
-   "toggle reverse singing call",
-   "initialize session file",
-   "change output file",
-   "change title",
-   (Cstring) 0
-};
+startup_list_menu_item startup_menu[] = {
+   {"exit from the program",       start_select_exit, ID_FILE_EXIT},
+   {"heads start",                 start_select_heads_start, -1},
+   {"sides start",                 start_select_sides_start, -1},
+   {"heads 1p2p",                  start_select_h1p2p, -1},
+   {"sides 1p2p",                  start_select_s1p2p, -1},
+   {"just as they are",            start_select_as_they_are, -1},
+   {"toggle concept levels",       start_select_toggle_conc, ID_COMMAND_TOGGLE_CONC},
+   {"toggle active phantoms",      start_select_toggle_act, ID_COMMAND_TOGGLE_PHAN},
+   {"toggle retain after error",   start_select_toggle_retain, -1},
+   {"toggle nowarn mode",          start_select_toggle_nowarn_mode, -1},
+   {"toggle singleclick mode",     start_select_toggle_singleclick_mode, -1},
+   {"toggle singing call",         start_select_toggle_singer, -1},
+   {"toggle reverse singing call", start_select_toggle_singer_backward, -1},
+   {"choose font for printing",    start_select_select_print_font, ID_FILE_CHOOSE_FONT},
+   {"print current file",          start_select_print_current, ID_FILE_PRINTTHIS},
+   {"print any file",              start_select_print_any, ID_FILE_PRINTFILE},
+   {"initialize session file",     start_select_init_session_file, -1},
+   {"change output file",          start_select_change_outfile, ID_COMMAND_CH_OUTFILE},
+   {"change title",                start_select_change_header_comment, ID_COMMAND_CH_TITLE},
+   {(Cstring) 0}};
 
 
 
@@ -518,7 +526,7 @@ Private void do_write(Cstring s)
       else {
          /* We need to do the mundane translation of "5" and "6" if the result
             isn't going to be used by something that uses same. */
-         if (enable_file_writing || use_escapes_for_drawing_people <= 1 || no_graphics != 0) {
+         if (enable_file_writing || use_escapes_for_drawing_people <= 1 || ui_options.no_graphics != 0) {
             if (c == '6')
                writestuff("    ");    /* space equivalent to 1 full glyph. */
             else if (c == '9')

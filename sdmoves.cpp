@@ -18,6 +18,7 @@
    divide_for_magic
    do_simple_split
    do_call_in_series
+   drag_someone_and_move
    anchor_someone_and_move
    process_number_insertion
    gcd
@@ -398,6 +399,10 @@ extern long_boolean divide_for_magic(
          else if (ss->kind == s3x4) {
             if (livemask == 03333 || livemask == 04747 ||
                 livemask == 02753 || livemask == 05327) goto do_3x3;
+         }
+         else if (ss->kind == s2x6) {
+            if (livemask == 02727 || livemask == 07272 ||
+                livemask == 02277 || livemask == 07722) goto do_3x3;
          }
          else if (ss->kind == s_spindle) {
             if (livemask == 0xFF) {
@@ -782,11 +787,11 @@ extern void do_call_in_series(
                }
                else if (qqqq.cmd.cmd_misc_flags & (DFM1_CONC_FORCE_OTHERWAY)) {
                   if ((sss->cmd.prior_elongation_bits+1) & 2)
-                     current_elongation = sss->cmd.prior_elongation_bits ^3;
+                     current_elongation = (sss->cmd.prior_elongation_bits & 3) ^ 3;
                }
                else if (qqqq.cmd.cmd_misc_flags & (DFM1_CONC_FORCE_SPOTS)) {
                   if ((sss->cmd.prior_elongation_bits+1) & 2)
-                     current_elongation = sss->cmd.prior_elongation_bits;
+                     current_elongation = sss->cmd.prior_elongation_bits & 3;
                }
 
                qqqq.cmd.cmd_misc_flags &= ~(DFM1_CONC_FORCE_SPOTS|DFM1_CONC_FORCE_OTHERWAY|
@@ -931,6 +936,7 @@ typedef struct gloop {
    int rightidx;           /* X-increment of rightmost valid jaywalkee. */
    int deltarot;           /* How this person will turn. */
    int roll_stability_info;/* This person's roll & stability info, from call def'n. */
+   int orig_source_idx;
    struct gloop *nextse;   /* Points to next person south (dir even) or east (dir odd.) */
    struct gloop *nextnw;   /* Points to next person north (dir even) or west (dir odd.) */
    long_boolean tbstopse;  /* True if nextse/nextnw is zero because the next spot */
@@ -938,9 +944,8 @@ typedef struct gloop {
 } matrix_rec;
 
 
-
 Private int start_matrix_call(
-   setup *ss,
+   const setup *ss,
    matrix_rec matrix_info[],
    uint32 flags,
    setup *people)
@@ -1007,6 +1012,7 @@ Private int start_matrix_call(
          matrix_info[nump].nearest = 100000;
          matrix_info[nump].deltarot = 0;
          matrix_info[nump].roll_stability_info = (ROLLBITM / ROLL_BIT) * DBROLL_BIT;
+         matrix_info[nump].orig_source_idx = i;
          matrix_info[nump].tbstopse = FALSE;
          matrix_info[nump].tbstopnw = FALSE;
          nump++;
@@ -1085,6 +1091,7 @@ Private void finish_matrix_call(
       k = y | 4;
       ypar |= (k & (~(k-1)));
    }
+
 
    ypar |= (xmax << 20) | (xpar << 16) | (ymax << 4);
 
@@ -1313,6 +1320,10 @@ Private void finish_matrix_call(
       checkptr = setup_attrs[s_qtag].setup_coords;
       goto doitrot;
    }
+   else if ((ypar == 0x00660055) && ((signature & (~0x01000480)) == 0)) {
+      checkptr = setup_attrs[s_2x1dmd].setup_coords;
+      goto doit;
+   }
    else if ((ypar == 0x00D50026) && ((signature & (~0x20008202)) == 0)) {
       checkptr = setup_attrs[s1x3dmd].setup_coords;
       goto doit;
@@ -1468,6 +1479,10 @@ Private void finish_matrix_call(
    else if ((ypar == 0x002200A2) && ((signature & (~0x10108484)) == 0)) {
       checkptr = setup_attrs[s2x6].setup_coords;
       goto doitrot;
+   }
+   else if ((ypar == 0x00C40022) && ((signature & (~0x26001B00)) == 0)) {
+      checkptr = setup_attrs[s2x7].setup_coords;
+      goto doit;
    }
    else if ((ypar == 0x00E20022) && ((signature & (~0x004C8036)) == 0)) {
       checkptr = setup_attrs[s2x8].setup_coords;
@@ -1646,6 +1661,7 @@ Private void matrixmove(
    matrix_rec matrix_info[9];
    int i, nump, alldelta;
    uint32 flags = callspec->stuff.matrix.flags;
+   const uint32 *callstuff = callspec->stuff.matrix.stuff;
 
    alldelta = 0;
 
@@ -1658,14 +1674,14 @@ Private void matrixmove(
          /* This is legal if girlbit or boybit is on (in which case we use the appropriate datum)
             or if the two data are identical so the sex doesn't matter. */
          if ((thisrec->girlbit | thisrec->boybit) == 0 &&
-             callspec->stuff.matrix.stuff[0] != callspec->stuff.matrix.stuff[1]) {
+             callstuff[0] != callstuff[1]) {
             if (flags & MTX_USE_VEER_DATA)
                fail("Can't determine lateral direction of this person.");
             else
                fail("Can't determine sex of this person.");
          }
 
-         datum = callspec->stuff.matrix.stuff[thisrec->girlbit];
+         datum = callstuff[thisrec->girlbit];
 
          thisrec->deltax = (((datum >> 4) & 0x1F) - 16) << 1;
          thisrec->deltay = (((datum >> 16) & 0x1F) - 16) << 1;
@@ -1713,16 +1729,13 @@ Private void matrixmove(
 
 
 
-Private void do_part_of_pair(matrix_rec *thisrec, int base, Const callspec_block *callspec)
+Private void do_part_of_pair(matrix_rec *thisrec, int base, Const uint32 *callstuff)
 {
-   uint32 datum;
-
    /* This is legal if girlbit or boybit is on (in which case we use the appropriate datum)
-      or if the two data are identical so the sex doesn't matter. */
-   if ((thisrec->girlbit | thisrec->boybit) == 0 &&
-       callspec->stuff.matrix.stuff[base] != callspec->stuff.matrix.stuff[base+1])
+         or if the two data are identical so the sex doesn't matter. */
+   if ((thisrec->girlbit | thisrec->boybit) == 0 && callstuff[base] != callstuff[base+1])
       fail("Can't determine sex of this person.");
-   datum = callspec->stuff.matrix.stuff[base+thisrec->girlbit];
+   uint32 datum = callstuff[base+thisrec->girlbit];
    if (datum == 0) failp(thisrec->id1, "can't do this call.");
    thisrec->deltax = (((datum >> 4) & 0x1F) - 16) << 1;
    thisrec->deltay = (((datum >> 16) & 0x1F) - 16) << 1;
@@ -1735,31 +1748,50 @@ Private void do_part_of_pair(matrix_rec *thisrec, int base, Const callspec_block
 Private void do_pair(
    matrix_rec *ppp,        /* Selected person */
    matrix_rec *qqq,        /* Unselected person */
-   Const callspec_block *callspec,
+   Const uint32 *callstuff,
+   uint32 flags,
    int flip,
    int filter)             /* 1 to do N/S facers, 0 for E/W facers. */
 {
-   uint32 flags;
+   if (callstuff) {     // Doing normal matrix call.
+      if ((!(flags & (MTX_IGNORE_NONSELECTEES | MTX_BOTH_SELECTED_OK))) && qqq->sel)
+         fail("Two adjacent selected people.");
 
-   flags = callspec->stuff.matrix.flags;
+      /* We know that either ppp is actually selected, or we are not using selectors. */
 
-   if ((!(flags & (MTX_IGNORE_NONSELECTEES | MTX_BOTH_SELECTED_OK))) && qqq->sel)
-      fail("Two adjacent selected people.");
+      if ((filter ^ ppp->dir) & 1) {
+         int base = (ppp->dir & 2) ? 6 : 4;
+         if (!(flags & MTX_USE_SELECTOR)) base &= 3;
+         do_part_of_pair(ppp, base^flip, callstuff);
+      }
 
-   /* We know that either ppp is actually selected, or we are not using selectors. */
-
-   if ((filter ^ ppp->dir) & 1) {
-      int base = (ppp->dir & 2) ? 6 : 4;
-      if (!(flags & MTX_USE_SELECTOR)) base &= 3;
-      do_part_of_pair(ppp, base^flip, callspec);
+      if ((filter ^ qqq->dir) & 1) {
+         int base = (qqq->dir & 2) ? 0 : 2;
+         if ((flags & MTX_IGNORE_NONSELECTEES) || qqq->sel) base |= 4;
+         do_part_of_pair(qqq, base^flip, callstuff);
+      }
    }
+   else {    // Doing "drag" concept.
+      // ppp and qqq are a pair, independent of selection.
+      // They may contain a dragger and a draggee.
+      if (ppp->sel) {
+         if (qqq->sel) fail("Two adjacent people being dragged.");
+         ppp->realdone = TRUE;
+         ppp->deltax = qqq->x;
+         ppp->deltay = qqq->y;
+         ppp->deltarot = qqq->orig_source_idx;
+         ppp->nearest = qqq->dir;
+      }
+      else if (qqq->sel) {
+         qqq->realdone = TRUE;
+         qqq->deltax = ppp->x;
+         qqq->deltay = ppp->y;
+         qqq->deltarot = ppp->orig_source_idx;
+         qqq->nearest = ppp->dir;
+      }
+   }
+
    ppp->done = TRUE;
-
-   if ((filter ^ qqq->dir) & 1) {
-      int base = (qqq->dir & 2) ? 0 : 2;
-      if ((flags & MTX_IGNORE_NONSELECTEES) || qqq->sel) base |= 4;
-      do_part_of_pair(qqq, base^flip, callspec);
-   }
    qqq->done = TRUE;
 }
 
@@ -1871,10 +1903,11 @@ Private void make_matrix_chains(
    }
 }
 
+
 Private void process_matrix_chains(
    matrix_rec matrix_info[],
    int nump,
-   Const callspec_block *callspec,
+   const uint32 *callstuff,
    uint32 flags,
    int filter)                        /* 1 for E/W chains, 0 for N/S chains. */
 {
@@ -1961,7 +1994,7 @@ Private void process_matrix_chains(
                            int dely = mj->y - mi->y;
                            int deltarot;
 
-                           uint32 datum = callspec->stuff.matrix.stuff[mi->girlbit];
+                           uint32 datum = callstuff[mi->girlbit];
                            if (datum == 0) failp(mi->id1, "can't do this call.");
 
                            another_round = TRUE;
@@ -2031,7 +2064,7 @@ Private void process_matrix_chains(
                      if (mi->nextse->nextse) mi->nextse->nextse->nextnw = 0;
                      mi->nextse->nextse = 0;
                      another_round = TRUE;
-                     do_pair(mi, mi->nextse, callspec, 0, filter);
+                     do_pair(mi, mi->nextse, callstuff, flags, 0, filter);
                   }
                }
             }
@@ -2046,7 +2079,7 @@ Private void process_matrix_chains(
                   if (mi->nextnw->nextnw) mi->nextnw->nextnw->nextse = 0;
                   mi->nextnw->nextnw = 0;
                   another_round = TRUE;
-                  do_pair(mi, mi->nextnw, callspec, 2, filter);
+                  do_pair(mi, mi->nextnw, callstuff, flags, 2, filter);
                }
             }
             else {
@@ -2084,15 +2117,14 @@ Private void partner_matrixmove(
    Const callspec_block *callspec,
    setup *result)
 {
-   uint32 flags;
+   uint32 flags = callspec->stuff.matrix.flags;
+   const uint32 *callstuff = callspec->stuff.matrix.stuff;
    setup people;
    matrix_rec matrix_info[9];
    int i, nump;
 
    if (ss->cmd.cmd_misc_flags & CMD_MISC__MUST_SPLIT_MASK)
       fail("Can't split the setup.");
-
-   flags = callspec->stuff.matrix.flags;
 
    /* We allow stuff like "tandem jay walk". */
 
@@ -2106,7 +2138,7 @@ Private void partner_matrixmove(
    make_matrix_chains(matrix_info, nump, FALSE, flags, 1);
    if (flags & MTX_FIND_SQUEEZERS)
       make_matrix_chains(matrix_info, nump, TRUE, flags, 1);
-   process_matrix_chains(matrix_info, nump, callspec, flags, 1);
+   process_matrix_chains(matrix_info, nump, callstuff, flags, 1);
 
    /* If jaywalking, don't do it again. */
 
@@ -2126,7 +2158,7 @@ Private void partner_matrixmove(
       make_matrix_chains(matrix_info, nump, FALSE, flags, 0);
       if (flags & MTX_FIND_SQUEEZERS)
          make_matrix_chains(matrix_info, nump, TRUE, flags, 0);
-      process_matrix_chains(matrix_info, nump, callspec, flags, 0);
+      process_matrix_chains(matrix_info, nump, callstuff, flags, 0);
    }
 
    /* Scan for people who ought to have done something but didn't. */
@@ -2142,6 +2174,133 @@ Private void partner_matrixmove(
    reinstate_rotation(ss, result);
    result->result_flags = 0;
 }
+
+
+
+extern void drag_someone_and_move(setup *ss, parse_block *parseptr, setup *result)
+{
+   setup people, second_people;
+   matrix_rec matrix_info[9];
+   matrix_rec second_matrix_info[9];
+   int i;
+   long_boolean fudged_start = FALSE;
+   uint32 flags = MTX_STOP_AND_WARN_ON_TBONE | MTX_IGNORE_NONSELECTEES;
+   selector_kind saved_selector = current_options.who;
+   current_options.who = parseptr->options.who;
+
+   setup scopy = *ss;      // Will save rotation of this to the very end.
+   scopy.rotation = 0;
+
+   if (scopy.kind == s_qtag) {
+      expand_setup(&exp_qtg_3x4_stuff, &scopy);
+      fudged_start = TRUE;
+   }
+
+   int nump = start_matrix_call(&scopy, matrix_info,
+                                MTX_USE_SELECTOR | MTX_STOP_AND_WARN_ON_TBONE, &people);
+   current_options.who = saved_selector;
+
+   /* Make the lateral chains first. */
+
+   make_matrix_chains(matrix_info, nump, FALSE, MTX_STOP_AND_WARN_ON_TBONE, 1);
+   process_matrix_chains(matrix_info, nump, (uint32 *) 0, flags, 1);
+
+   /* Now clean off the pointers in preparation for the second pass. */
+
+   for (i=0; i<nump; i++) {
+      matrix_info[i].done = FALSE;
+      matrix_info[i].nextse = 0;
+      matrix_info[i].nextnw = 0;
+      matrix_info[i].tbstopse = FALSE;
+      matrix_info[i].tbstopnw = FALSE;
+   }
+
+   /* Vertical chains next. */
+
+   make_matrix_chains(matrix_info, nump, FALSE, MTX_STOP_AND_WARN_ON_TBONE, 0);
+   process_matrix_chains(matrix_info, nump, (uint32 *) 0, flags, 0);
+
+   /* Scan for people who ought to have done something but didn't. */
+
+   for (i=0; i<nump; i++) {
+      if (matrix_info[i].sel)
+         clear_person(&scopy, matrix_info[i].orig_source_idx);
+   }
+
+   setup refudged = scopy;
+   if (fudged_start)
+      compress_setup(&exp_qtg_3x4_stuff, &refudged);
+
+   move(&refudged, FALSE, result);
+
+   // Expand again if it's another qtag.
+   if (result->kind == s_qtag)
+      expand_setup(&exp_qtg_3x4_stuff, result);
+
+   // Now figure out where the people who moved really are.
+
+   int second_nump = start_matrix_call(result, second_matrix_info,
+                                       MTX_STOP_AND_WARN_ON_TBONE, &second_people);
+
+   int final_2nd_nump = second_nump;
+
+   // And scan the dragged people (who aren't in the result setup)
+   // to find out how to glue them to the real result people.
+
+   for (i=0; i<nump; i++) {
+      if (matrix_info[i].sel) {
+         // Get the actual dragger person id1 word.
+         uint32 dragger_id = scopy.people[matrix_info[i].deltarot].id1;
+
+         // Find the XY coords of the person's dragger.
+
+         int kk;
+         for (kk=0; kk<second_nump; kk++) {
+            if (((second_matrix_info[kk].id1 ^ dragger_id) & (PID_MASK|BIT_PERSON)) == 0)
+               goto found_dragger;
+         }
+         fail("Internal error: failed to find dragger coords.");
+      found_dragger:
+         // Original offset of draggee relative to dragger.
+         int origdx = matrix_info[i].x - matrix_info[i].deltax;
+         int origdy = matrix_info[i].y - matrix_info[i].deltay;
+         // Find out how much the dragger turned while doing the call.
+         // The "before" space is scopy and the "after" space is result,
+         // so this doesn't necessarily relate to actual turning.
+         int dragger_turn = (second_matrix_info[kk].dir - matrix_info[i].nearest) & 3;
+         if (dragger_turn & 2) {
+            origdx = -origdx;
+            origdy = -origdy;
+         }
+         if (dragger_turn & 1) {
+            int temp = origdx;
+            origdx = origdy;
+            origdy = -temp;
+         }
+         // Now origdx/dy has offset of draggee from dragger in new space.
+         // This is new info for draggee.
+         second_people.people[final_2nd_nump].id1 =
+            rotperson(people.people[i].id1, dragger_turn*011);
+         second_matrix_info[final_2nd_nump] = matrix_info[i];
+         second_matrix_info[final_2nd_nump].x = second_matrix_info[kk].x + origdx;
+         second_matrix_info[final_2nd_nump++].y = second_matrix_info[kk].y + origdy;
+      }
+   }
+
+   for (i=0; i<final_2nd_nump; i++) {
+      second_matrix_info[i].deltax = 0;
+      second_matrix_info[i].deltay = 0;
+      second_matrix_info[i].deltarot = 0;
+   }
+
+   clear_people(result);
+
+   ss->rotation += result->rotation;    // finish_matrix_call will clear result->rotation.
+   finish_matrix_call(second_matrix_info, final_2nd_nump, TRUE, &second_people, result);
+   reinstate_rotation(ss, result);
+   result->result_flags = 0;
+}
+
 
 
 extern void anchor_someone_and_move(
@@ -3273,7 +3432,7 @@ Private void do_sequential_call(
       We keep track of pseudo-elongation during the call even when it wasn't,
       but sometimes we really need to know. */
    long_boolean setup_is_elongated =
-      (ss->kind == s2x2 || ss->kind == s_short6) && ss->cmd.prior_elongation_bits != 0;
+      (ss->kind == s2x2 || ss->kind == s_short6) && (ss->cmd.prior_elongation_bits & 0x3F) != 0;
    int remembered_2x2_elongation = 0;
    int subpart_count = 0;
 
@@ -3379,6 +3538,7 @@ Private void do_sequential_call(
 
    if (     !(ss->cmd.cmd_misc_flags & (CMD_MISC__NO_STEP_TO_WAVE | CMD_MISC__ALREADY_STEPPED)) &&
             (start_point == 0) &&
+            !zzz.do_last_half_of_first_part &&
             !zzz.reverse_order &&
             (callflags1 & CFLAG1_STEP_REAR_MASK)) {
 
@@ -3675,7 +3835,7 @@ Private void do_sequential_call(
 
       oldk = result->kind;
 
-      if (oldk == s2x2 && result->cmd.prior_elongation_bits != 0)
+      if (oldk == s2x2 && (result->cmd.prior_elongation_bits & 3) != 0)
          remembered_2x2_elongation = result->cmd.prior_elongation_bits & 3;
 
       /* We need to manipulate some assumptions -- there are a few cases in
@@ -3915,7 +4075,15 @@ done_with_big_cycle:
       }
    }
 
-   /* Pick up the concentricity command stuff from the last thing we did, but take out the effect of "splitseq". */
+   // If the setup expanded from an 8-person setup to a "bigdmd", and we can
+   // compress it back, do so.  This takes care of certain type of "triple diamonds
+   // working together exchange the diamonds 1/2" situations.
+
+   if (result->kind == sbigdmd && setup_attrs[ss->kind].setup_limits == 7)
+      normalize_setup(result, normalize_compress_bigdmd);
+
+   // Pick up the concentricity command stuff from the last thing we did,
+   // but take out the effect of "splitseq".
 
    ss->cmd.cmd_misc_flags |= result->cmd.cmd_misc_flags;
    ss->cmd.cmd_misc_flags &= ~CMD_MISC__MUST_SPLIT_MASK;
@@ -4046,6 +4214,8 @@ Private calldef_schema fixup_conc_schema(Const callspec_block *callspec, setup *
          return schema_conc_12;
       else if (herit_concepts & INHERITFLAG_16_MATRIX)
          return schema_conc_16;
+      else if (herit_concepts & INHERITFLAG_GRAND)
+         return schema_concentric_others;
       else
          return schema_single_concentric_together;
    case schema_maybe_matrix_conc:

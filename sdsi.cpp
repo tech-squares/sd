@@ -67,12 +67,7 @@ and the following external variables:
    number_of_resolve_commands
    resolve_command_strings
    concept_key_table
-   no_graphics
-   no_intensify
-   reverse_video
-   pastel_color
-   no_color
-   no_sound
+   ui_options
    random_number
    hashed_randoms
    database_filename
@@ -213,9 +208,12 @@ extern char *strerror(int);
    to it at that line. */
 
 int session_index = 0;        /* If this is nonzero, we have opened a session. */
-int num_command_commands;   /* Size of the command menu. */
+int num_command_commands;     // Size of the command menu.
 Cstring *command_commands;
 command_kind *command_command_values;
+int num_startup_commands;     // Size of the startup menu.
+Cstring *startup_commands;
+start_select_kind *startup_command_values;
 int number_of_resolve_commands;
 Cstring *resolve_command_strings;
 resolve_command_kind *resolve_command_values;
@@ -286,15 +284,9 @@ Cstring concept_key_table[] = {
    "*se8   lower reconcile point",  /* shift down arrow */
    (char *) 0};
 
-int no_graphics = 0;     /* 1 = "no_checkers"; 2 = "no_graphics" */
-int no_intensify = 0;
-int reverse_video = 0;   /* 0 = black-on-white (default); 1 = white-on-black */
-int pastel_color = 0;    /* 1 = use pastel red/grn for color by gender;
-                            0 = bold colors.  Color by couple or color by corner
-                            are always done with bold colors. */
-int no_color = 0;        /* 0 = default (by gender); 1 = none at all;
-                            2 = by_couple; 3 = by_corner */
-int no_sound = 0;
+
+ui_option_type ui_options;
+
 int random_number;
 int hashed_randoms;
 char *database_filename = DATABASE_FILENAME;
@@ -541,9 +533,6 @@ extern void open_file(void)
          return;
       }
 
-
-
-
       goto really_just_append;
    }
 
@@ -709,18 +698,17 @@ extern void open_file(void)
       newline();
    }
    else {
-      char formfeed = '\f';
-
       if (last_file_position == -1) {
          writestuff("Appending to existing file.");
          newline();
          newline();
       }
 
-      if ((fwrite(&formfeed, 1, 1, fildes) != 1) || ferror(fildes)) {
+      if ((fwrite("\f", 1, 1, fildes) != 1) || ferror(fildes)) {
          (void) strncpy(fail_errstring, get_errstring(), MAX_ERR_LENGTH);
-         (void) strncpy(fail_message, "write", MAX_ERR_LENGTH);
-         file_error = TRUE;
+         (void) strncpy(fail_message, "write formfeed", MAX_ERR_LENGTH);
+         file_error = TRUE;      /* Indicate that sequence will not get written. */
+         return;
       }
    }
 }
@@ -738,14 +726,16 @@ extern void write_file(char line[])
 #define NLSIZE 1
 #endif
 
-   if (file_error) return;    /* Don't keep trying after a failure. */
+   if (file_error) return;    // Don't keep trying after a failure.
 
    size = strlen(line);
-   if ((fwrite(line, 1, size, fildes) != size) || ferror(fildes)) {
-      (void) strncpy(fail_errstring, get_errstring(), MAX_ERR_LENGTH);
-      (void) strncpy(fail_message, "write", MAX_ERR_LENGTH);
-      file_error = TRUE;      /* Indicate that sequence will not get written. */
-      return;
+   if (size != 0) {
+      if ((fwrite(line, 1, size, fildes) != size) || ferror(fildes)) {
+         (void) strncpy(fail_errstring, get_errstring(), MAX_ERR_LENGTH);
+         (void) strncpy(fail_message, "write", MAX_ERR_LENGTH);
+         file_error = TRUE;      /* Indicate that sequence will not get written. */
+         return;
+      }
    }
 
    if ((fwrite(nl, 1, NLSIZE, fildes) != NLSIZE) || ferror(fildes)) {
@@ -1087,6 +1077,21 @@ extern void prepare_to_read_menus(void)
          command_command_values[i] = command_menu[i].action;
       }
 
+      /* Find out how big the startup menu needs to be. */
+
+      for (num_startup_commands = 0 ;
+           startup_menu[num_startup_commands].startup_name ;
+           num_startup_commands++) ;
+
+      startup_commands = (Cstring *) get_mem(sizeof(Cstring) * num_startup_commands);
+      startup_command_values =
+         (start_select_kind *) get_mem(sizeof(start_select_kind) * num_startup_commands);
+
+      for (i = 0 ; i < num_startup_commands; i++) {
+         startup_commands[i] = startup_menu[i].startup_name;
+         startup_command_values[i] = startup_menu[i].action;
+      }
+
       /* Find out how big the resolve menu needs to be. */
 
       for (number_of_resolve_commands = 0 ;
@@ -1109,6 +1114,8 @@ extern void initialize_misc_lists(void)
 {
    int i;
    uint32 ui;
+
+   initialize_sdlib();
 
    /* Create the tagger menu lists */
 
@@ -1138,6 +1145,8 @@ extern void initialize_misc_lists(void)
       circcer_menu_list[ui] = circcer_calls[ui]->menu_name;
 
    circcer_menu_list[number_of_circcers] = (Cstring) 0;
+
+   initialize_getout_tables();
 }
 
 
@@ -1238,30 +1247,36 @@ extern long_boolean open_session(int argc, char **argv)
             glob_call_list_mode = call_list_mode_abridging;
             if (argno+1 < nargs) call_list_string = args[argno+1];
          }
+         else if (strcmp(&args[argno][1], "sequence") == 0) {
+	     if (argno+1 < nargs) new_outfile_string = args[argno+1];
+         }
+         else if (strcmp(&args[argno][1], "db") == 0) {
+            if (argno+1 < nargs) database_filename = args[argno+1];
+         }
          else if (strcmp(&args[argno][1], "no_intensify") == 0)
-            { no_intensify = 1; continue; }
+            { ui_options.no_intensify = 1; continue; }
          else if (strcmp(&args[argno][1], "reverse_video") == 0)
-            { reverse_video = 1; continue; }
+            { ui_options.reverse_video = 1; continue; }
          else if (strcmp(&args[argno][1], "normal_video") == 0)
-            { reverse_video = 0; continue; }
+            { ui_options.reverse_video = 0; continue; }
          else if (strcmp(&args[argno][1], "pastel_color") == 0)
-            { pastel_color = 1; continue; }
+            { ui_options.pastel_color = 1; continue; }
          else if (strcmp(&args[argno][1], "bold_color") == 0)
-            { pastel_color = 0; continue; }
+            { ui_options.pastel_color = 0; continue; }
          else if (strcmp(&args[argno][1], "no_color") == 0)
-            { no_color = 1; continue; }
+            { ui_options.no_color = 1; continue; }
          else if (strcmp(&args[argno][1], "color_by_couple") == 0)
-            { no_color = 2; continue; }
+            { ui_options.no_color = 2; continue; }
          else if (strcmp(&args[argno][1], "color_by_corner") == 0)
-            { no_color = 3; continue; }
+            { ui_options.no_color = 3; continue; }
          else if (strcmp(&args[argno][1], "no_sound") == 0)
-            { no_sound = 1; continue; }
+            { ui_options.no_sound = 1; continue; }
          else if (strcmp(&args[argno][1], "single_click") == 0)
             { accept_single_click = TRUE; continue; }
          else if (strcmp(&args[argno][1], "no_checkers") == 0)
-            { no_graphics = 1; continue; }
+            { ui_options.no_graphics = 1; continue; }
          else if (strcmp(&args[argno][1], "no_graphics") == 0)
-            { no_graphics = 2; continue; }
+            { ui_options.no_graphics = 2; continue; }
          else if (strcmp(&args[argno][1], "diagnostic") == 0)
             { diagnostic_mode = TRUE; continue; }
          else if (strcmp(&args[argno][1], "singlespace") == 0)
@@ -1276,12 +1291,6 @@ extern long_boolean open_session(int argc, char **argv)
             { retain_after_error = FALSE; continue; }
          else if (strcmp(&args[argno][1], "retain_after_error") == 0)
             { retain_after_error = TRUE; continue; }
-         else if (strcmp(&args[argno][1], "sequence") == 0) {
-	     if (argno+1 < nargs) new_outfile_string = args[argno+1];
-         }
-         else if (strcmp(&args[argno][1], "db") == 0) {
-            if (argno+1 < nargs) database_filename = args[argno+1];
-         }
          else
             uims_bad_argument("Unknown flag:", args[argno], (char *) 0);
 

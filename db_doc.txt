@@ -107,6 +107,15 @@ shown with a map giving the person numbering:
             |_____|_____|_____|_____|_____|_____|
 
 
+             _____ _____ _____ _____ _____ _____ _____
+            |     |     |     |     |     |     |     |
+            |  0  |  1  |  2  |  3  |  4  |  5  |  6  |
+2x7         |_____|_____|_____|_____|_____|_____|_____|
+            |     |     |     |     |     |     |     |
+            | 13  | 12  | 11  | 10  |  9  |  8  |  7  |
+            |_____|_____|_____|_____|_____|_____|_____|
+
+
              _____ _____ _____ _____ _____ _____ _____ _____
             |     |     |     |     |     |     |     |     |
             |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |
@@ -114,6 +123,24 @@ shown with a map giving the person numbering:
             |     |     |     |     |     |     |     |     |
             | 15  | 14  | 13  | 12  | 11  | 10  |  9  |  8  |
             |_____|_____|_____|_____|_____|_____|_____|_____|
+
+
+             _____ _____ _____ _____ _____ _____ _____ _____ _____ _____
+            |     |     |     |     |     |     |     |     |     |     |
+            |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |
+2x10        |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+            |     |     |     |     |     |     |     |     |     |     |
+            | 19  | 18  | 17  | 16  | 15  | 14  | 13  | 12  | 11  | 10  |
+            |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+
+
+             _____ _____ _____ _____ _____ _____ _____ _____ _____ _____ _____ _____
+            |     |     |     |     |     |     |     |     |     |     |     |     |
+            |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  | 10  | 11  |
+2x12        |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+            |     |     |     |     |     |     |     |     |     |     |     |     |
+            | 23  | 22  | 21  | 20  | 19  | 18  | 17  | 16  | 15  | 14  | 13  | 12  |
+            |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
 
 
              _____ _____ _____ _____ _____ _____
@@ -2559,6 +2586,7 @@ There are a number of internal ones not shown here.  See the file ~/sd/restricti
                                     2x2 - real RH or LH box
                                     3x2/4x2/5x2/6x2/8x2 - columns
                                     qtag/pqtag - wave in center
+                                    2x1dmd/3x1dmd - wave (of 6) in center
                                     ptpd/pptpd - miniwaves in centers of each diamond
                                     pshort6 (note that this means the short6 is
                                        laterally oriented) - centers tandem in wave
@@ -2664,6 +2692,7 @@ There are a number of internal ones not shown here.  See the file ~/sd/restricti
 
                                           3x2/4x2/5x2/6x2/8x2 - R/L columns;
                                           qtag/pqtag - right wave in center
+                                          2x1dmd/3x1dmd - right wave (of 6) in center
                                           ptpd/pptpd - right miniwaves in centers of each diamond
                                           dmd, trngl - people are paired in right miniwaves.
                                              For diamonds, this applies just to the centers.
@@ -2793,19 +2822,24 @@ There are a number of internal ones not shown here.  See the file ~/sd/restricti
                                        and the inner pairs are couples.
    split_dixie,                     2x2 - invoked with "split" for dixie style
    not_split_dixie,                 2x2 - invoked without "split" for dixie style
+   NEXT TWO ARE DISCONTINUED!!!!!   Use "in_or_out" with "in" or "out" modifier
    8_chain,                         4x2/4x1/2x1 - [single] 8 chain
    trade_by,                        4x2/4x1/2x1 - [single] trade by
+   LAST TWO ARE DISCONTINUED!!!!!   Use "in_or_out" with "in" or "out" modifier
    qtag_mwv,                        qtag only -- EVERYONE is in a miniwave of consistent
                                     handedness.
    qtag_mag_mwv,                    qtag only -- EVERYONE is in a miniwave, but the centers
                                     have opposite handedness to the ends.  "Right/left"
                                     applies to the ends.
-   dmd_ctrs_mwv,                    dmd, trngl, qtag, ptpd, short6, bone6, spindle, 1x4, 2x3 -
+   dmd_ctrs_mwv,                    dmd, trngl, qtag, ptpd, short6, bone6, spindle, 1x4,
+                                    2x3, 2x4 -
                                     the centers or base (2, 4, or 6 of them) are consistently
                                     in consistent-handed miniwaves; other people not checked
                                     at all.
                                     For bone6, it checks triangle base, i.e. outsides.
-                                    For 2x3, it checks center 2.
+                                    For 2x3, it checks center 2, who are of course in
+                                    column-like orientation.
+                                    For 2x4, the center 4 must be in line-like orientation.
                                     Use this with "right/left" keyword.
 
                   ** We don't list trngl4 in the above two, because it doesn't obey the all-larger-setups rule, that is,

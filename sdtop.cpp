@@ -952,6 +952,7 @@ static restr_initializer restr_init_table0[] = {
    {s_crosswave, cr_1fl_only, 8, {0, 3, 1, 2, 6, 5, 7, 4},                        {0}, {0}, {0}, FALSE, chk_wave},
    {s_crosswave, cr_magic_only, 8, {0, 1, 3, 2, 5, 4, 6, 7},  /* NOTE THE 4 --> */{4}, {0}, {0}, TRUE,  chk_wave},
    {s3x1dmd, cr_wave_only, 6, {0, 1, 2, 6, 5, 4},                                 {0}, {0}, {0}, TRUE,  chk_wave},
+   {s_2x1dmd, cr_wave_only, 4, {0, 1, 4, 3},                                      {0}, {0}, {0}, TRUE,  chk_wave},
    {s_qtag, cr_real_1_4_tag, 4, {6, 7, 3, 2},                         {4, 4, 0, 5, 1}, {0}, {0}, TRUE,  chk_qtag},
    {s_qtag, cr_real_3_4_tag, 4, {6, 7, 3, 2},                         {4, 0, 4, 1, 5}, {0}, {0}, TRUE,  chk_qtag},
    {s_qtag, cr_real_1_4_line, 4, {6, 3, 7, 2},                        {4, 4, 0, 5, 1}, {0}, {0}, TRUE,  chk_qtag},
@@ -1387,6 +1388,26 @@ static restr_initializer *get_restriction_thing(setup_kind k, assumption_thing t
 }
 
 
+static long_boolean check_for_supercall(const parse_block *parseptrcopy)
+{
+   concept_kind kk = parseptrcopy->concept->kind;
+
+   if (kk <= marker_end_of_list) {
+      if (kk == concept_another_call_next_mod &&
+          parseptrcopy->next &&
+          (parseptrcopy->next->call == base_calls[base_call_null] ||
+           parseptrcopy->next->call == base_calls[base_call_null_second]) &&
+          !parseptrcopy->next->next &&
+          parseptrcopy->next->subsidiary_root) {
+         return TRUE;
+      }
+      else
+         fail("A concept is required.");
+   }
+
+   return FALSE;
+}
+
 
 extern long_boolean check_for_concept_group(
    Const parse_block *parseptrcopy,
@@ -1400,7 +1421,7 @@ extern long_boolean check_for_concept_group(
    parse_block *parseptr_skip;
    parse_block *next_parseptr;
 
-   Const parse_block *first_arg = parseptrcopy;
+   const parse_block *first_arg = parseptrcopy;
 
    *need_to_restrain_p = 0;
 
@@ -1411,18 +1432,8 @@ extern long_boolean check_for_concept_group(
    if (parseptrcopy->concept) {
       k = parseptrcopy->concept->kind;
 
-      if (k <= marker_end_of_list) {
-         /* Look for "supercalls". */
-         if (k == concept_another_call_next_mod &&
-             parseptrcopy->next &&
-             parseptrcopy->next->call == base_calls[base_call_null] &&
-             !parseptrcopy->next->next &&
-             parseptrcopy->next->subsidiary_root) {
-            k = concept_supercall;
-         }
-         else
-            fail("A concept is required.");
-      }
+      if (check_for_supercall(parseptrcopy))
+         k = concept_supercall;
    }
    else
       k = marker_end_of_list;
@@ -2747,6 +2758,7 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec)
       case s1x6: case s1x8: case s1x10:
       case s1x12: case s1x14: case s1x16:
       case s2x2: case s4x4: case s_thar: case s_crosswave: case s_qtag:
+      case s3x1dmd: case s_2x1dmd:
       case s_trngl: case s_bone:
          /* FELL THROUGH!!! */
          goto check_tt;
@@ -2854,14 +2866,14 @@ extern void clear_person(setup *resultpeople, int resultplace)
 }
 
 
-extern uint32 copy_person(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace)
+extern uint32 copy_person(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace)
 {
    resultpeople->people[resultplace] = sourcepeople->people[sourceplace];
    return resultpeople->people[resultplace].id1;
 }
 
 
-extern uint32 copy_rot(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace, int rotamount)
+extern uint32 copy_rot(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace, int rotamount)
 {
    uint32 newperson = sourcepeople->people[sourceplace].id1;
 
@@ -2879,7 +2891,7 @@ extern void swap_people(setup *ss, int oneplace, int otherplace)
 }
 
 
-extern void install_person(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace)
+extern void install_person(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace)
 {
    uint32 newperson = sourcepeople->people[sourceplace].id1;
 
@@ -2895,7 +2907,7 @@ extern void install_person(setup *resultpeople, int resultplace, setup *sourcepe
 }
 
 
-extern void install_rot(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace, int rotamount)
+extern void install_rot(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace, int rotamount)
 {
    uint32 newperson = sourcepeople->people[sourceplace].id1;
 
@@ -2917,7 +2929,8 @@ extern void install_rot(setup *resultpeople, int resultplace, setup *sourcepeopl
 }
 
 
-extern void scatter(setup *resultpeople, setup *sourcepeople, Const veryshort *resultplace, int countminus1, int rotamount)
+extern void scatter(setup *resultpeople, const setup *sourcepeople,
+                    const veryshort *resultplace, int countminus1, int rotamount)
 {
    int k, idx;
    for (k=0; k<=countminus1; k++) {
@@ -2933,7 +2946,8 @@ extern void scatter(setup *resultpeople, setup *sourcepeople, Const veryshort *r
 }
 
 
-extern void gather(setup *resultpeople, setup *sourcepeople, Const veryshort *resultplace, int countminus1, int rotamount)
+extern void gather(setup *resultpeople, const setup *sourcepeople,
+                   const veryshort *resultplace, int countminus1, int rotamount)
 {
    int k, idx;
    for (k=0; k<=countminus1; k++) {
@@ -3080,6 +3094,12 @@ extern parse_block *process_final_concepts(
          break;
       case concept_cross:
          heritsetbit = INHERITFLAG_CROSS; break;
+      case concept_reverse:
+         heritsetbit = INHERITFLAG_REVERSE; break;
+      case concept_fast:
+         heritsetbit = INHERITFLAG_FAST; break;
+      case concept_left:
+         heritsetbit = INHERITFLAG_LEFT; break;
       case concept_yoyo:
          heritsetbit = INHERITFLAG_YOYO; break;
       case concept_fractal:
@@ -3119,10 +3139,6 @@ extern parse_block *process_final_concepts(
       case concept_split:
          the_final_bit = FINAL__SPLIT;
          goto new_final;
-      case concept_reverse:
-         heritsetbit = INHERITFLAG_REVERSE; break;
-      case concept_left:
-         heritsetbit = INHERITFLAG_LEFT; break;
       case concept_12_matrix:
          if (check_errors && (final_concepts->her8it | final_concepts->final))
             fail("Matrix modifier must appear first.");
@@ -3222,26 +3238,16 @@ extern parse_block *really_skip_one_concept(
    else if (parseptrcopy->concept) {
       concept_kind kk = parseptrcopy->concept->kind;
 
-      if (kk <= marker_end_of_list) {
-         /* Look for "supercalls". */
-         if (kk == concept_another_call_next_mod &&
-             parseptrcopy->next &&
-             (parseptrcopy->next->call == base_calls[base_call_null] ||
-              parseptrcopy->next->call == base_calls[base_call_null_second]) &&
-             !parseptrcopy->next->next &&
-             parseptrcopy->next->subsidiary_root) {
-            *parseptr_skip_p = parseptrcopy->next->subsidiary_root;
-            *k_p = concept_supercall;
+      if (check_for_supercall(parseptrcopy)) {
+         *parseptr_skip_p = parseptrcopy->next->subsidiary_root;
+         *k_p = concept_supercall;
 
-            /* We don't restrain for echo with supercalls, because echo doesn't pull parts
-               apart, and supercalls don't work with multiple-part calls as the target
-               for which they are restraining the concept. */
+         /* We don't restrain for echo with supercalls, because echo doesn't pull parts
+            apart, and supercalls don't work with multiple-part calls as the target
+            for which they are restraining the concept. */
 
-            *need_to_restrain_p = 1;
-            return parseptrcopy;
-         }
-         else
-            fail("A concept is required.");
+         *need_to_restrain_p = 1;
+         return parseptrcopy;
       }
 
       if (concept_table[kk].concept_action == 0)
@@ -3865,9 +3871,20 @@ extern void normalize_setup(setup *ss, normalize_action action)
       ss->kind = ss->inner.skind;
       ss->rotation += ss->inner.srotation;
       did_something = TRUE;
-      goto startover; 
+      goto startover;
    }
 
+   if (action == normalize_compress_bigdmd) {
+      if (ss->kind == sbigdmd) {
+         if ((livemask & 00003) == 00001) swap_people(ss, 0, 1);
+         if ((livemask & 00060) == 00040) swap_people(ss, 4, 5);
+         if ((livemask & 00300) == 00100) swap_people(ss, 6, 7);
+         if ((livemask & 06000) == 04000) swap_people(ss, 10, 11);
+         action = simple_normalize;
+         goto startover;
+      }
+      else return;   // Huh?
+   }
 
    // A few difficult cases.
 
@@ -3887,7 +3904,6 @@ extern void normalize_setup(setup *ss, normalize_action action)
          goto startover; 
       }
    }
-
 
    // Next, search for simple things in the hash table.
 

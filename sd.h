@@ -377,11 +377,13 @@ static Const uint32 CMD_MISC2_RESTRAINED_SUPER   = 0x20000000UL;
 typedef enum {
    simple_normalize,
    normalize_before_isolated_call,
+   normalize_before_isolate_strict,
    normalize_to_6,
    normalize_to_4,
    normalize_to_2,
    normalize_after_triple_squash,
-   normalize_before_merge
+   normalize_before_merge,
+   normalize_compress_bigdmd
 } normalize_action;
 
 typedef enum {
@@ -445,14 +447,15 @@ typedef enum {    /* These control error messages that arise when we divide a se
                      (the outer one) isn't occupied and will give the error message
                      "Don't use phantom concept if you don't mean it." */
 
-   phantest_ok,               /* Anything goes */
-   phantest_impossible,       /* Can't happen in symmetric stuff?? */
-   phantest_both,             /* Require both setups (partially) occupied */
-   phantest_only_one,         /* Require only one setup occupied, don't care which */
-   phantest_only_first_one,   /* Require only first setup occupied, second empty */
-   phantest_only_second_one,  /* Require only second setup occupied, first empty */
-   phantest_first_or_both,    /* Require first setup only, or a mixture */
-   phantest_ctr_phantom_line, /* Special, created when outside phantom setup is empty. */
+   phantest_ok,               // Anything goes
+   phantest_impossible,       // Can't happen in symmetric stuff??
+   phantest_both,             // Require both setups (partially) occupied
+   phantest_only_one,         // Require only one setup occupied, don't care which
+   phantest_only_first_one,   // Require only first setup occupied, second empty
+   phantest_only_second_one,  // Require only second setup occupied, first empty
+   phantest_only_one_pair,    // Require only first 2 (of 4) or only last 2
+   phantest_first_or_both,    // Require first setup only, or a mixture
+   phantest_ctr_phantom_line, // Special, created when outside phantom setup is empty.
    phantest_2x2_both,
    phantest_2x2_only_two,
    phantest_not_just_centers
@@ -677,6 +680,8 @@ extern map_thing map_4x4_ew;                                        /* in SDTABL
 extern map_thing map_vsplit_f;                                      /* in SDTABLES */
 extern map_thing map_stairst;                                       /* in SDTABLES */
 extern map_thing map_ladder;                                        /* in SDTABLES */
+extern map_thing map_crazy_offset1;                                 /* in SDTABLES */
+extern map_thing map_crazy_offset2;                                 /* in SDTABLES */
 extern map_thing map_but_o;                                         /* in SDTABLES */
 extern map_thing map_offset;                                        /* in SDTABLES */
 extern map_thing map_4x4v;                                          /* in SDTABLES */
@@ -735,6 +740,8 @@ extern map_thing map_f2x8_4x4;                                      /* in SDTABL
 extern map_thing map_w4x4_4x4;                                      /* in SDTABLES */
 extern map_thing map_f2x8_2x8;                                      /* in SDTABLES */
 extern map_thing map_w4x4_2x8;                                      /* in SDTABLES */
+extern map_thing map_emergency1;                                    /* in SDTABLES */
+extern map_thing map_emergency2;                                    /* in SDTABLES */
 extern map_thing *maps_3diag[4];                                    /* in SDTABLES */
 extern map_thing *maps_3diagwk[4];                                  /* in SDTABLES */
 extern mapcoder map_init_table[];                                   /* in SDTABLES */
@@ -811,6 +818,9 @@ extern void do_call_in_series(
    long_boolean roll_transparent,
    long_boolean normalize,
    long_boolean qtfudged);
+
+
+extern void drag_someone_and_move(setup *ss, parse_block *parseptr, setup *result);
 
 extern void anchor_someone_and_move(setup *ss, parse_block *parseptr, setup *result);
 
@@ -1042,13 +1052,15 @@ extern void clear_people(setup *z);
 extern uint32 rotcw(uint32 n);
 extern uint32 rotccw(uint32 n);
 extern void clear_person(setup *resultpeople, int resultplace);
-extern uint32 copy_person(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace);
-extern uint32 copy_rot(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace, int rotamount);
+extern uint32 copy_person(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace);
+extern uint32 copy_rot(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace, int rotamount);
 extern void swap_people(setup *ss, int oneplace, int otherplace);
-extern void install_person(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace);
-extern void install_rot(setup *resultpeople, int resultplace, setup *sourcepeople, int sourceplace, int rotamount);
-extern void scatter(setup *resultpeople, setup *sourcepeople, Const veryshort *resultplace, int countminus1, int rotamount);
-extern void gather(setup *resultpeople, setup *sourcepeople, Const veryshort *resultplace, int countminus1, int rotamount);
+extern void install_person(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace);
+extern void install_rot(setup *resultpeople, int resultplace, const setup *sourcepeople, int sourceplace, int rotamount);
+extern void scatter(setup *resultpeople, const setup *sourcepeople,
+                    const veryshort *resultplace, int countminus1, int rotamount);
+extern void gather(setup *resultpeople, const setup *sourcepeople,
+                   const veryshort *resultplace, int countminus1, int rotamount);
 extern parse_block *really_skip_one_concept(
    parse_block *incoming,
    concept_kind *k_p,

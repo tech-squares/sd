@@ -61,6 +61,8 @@ char *file_list[] = {
    "sdtty.ico",
    "SD.lnk",
    "SDTTY.lnk",
+   "SD nocheckers.lnk",
+   "SD couple.lnk",
    "Edit sd.ini.lnk",
    "sample1.ini",
    "sample2.ini",
@@ -80,6 +82,8 @@ char *save_list[] = {
 char *shortcut_list[] = {
    "SD.lnk",
    "SDTTY.lnk",
+   "SD nocheckers.lnk",
+   "SD couple.lnk",
    "Edit sd.ini.lnk",
    (char) 0};
 

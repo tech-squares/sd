@@ -1992,7 +1992,7 @@ Private void search_menu(uims_reply kind)
       else if (static_call_menu == match_startup_commands) {
          kind = ui_start_select;
          menu = startup_commands;
-         menu_length = NUM_START_SELECT_KINDS;
+         menu_length = num_startup_commands;
       }
       else if (static_call_menu == match_resolve_commands) {
          kind = ui_resolve_select;

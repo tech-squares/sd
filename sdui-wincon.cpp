@@ -46,7 +46,7 @@ extern void ttu_final_option_setup(int *use_escapes_for_drawing_people_p,
 
    /* Install the pointy triangles. */
 
-   if (no_graphics < 2)
+   if (ui_options.no_graphics < 2)
       *direc_p = "?\020?\021????\036?\037?????";
 
    my_directions = *direc_p;
@@ -169,20 +169,20 @@ extern void ttu_initialize(void)
 
    (void) GetConsoleScreenBufferInfo(consoleStdout, &globalconsoleInfo);
 
-   if (reverse_video)
+   if (ui_options.reverse_video)
       background_color = 0;
    else {
       /* If doing color_by_couple or color_by_corner, make the backround light
          gray instead of white, because yellow doesn't show up well against white. */
-      if (no_color == 2 || no_color == 3)
+      if (ui_options.no_color == 2 || ui_options.no_color == 3)
          background_color = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
       else
          background_color = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED |
             BACKGROUND_INTENSITY;
    }
 
-   if (!no_intensify) {
-      if (reverse_video)
+   if (!ui_options.no_intensify) {
+      if (ui_options.reverse_video)
          text_color = FOREGROUND_BLUE | FOREGROUND_GREEN |
             FOREGROUND_RED | FOREGROUND_INTENSITY;
       else
@@ -206,7 +206,7 @@ extern void ttu_initialize(void)
                                      coord,
                                      &numWrite);
 
-   if (!no_intensify)
+   if (!ui_options.no_intensify)
       (void) SetConsoleTextAttribute(consoleStdout, text_color);
 
    (void) SetConsoleCtrlHandler(&control_c_handler, TRUE);
@@ -299,13 +299,13 @@ extern void put_line(const char the_line[])
 
             put_char(' ');
 
-            if (no_color != 1) {
-               if (no_color == 2)
+            if (ui_options.no_color != 1) {
+               if (ui_options.no_color == 2)
                   color = couple_colors[c1 & 7];
-               else if (no_color == 3)
+               else if (ui_options.no_color == 3)
                   color = couple_colors[(c1 & 7) + 1];
                else
-                  color = (pastel_color ? pastel_person_colors : person_colors)[c1 & 1];
+                  color = (ui_options.pastel_color ? pastel_person_colors : person_colors)[c1 & 1];
 
                (void) SetConsoleTextAttribute(consoleStdout, color);
             }
@@ -316,7 +316,7 @@ extern void put_line(const char the_line[])
 
             /* Set back to plain "white". */
 
-            if (no_color != 1)
+            if (ui_options.no_color != 1)
                (void) SetConsoleTextAttribute(consoleStdout, text_color);
          }
          else
@@ -527,6 +527,7 @@ extern void ttu_bell(void)
 {
    (void) MessageBeep(MB_ICONQUESTION);
 }
+
 
 extern void initialize_signal_handlers(void)
 {

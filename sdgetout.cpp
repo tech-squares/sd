@@ -1267,4 +1267,3 @@ extern void initialize_getout_tables(void)
       }
    }
 }
-

@@ -788,7 +788,7 @@ Private void innards(
 
    finish:
 
-   /* If this is a special map that expects some setup to have been flipped upside-down, do so. */
+   // If this is a special map that expects some setup to have been flipped upside-down, do so.
 
    if (arity == 2) {
       if (final_map->rot & 0x200) {
@@ -802,6 +802,35 @@ Private void innards(
    }
 
    if (arity != final_map->arity) fail("Confused about number of setups to divide into.");
+
+   if (final_map->code == MAPCODE(s2x4,2,MPKIND__OFFS_L_THRQ, 1) ||
+       final_map->code == MAPCODE(s2x4,2,MPKIND__OFFS_R_THRQ, 1)) {
+      // We need to check for the possibility that we have to go to a 4x5 instead
+      // of a 2x7.  All this is needed because we do not support a 4x7 matrix,
+      // (just too big) so we assume a 2x7 and hop for the best.  The best
+      // doesn't always work out.
+
+      getptr = final_map->maps;
+
+      for (j=0 ; j<arity ; j++) {
+         for (i=0 ; i<insize ; i++) {
+            if (*getptr++ < 0 && z[j].people[i].id1 != 0)
+               goto emergency;
+         }
+      }
+
+      goto no_emergency;
+
+   emergency:
+
+      // Yow!
+      if (final_map->code == MAPCODE(s2x4,2,MPKIND__OFFS_L_THRQ, 1))
+         final_map = &map_emergency1;
+      else
+         final_map = &map_emergency2;
+   }
+
+ no_emergency:
 
    getptr = final_map->maps;
 
@@ -899,6 +928,10 @@ extern void divided_setup_move(
          break;
       case phantest_only_one:
          if (vflags[0] && vflags[1]) fail("Can't find the setup to work in.");
+         break;
+      case phantest_only_one_pair:
+         if ((vflags[0] || vflags[1]) && (vflags[2] || vflags[3]))
+            fail("Can't find the setup to work in.");
          break;
       case phantest_only_first_one:
          if (vflags[1]) fail("Not in correct setup.");
@@ -2742,9 +2775,10 @@ extern void common_spot_move(
 
 
 
-Private void do_glorious_triangles(
+static void do_glorious_triangles(
    setup *ss,
-   Const tgl_map *map_ptr,
+   const tgl_map **map_ptr_table,
+   int indicator,
    setup *result)
 {
    int i, r, startingrot;
@@ -2752,7 +2786,8 @@ Private void do_glorious_triangles(
    setup a1, a2;
    setup idle;
    setup res[2];
-   Const veryshort *mapnums;
+   const veryshort *mapnums;
+   const tgl_map *map_ptr = map_ptr_table[(indicator >> 6) & 1];
 
    if (ss->kind == s_c1phan) {
       mapnums = map_ptr->mapcp1;
@@ -2944,8 +2979,8 @@ Private void do_glorious_triangles(
 
 
 
-/* This procedure does wave-base, tandem-base, and so-and-so-base. */
-Private void wv_tand_base_move(
+// This procedure does wave-base, tandem-base, and so-and-so-base.
+static void wv_tand_base_move(
    setup *s,
    int indicator,
    setup *result)
@@ -2953,70 +2988,96 @@ Private void wv_tand_base_move(
    uint32 tbonetest;
    int t;
    calldef_schema schema;
-   Const tgl_map **map_ptr_table;
 
    switch (s->kind) {
-      case s_galaxy:
-         if ((indicator & 076) != 6)   /* Only "tandem-base" and "wave-base" are allowed here. */
-            fail("Can't find the indicated triangles.");
+   case s_bone:
+   case s_rigger:
+      tbonetest = s->people[0].id1 | s->people[1].id1 | s->people[4].id1 | s->people[5].id1;
 
-         tbonetest = s->people[1].id1 | s->people[3].id1 | s->people[5].id1 | s->people[7].id1;
+      if ((indicator & 076) != 6 || (tbonetest & 011) == 011 || !((indicator ^ tbonetest) & 1))
+         fail("Can't find the indicated triangles.");
 
-         if ((tbonetest & 011) == 011)
-            fail("Can't find the indicated triangles.");
-         else if ((indicator ^ tbonetest) & 1)
-            schema = (indicator & 0100) ? schema_intlk_lateral_6 : schema_lateral_6;
-         else
-            schema = (indicator & 0100) ? schema_intlk_vertical_6 : schema_vertical_6;
-   
-         /* For galaxies, the schema is now in terms of the absolute orientation. */
-         /* We know that the original setup rotation was canonicalized. */
-         break;
-      case s_hrglass:
-         if ((indicator & 076) != 6)   /* Only "tandem-base" and "wave-base" are allowed here. */
-            fail("Can't find the indicated triangles.");
-
-         tbonetest = s->people[0].id1 | s->people[1].id1 | s->people[4].id1 | s->people[5].id1;
-
-         if ((tbonetest & 011) == 011 || ((indicator ^ tbonetest) & 1))
-            fail("Can't find the indicated triangles.");
-   
-         schema = (indicator & 0100) ? schema_intlk_vertical_6 : schema_vertical_6;
-         break;
-      case s_c1phan:
-         if ((indicator&63) == 20) {
-            t = 0;
-            if (global_selectmask == (global_livemask & 0x5A5A))
-               t = 1;
-            else if (global_selectmask != (global_livemask & 0xA5A5))
-               fail("Can't find the indicated triangles.");
-         }
-         else {
-            t = indicator & 1;
-            if ((global_tbonetest & 010) == 0) t ^= 1;
-            else if ((global_tbonetest & 1) != 0)
-               fail("Can't find the indicated triangles.");
-         }
-
-         /* Now t is 0 to select the triangles whose bases are horizontally
-            aligned, and 1 for the vertically aligned bases. */
-
-         s->rotation += t;   /* Just flip the setup around and recanonicalize. */
-         canonicalize_rotation(s);
-
-         if ((global_livemask & 0xAAAA) == 0)
-            map_ptr_table = c1tglmap1;
-         else if ((global_livemask & 0x5555) == 0)
-            map_ptr_table = c1tglmap2;
-         else
-            fail("Can't find the indicated triangles.");
-
-         do_glorious_triangles(s, map_ptr_table[(indicator >> 6) & 1], result);
-         result->rotation -= t;   /* Flip the setup back. */
-         reinstate_rotation(s, result);
+      if (s->kind == s_bone) {
+         if (indicator & 0100) fail("Can't do this concept in this setup.");
+         concentric_move(s, (setup_command *) 0, &s->cmd, schema_concentric_2_6, 0, 0, TRUE, result);
          return;
-      default:
-         fail("Can't do this concept in this setup.");
+      }
+      else {
+         // We now know that the desired triangles are the "inside" ones.
+
+         if (indicator & 0100) {
+            do_glorious_triangles(s, rgtglmap1, indicator, result);
+            reinstate_rotation(s, result);
+            return;
+         }
+         else
+            schema = schema_concentric_6_2;
+      }
+
+      break;
+   case s_galaxy:
+      if ((indicator & 076) != 6)   // Only "tandem-base" and "wave-base" are allowed here.
+         fail("Can't find the indicated triangles.");
+
+      tbonetest = s->people[1].id1 | s->people[3].id1 | s->people[5].id1 | s->people[7].id1;
+
+      if ((tbonetest & 011) == 011)
+         fail("Can't find the indicated triangles.");
+      else if ((indicator ^ tbonetest) & 1)
+         schema = (indicator & 0100) ? schema_intlk_lateral_6 : schema_lateral_6;
+      else
+         schema = (indicator & 0100) ? schema_intlk_vertical_6 : schema_vertical_6;
+   
+      // For galaxies, the schema is now in terms of the absolute orientation.
+      // We know that the original setup rotation was canonicalized.
+      break;
+   case s_hrglass:
+      if ((indicator & 076) != 6)   // Only "tandem-base" and "wave-base" are allowed here.
+         fail("Can't find the indicated triangles.");
+
+      tbonetest = s->people[0].id1 | s->people[1].id1 | s->people[4].id1 | s->people[5].id1;
+
+      if ((tbonetest & 011) == 011 || ((indicator ^ tbonetest) & 1))
+         fail("Can't find the indicated triangles.");
+   
+      schema = (indicator & 0100) ? schema_intlk_vertical_6 : schema_vertical_6;
+      break;
+   case s_c1phan:
+      if ((indicator&63) == 20) {
+         t = 0;
+         if (global_selectmask == (global_livemask & 0x5A5A))
+            t = 1;
+         else if (global_selectmask != (global_livemask & 0xA5A5))
+            fail("Can't find the indicated triangles.");
+      }
+      else {
+         t = indicator & 1;
+         if ((global_tbonetest & 010) == 0) t ^= 1;
+         else if ((global_tbonetest & 1) != 0)
+            fail("Can't find the indicated triangles.");
+      }
+
+      // Now t is 0 to select the triangles whose bases are horizontally
+      // aligned, and 1 for the vertically aligned bases.
+
+      s->rotation += t;   // Just flip the setup around and recanonicalize.
+      canonicalize_rotation(s);
+
+      const tgl_map **map_ptr_table;
+
+      if ((global_livemask & 0xAAAA) == 0)
+         map_ptr_table = c1tglmap1;
+      else if ((global_livemask & 0x5555) == 0)
+         map_ptr_table = c1tglmap2;
+      else
+         fail("Can't find the indicated triangles.");
+
+      do_glorious_triangles(s, map_ptr_table, indicator, result);
+      result->rotation -= t;   // Flip the setup back.
+      reinstate_rotation(s, result);
+      return;
+   default:
+      fail("Can't do this concept in this setup.");
    }
 
    concentric_move(s, &s->cmd, (setup_command *) 0, schema, 0, 0, TRUE, result);
@@ -3083,13 +3144,11 @@ extern void triangle_move(
       concentric_move(ss, &ss->cmd, (setup_command *) 0, schema, 0, 0, TRUE, result);
    }
    else {
-      Const tgl_map **map_ptr_table;
-
       /* Set this so we can do "peel and trail" without saying "triangle" again. */
       ss->cmd.cmd_misc_flags |= CMD_MISC__SAID_TRIANGLE;
 
       if (indicator_base >= 6) {
-         /* Indicator = 6 for wave-base, 7 for tandem-base, 20 for <anyone>-base. */
+         // Indicator = 6 for wave-base, 7 for tandem-base, 20 for <anyone>-base.
          wv_tand_base_move(ss, indicator, result);
       }
       else if (indicator_base >= 4) {
@@ -3112,6 +3171,8 @@ extern void triangle_move(
             if ((ss->people[5].id1 & d_mask) == d_west) t |= 2;
          }
    
+         const tgl_map **map_ptr_table;
+
          if (t == 1)
             map_ptr_table = qttglmap1;
          else if (t == 2)
@@ -3119,7 +3180,7 @@ extern void triangle_move(
          else
             fail("Can't find designated point.");
 
-         do_glorious_triangles(ss, map_ptr_table[(indicator >> 6) & 1], result);
+         do_glorious_triangles(ss, map_ptr_table, indicator, result);
          reinstate_rotation(ss, result);
       }
       else {
@@ -3129,6 +3190,8 @@ extern void triangle_move(
          /* Only a few cases allow interlocked. */
 
          if (indicator_base == 2 && ss->kind == sbigdmd) {
+            const tgl_map **map_ptr_table;
+
             if (global_livemask == 07474)
                map_ptr_table = bdtglmap1;
             else if (global_livemask == 01717)
@@ -3136,14 +3199,13 @@ extern void triangle_move(
             else
                fail("Can't find the indicated triangles.");
 
-            do_glorious_triangles(ss, map_ptr_table[(indicator >> 6) & 1], result);
+            do_glorious_triangles(ss, map_ptr_table, indicator, result);
             reinstate_rotation(ss, result);
 
             return;
          }
          else if (indicator == 0102 && ss->kind == s_rigger) {
-            map_ptr_table = rgtglmap1;
-            do_glorious_triangles(ss, map_ptr_table[(indicator >> 6) & 1], result);
+            do_glorious_triangles(ss, rgtglmap1, indicator, result);
             reinstate_rotation(ss, result);
 
             return;
@@ -3154,8 +3216,8 @@ extern void triangle_move(
          if (indicator_base == 2) {
             switch (ss->kind) {
                case s_hrglass:
-                  schema = schema_vertical_6;   /* This is the schema for picking out
-                                                   the triangles in an hourglass. */
+                  // This is the schema for picking out the triangles in an hourglass.
+                  schema = schema_vertical_6;
                   break;
                case s_rigger:
                case s_ptpd:

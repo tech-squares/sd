@@ -82,7 +82,7 @@ typedef Const char *Cstring;
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 148
+#define DATABASE_FORMAT_VERSION 151
 
 /* BEWARE!!  These must track the items in "tagtabinit" in dbcomp.c . */
 typedef enum {
@@ -102,7 +102,7 @@ typedef enum {
    base_call_lockit,
    base_call_disband1,
    base_call_slither,
-      /* the next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
+   /* The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
    base_call_tagger0,
    base_call_tagger1_noref,
    base_call_tagger2_noref,
@@ -113,30 +113,10 @@ typedef enum {
 #define num_base_call_indices (((int) base_call_turnstar_n)+1)
 
 
-/* Number of items in the above list. */
-#ifdef DONTUSETHESEANYMORE
-#define NUM_BASE_CALLS 16
-
-#define BASE_CALL_NULL        1
-#define BASE_CALL_NULL_SECOND 2
-#define BASE_CALL_CAST_3_4    3
-#define BASE_CALL_ENDS_SHADOW 4
-#define BASE_CALL_BACKEMUP    7
-#define BASE_CALL_CIRCULATE   8
-#define BASE_CALL_TRADE       9
-/* The next "NUM_TAGGER_CLASSES" (that is, 4) must be a consecutive group. */
-#define BASE_CALL_TAGGER0    10
-#define BASE_CALL_TAGGER1    11
-#define BASE_CALL_TAGGER2    12
-#define BASE_CALL_TAGGER3    13
-#define BASE_CALL_CIRCCER    14
-#define BASE_CALL_TURNSTAR_N 15
-#endif
-
 /* BEWARE!!  This list must track the tables "flagtabh", "defmodtabh",
    "forcetabh", and "altdeftabh" in dbcomp.c .  The "K" items also track
    the tables "mxntabforce", "nxntabforce", "nxntabplain", "mxntabplain",
-   and "reverttabplain" in dbcomp.c .
+   "reverttabplain", and "reverttabforce" in dbcomp.c .
 
    These are the infamous "heritable flags".  They are used in generally
    corresponding ways in the "callflagsh" word of a top level callspec_block,
@@ -162,45 +142,46 @@ static Const uint32 INHERITFLAG_STRAIGHT   = 0x00004000UL;
 static Const uint32 INHERITFLAG_TWISTED    = 0x00008000UL;
 static Const uint32 INHERITFLAG_LASTHALF   = 0x00010000UL;
 static Const uint32 INHERITFLAG_FRACTAL    = 0x00020000UL;
+static const uint32 INHERITFLAG_FAST       = 0x00040000UL;
 
 /* This is a 3 bit field. */
-#define             INHERITFLAG_MXNMASK      0x001C0000UL
+#define             INHERITFLAG_MXNMASK      0x00380000UL
 /* This is its low bit. */
-#define             INHERITFLAG_MXNBIT       0x00040000UL
+#define             INHERITFLAG_MXNBIT       0x00080000UL
 
 /* These 4 things are the choices available inside. */
-#define             INHERITFLAGMXNK_1X2      0x00040000UL
-#define             INHERITFLAGMXNK_2X1      0x00080000UL
-#define             INHERITFLAGMXNK_1X3      0x000C0000UL
-#define             INHERITFLAGMXNK_3X1      0x00100000UL
+#define             INHERITFLAGMXNK_1X2      0x00080000UL
+#define             INHERITFLAGMXNK_2X1      0x00100000UL
+#define             INHERITFLAGMXNK_1X3      0x00180000UL
+#define             INHERITFLAGMXNK_3X1      0x00200000UL
 
 /* This is a 3 bit field. */
-#define             INHERITFLAG_NXNMASK      0x00E00000UL
+#define             INHERITFLAG_NXNMASK      0x01C00000UL
 /* This is its low bit. */
-#define             INHERITFLAG_NXNBIT       0x00200000UL
+#define             INHERITFLAG_NXNBIT       0x00400000UL
 
 /* These 7 things are the choices available inside. */
-#define             INHERITFLAGNXNK_2X2      0x00200000UL
-#define             INHERITFLAGNXNK_3X3      0x00400000UL
-#define             INHERITFLAGNXNK_4X4      0x00600000UL
-#define             INHERITFLAGNXNK_5X5      0x00800000UL
-#define             INHERITFLAGNXNK_6X6      0x00A00000UL
-#define             INHERITFLAGNXNK_7X7      0x00C00000UL
-#define             INHERITFLAGNXNK_8X8      0x00E00000UL
+#define             INHERITFLAGNXNK_2X2      0x00400000UL
+#define             INHERITFLAGNXNK_3X3      0x00800000UL
+#define             INHERITFLAGNXNK_4X4      0x00C00000UL
+#define             INHERITFLAGNXNK_5X5      0x01000000UL
+#define             INHERITFLAGNXNK_6X6      0x01400000UL
+#define             INHERITFLAGNXNK_7X7      0x01800000UL
+#define             INHERITFLAGNXNK_8X8      0x01C00000UL
 
 /* This is a 3 bit field. */
-#define             INHERITFLAG_REVERTMASK   0x07000000UL
+#define             INHERITFLAG_REVERTMASK   0x0E000000UL
 /* This is its low bit. */
-#define             INHERITFLAG_REVERTBIT    0x01000000UL
+#define             INHERITFLAG_REVERTBIT    0x02000000UL
 
 /* These 7 things are the choices available inside. */
-#define             INHERITFLAGRVRTK_REVERT  0x01000000UL
-#define             INHERITFLAGRVRTK_REFLECT 0x02000000UL
-#define             INHERITFLAGRVRTK_RVF     0x03000000UL
-#define             INHERITFLAGRVRTK_RFV     0x04000000UL
-#define             INHERITFLAGRVRTK_RVFV    0x05000000UL
-#define             INHERITFLAGRVRTK_RFVF    0x06000000UL
-#define             INHERITFLAGRVRTK_RFF     0x07000000UL
+#define             INHERITFLAGRVRTK_REVERT  0x02000000UL
+#define             INHERITFLAGRVRTK_REFLECT 0x04000000UL
+#define             INHERITFLAGRVRTK_RVF     0x06000000UL
+#define             INHERITFLAGRVRTK_RFV     0x08000000UL
+#define             INHERITFLAGRVRTK_RVFV    0x0A000000UL
+#define             INHERITFLAGRVRTK_RFVF    0x0C000000UL
+#define             INHERITFLAGRVRTK_RFF     0x0E000000UL
 
 
 /* BEWARE!!  This list must track the table "flagtab1" in dbcomp.c .
@@ -357,6 +338,7 @@ typedef enum {
    s_rigger,
    s3x4,
    s2x6,
+   s2x7,
    s_d3x4,
    s1p5x8,   /* internal use only */
    s2x8,
@@ -480,6 +462,8 @@ typedef enum {
    b_4x3,
    b_2x6,
    b_6x2,
+   b_2x7,
+   b_7x2,
    b_d3x4,
    b_d4x3,
    b_2x8,
@@ -594,11 +578,12 @@ typedef enum {
 #define CAF__RESTR_BOGUS           0x50
 #define CAF__PREDS                 0x80
 #define CAF__NO_CUTTING_THROUGH   0x100
-#define CAF__LATERAL_TO_SELECTEES 0x200
-#define CAF__VACATE_CENTER        0x400
-#define CAF__OTHER_ELONGATE       0x800
-#define CAF__SPLIT_TO_BOX        0x1000
-#define CAF__REALLY_WANT_DIAMOND 0x2000
+#define CAF__NO_FACING_ENDS       0x200
+#define CAF__LATERAL_TO_SELECTEES 0x400
+#define CAF__VACATE_CENTER        0x800
+#define CAF__OTHER_ELONGATE      0x1000
+#define CAF__SPLIT_TO_BOX        0x2000
+#define CAF__REALLY_WANT_DIAMOND 0x4000
 
 /* BEWARE!!  This list must track the array "qualtab" in dbcomp.c . */
 typedef enum {

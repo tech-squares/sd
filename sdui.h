@@ -269,40 +269,6 @@ typedef enum {
     modify_popup_only_circ
 } modify_popup_kind;
 
-/* In each case, an integer or enum is deposited into the global variable uims_menu_index.  Its interpretation
-   depends on which of the replies above was given.  For some of the replies, it gives the index
-   into a menu.  For "ui_start_select" it is a start_select_kind.
-   For other replies, it is one of the following constants: */
-
-/* BEWARE!!  This list must track the array "startup_commands" in sdtables.c . */
-/* BEWARE!!  This list must track the array "startup_resources" in sdui-x11.c . */
-/* BEWARE!!!!!!!!  Lots of implications for "centersp" and all that! */
-/* BEWARE!!  If change this next definition, be sure to update the definition of
-   "startinfolist" in sdtables.c, and also necessary stuff in the user interfaces.
-   The latter includes the definition of "start_choices" in sd.dps
-   in the Domain/Dialog system, and the corresponding CNTLs in *.rsrc
-   in the Macintosh system.  You may also need changes in create_controls() in
-   macstuff.c. */
-typedef enum {
-   start_select_exit,        /* Don't start a sequence; exit from the program. */
-   start_select_h1p2p,       /* Start with Heads 1P2P. */
-   start_select_s1p2p,       /* Etc. */
-   start_select_heads_start,
-   start_select_sides_start,
-   start_select_as_they_are,
-   start_select_toggle_conc,
-   start_select_toggle_act,
-   start_select_toggle_retain,
-   start_select_toggle_nowarn_mode,
-   start_select_toggle_singleclick_mode,
-   start_select_toggle_singer,
-   start_select_toggle_singer_backward,
-   start_select_init_session_file,
-   start_select_change_outfile,
-   start_select_change_header_comment
-} start_select_kind;
-#define NUM_START_SELECT_KINDS (((int) start_select_change_header_comment)+1)
-
 typedef enum {
    file_write_no,
    file_write_double
@@ -387,6 +353,9 @@ extern void uims_postinitialize(void);
 extern long_boolean uims_open_session(int argc, char **argv);
 extern void uims_set_window_title(char s[]);
 extern void uims_bell(void);
+extern void uims_choose_font(long_boolean in_startup);
+extern void uims_print_this(long_boolean in_startup);
+extern void uims_print_any(long_boolean in_startup);
 extern int uims_do_comment_popup(char dest[]);
 extern int uims_do_outfile_popup(char dest[]);
 extern int uims_do_header_popup(char dest[]);
@@ -451,15 +420,13 @@ extern int session_index;                                           /* in SDSI *
 extern int num_command_commands;                                    /* in SDSI */
 extern Cstring *command_commands;                                   /* in SDSI */
 extern command_kind *command_command_values;                        /* in SDSI */
+extern int num_startup_commands;                                    /* in SDSI */
+extern Cstring *startup_commands;                                   /* in SDSI */
+extern start_select_kind *startup_command_values;                   /* in SDSI */
 extern int number_of_resolve_commands;                              /* in SDSI */
 extern Cstring* resolve_command_strings;                            /* in SDSI */
 extern resolve_command_kind *resolve_command_values;                /* in SDSI */
-extern int no_graphics;                                             /* in SDSI */
-extern int no_intensify;                                            /* in SDSI */
-extern int reverse_video;                                           /* in SDSI */
-extern int pastel_color;                                            /* in SDSI */
-extern int no_color;                                                /* in SDSI */
-extern int no_sound;                                                /* in SDSI */
+extern ui_option_type ui_options;                                   /* in SDSI */
 extern int random_number;                                           /* in SDSI */
 extern int hashed_randoms;                                          /* in SDSI */
 extern char *database_filename;                                     /* in SDSI */
@@ -481,10 +448,10 @@ extern long_boolean accept_single_click;                            /* in SDUTIL
 extern Cstring menu_names[];                                        /* in SDUTIL */
 extern command_list_menu_item command_menu[];                       /* in SDUTIL */
 extern resolve_list_menu_item resolve_menu[];                       /* in SDUTIL */
-extern Cstring startup_commands[];                                  /* in SDUTIL */
-extern SDLIB_API Cstring cardinals[];                                         /* in SDUTIL */
-extern SDLIB_API Cstring ordinals[];                                          /* in SDUTIL */
-extern SDLIB_API Cstring direction_names[];                                   /* in SDUTIL */
+extern startup_list_menu_item startup_menu[];                       /* in SDUTIL */
+extern SDLIB_API Cstring cardinals[];                               /* in SDUTIL */
+extern SDLIB_API Cstring ordinals[];                                /* in SDUTIL */
+extern SDLIB_API Cstring direction_names[];                         /* in SDUTIL */
 extern int last_direction_kind;                                     /* in SDUTIL */
 
 extern int *concept_list;        /* indices of all concepts */
@@ -514,6 +481,7 @@ extern SDLIB_API callspec_block **tagger_calls[NUM_TAGGER_CLASSES];           /*
 extern uint32 number_of_circcers;                                   /* in SDMAIN */
 extern SDLIB_API callspec_block **circcer_calls;                              /* in SDMAIN */
 extern char outfile_string[];                                       /* in SDMAIN */
+extern long_boolean wrote_a_sequence;                               /* in SDMAIN */
 extern char header_comment[];                                       /* in SDMAIN */
 extern long_boolean need_new_header_comment;                        /* in SDMAIN */
 extern call_list_mode_t glob_call_list_mode;                        /* in SDMAIN */

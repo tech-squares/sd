@@ -131,9 +131,14 @@ static resolver_display_state resolver_happiness = resolver_display_failed;
 
 int main(int argc, char *argv[])
 {
-   /* In Sdtty, the defaults are reverse video (white-on-black) and pastel colors. */
-   pastel_color = 1;
-   reverse_video = 1;
+   // In Sdtty, the defaults are reverse video (white-on-black) and pastel colors.
+   ui_options.no_graphics = 0;
+   ui_options.no_intensify = 0;
+   ui_options.reverse_video = 1;
+   ui_options.pastel_color = 1;
+   ui_options.no_color = 0;
+   ui_options.no_sound = 0;
+
    return sdmain(argc, argv);
 }
 
@@ -366,6 +371,7 @@ extern long_boolean uims_open_session(int argc, char **argv)
       ttu_initialize();
    }
 
+   initialize_misc_lists();
    prepare_to_read_menus();
 
    /* Opening the database sets up the values of
@@ -392,7 +398,6 @@ extern long_boolean uims_open_session(int argc, char **argv)
 
    call_menu_prompts[call_list_empty] = "--> ";   /* This prompt should never be used. */
 
-   initialize_misc_lists();
    matcher_initialize();
 
    {
@@ -487,7 +492,7 @@ extern void uims_set_window_title(char s[])
 
 extern void uims_bell(void)
 {
-   if (!no_sound) ttu_bell();
+   if (!ui_options.no_sound) ttu_bell();
 }
 
 
@@ -924,6 +929,12 @@ extern uims_reply uims_get_startup_command(void)
    }
 
    uims_menu_index = user_match.match.index;
+
+   if (user_match.match.kind == ui_start_select) {
+      /* Translate the command. */
+      uims_menu_index = (int) startup_command_values[user_match.match.index];
+   }
+
    return user_match.match.kind;
 }
 
@@ -1423,6 +1434,40 @@ extern void uims_reduce_line_count(int n)
 
    current_text_line = n;
 }
+
+
+extern void uims_choose_font(long_boolean in_startup)
+{
+   if (in_startup) {
+      writestuff("Printing is not supported in Sdtty.");
+      newline();
+   }
+   else
+      specialfail("Printing is not supported in Sdtty.");
+}
+
+
+extern void uims_print_this(long_boolean in_startup)
+{
+   if (in_startup) {
+      writestuff("Printing is not supported in Sdtty.");
+      newline();
+   }
+   else
+      specialfail("Printing is not supported in Sdtty.");
+}
+
+
+extern void uims_print_any(long_boolean in_startup)
+{
+   if (in_startup) {
+      writestuff("Printing is not supported in Sdtty.");
+      newline();
+   }
+   else
+      specialfail("Printing is not supported in Sdtty.");
+}
+
 
 extern void uims_terminate(void)
 {
