@@ -3,7 +3,7 @@
 @settitle Sd
 @c %**end of header
 @ifinfo
-sd_doc.txinfo time-stamp: @{93/04/10 21:26:16 gildea@}
+sd_doc.txinfo time-stamp: @{93/05/12 11:39:52 gildea@}
 @end ifinfo
 @iftex
 @finalout
@@ -17,8 +17,12 @@ sd_doc.txinfo time-stamp: @{93/04/10 21:26:16 gildea@}
 @center William B. Ackerman and Stephen Gildea
 @c
 @end titlepage
+@c The copyright stuff goes in the info file, too,
+@c so it cannot be inside the @titlepage environment.
 @headings off
 @iftex
+@c Making this not in titlepage env tries to call it page 1 again.
+@pageno=2
 @ @c hard Space to make vskip work
 @vskip 0pt plus 1fill
 @end iftex
@@ -40,13 +44,13 @@ on all copies.
 
 The authors disclaim all liability for your use of this software and 
 documentation and make no representation as to the suitability of the 
-software for any purpose.  THE SOFTWARE IS PROVIDED "AS IS" WITHOUT 
+software for any purpose.  THE SOFTWARE IS PROVIDED ``AS IS'' WITHOUT 
 WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO, 
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
 NONINFRINGMENT.
 
 @page	@c end of copyright page
-@headings on   
+@headings on
 
 @node Top, Intro, (dir), (dir)
 
@@ -55,14 +59,18 @@ This file documents Sd, a square dance caller's helper.
 
 @end ifinfo
 @menu
-Table of Contents
+To get started quickly, type @key{1} to go to...
 
-You can pick a item out of one of the menus here, or, to start reading
-the manual from the beginning, type @key{n} to go to the next node.
+* Getting Started::             Getting started quickly with Sd
+
+To start reading the manual from the beginning, type @key{n} to go to
+the next node.  Or go directly to a topic of interest by picking an item
+out of one of the menus here.
 
 This is the summary table of contents:
 
 * Intro::                       Introduction
+* Getting Started::             Getting started quickly with Sd
 * Invoking Sd::                 Invoking Sd
 * Calling::                     Calling
 * Resolving and Searching::     Resolving and Searching
@@ -148,96 +156,37 @@ Installation
 * Compiling a New Release::	  Compiling a New Release
 * Running on Macintosh::	  Running on the Mac
 
-
 @end menu
 
-@node Intro, Invoking Sd, Top, Top
-@unnumbered Introduction
+@set full-manual
+@include readme.txinfo
 
-Sd is a square dance caller's helper.  The program assists in writing material
-for Western square dancing by doing the checker pushing.  You tell the
-program what call you want to call next, and it computes the resulting
-setup and shows it to you.
+@node Getting Started, Invoking Sd, Intro, Top
+@chapter Getting Started
 
-Sd was intended to be used to write challenge-level material where the
-sequences are often complex and the checker pushing tedious and
-error-prone.  Most challenge callers write out the material they will
-call before they get to the dance, unlike Mainstream callers, who
-often invent the material on the fly from the stage.
-
-Sd knows nothing about timing, body flow, or esthetics.
-
-This program is not appropriate for Traditional-style squares.  Designing
-the exquisitely timed and well-phrased sequences that make up Traditional
-squares may or may not be beyond the capability of computer programs,
-but it is definitely beyond the capability of this program.
-
-Since the emphasis here is on checker pushing, you will find various
-mainstream staples missing, such as Circle Left, Grand Square, and
-Allemande Left.  Since these calls are technical zeros, there is no
-reason to have them in a checker-pushing program.  However, if you
-wish to write material containing calls such as these, you can use the
-@code{insert comment} command to write them into the sequence.
-
-In short, if you are writing a Traditional or Mainstream dance,
-you may find that this program is not for you.
-
-@menu
-* Contact Info::                How to Contact the Authors
-* Acknowledgements::            Acknowlegdements
-@end menu
-
-@node Contact Info, Acknowledgements, ,Intro
-@unnumberedsec How to Contact the Authors
-
-The Internet mailing list @code{sd@@mc.lcs.mit.edu} is for discussion of Sd
-and announcements of new versions.  Send to @code{sd-request@@mc.lcs.mit.edu}
-to be added.
-
-Please send bug reports and other comments on Sd to the authors at the
-addresses given below.  Be sure to include the version number.
-
-@display
-William Ackerman
-wba@@apollo.hp.com
-
-Stephen Gildea
-gildea@@lcs.mit.edu
-@end display
-@iftex
-
-If you do not have access to electronic mail, write to
-
-@display
-Bill Ackerman
-5 Parlmont Park Apt 100
-North Billerica MA 01862
-@end display
-@end iftex
-
-@node Acknowledgements, , Contact Info,Intro
-@unnumberedsec Acknowlegdements
-
-Thanks to Kathy Godfrey, Sue Curtis, and Chris Stacy for their help,
-encouragement, suggestions, contributions of calls, feedback, testing,
-and many other contributions.
-
-The non-windowed interface (@pxref{Terminal Interface}) was written by
-Alan Snyder.
-The section on building Sd for the Macintosh (@pxref{Building on the
-Mac}) was written by Sue Curtis.
-
-We received helpful feedback and testing from Robert French, Judy
-Anderson, Lynette McNiel, Bill van Melle, Lois Lew, and Ron Nicholson.
-
-@node Invoking Sd, Calling, Intro, Top
-@chapter Invoking Sd
+@code{Sd} is typically run by typing its name and the level you want to
+write material for, e.g.,
 
 @example
-sd level [ Xt options ... ] [ -abridge filename ]
-sd level -write_list filename
-sd level -write_full_list filename
+sd c2
 @end example
+
+Then use the mouse to select calls and concepts.  The menu in the upper
+left corner contains program commands for actions such as automatic
+resolves and exiting the program.
+
+With some experimentation, you should be able to use the program without
+reading this document.  The following chapters cover using @code{Sd} in
+detail.
+
+@node Invoking Sd, Calling, Getting Started, Top
+@chapter Invoking Sd
+
+@display
+@t{sd} level [ Xt options ... ] [ @t{-abridge} filename ]
+@t{sd} level @t{-write_list} filename
+@t{sd} level @t{-write_full_list} filename
+@end display
 
 The program is normally invoked with a single argument---the level.
 This is one of @code{m} (mainstream), @code{p} (plus), @code{a1},
@@ -294,11 +243,12 @@ location of the calls database.  The default is @file{sd_calls.dat} in
 the current directory.
 @item -sequence @var{filename}
 base name of the file to write sequences to.  The calling level will be
-appended to this name.  The default is @file{sequence}.
+appended to this name.  The default is @file{sequence}, so a complete
+file name might be @file{sequence.C1}.
 @end table
 
 There are X resources associated with both switches:
-@code{Sd.sequenceFile} is equivalent to @code{-sequence}, and
+@code{Sd.sequenceFile} is equivalent to the @w{@code{-sequence}} switch, and
 @code{Sd.databaseFile} is equivalent to @code{-db}.
 
 If you almost always will be passing the the same value for a
@@ -753,7 +703,7 @@ It biases the search in favor of short sequences (1 call) rather than
 long ones (3 calls) and in favor of resolves that do not contain @i{all 8
 circulate}.  If, after 5000 attempts, no resolve is found, the @code{find another}
 operation fails.  (This tends to happen if you try to resolve out of an
-hourglass at mainstream.)  You can click on @code{find another} again to make
+hourglass at Mainstream.)  You can click on @code{find another} again to make
 another attempt if you wish.
 
 @node Nice Setup, Do Anything, Resolving, Resolving and Searching
@@ -911,7 +861,7 @@ number designators, you type the designator as part of the call name.
 For example, to call @code{<ANYONE> run} and select @code{centers}, just
 type @code{centers run}.
 Where in the window interface you would select @code{square thru <n>}
-hand then select @code{4} in response to the ``How many?'' prompt, with
+and then select @code{4} in response to the ``How many?'' prompt, with
 @code{sdtty} you type @code{square thru 4} as one command.
 
 When typing, press @key{SPC} to complete the current word.
@@ -1222,7 +1172,7 @@ of the tip.
 Warning:  The program's notion of levels is only keyed to concepts and
 calls, not to concept/call combinations, and not to calls in the context
 of certain setups.  For example, since @i{split} and @i{square thru} are
-both mainstream, it thinks that @i{split square thru} is mainstream, even
+both Mainstream, it thinks that @i{split square thru} is Mainstream, even
 though it is A1.  Also, @i{chain reaction} should only be used from the
 simple @samp{heads pass the ocean} setup at A1, but the program doesn't
 know this.

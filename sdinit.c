@@ -182,6 +182,8 @@ Private void test_starting_setup(call_list_kind cl, setup test_setup)
    real_jmp_buf my_longjmp_buffer;
    int i;
 
+   uims_database_tick(10);
+
    call_index = -1;
    global_callcount = 0;
    /* Mark the parse block allocation, so that we throw away the garbage
@@ -502,12 +504,8 @@ Private void read_fullword(void)
 
 Private void database_error(char *message)
 {
-    print_line(message);
-    if (call_root && call_root->name) {
-	print_line("  While reading this call from the database:");
-	print_line(call_root->name);
-    }
-    exit_program(1);
+   uims_database_error(message, call_root ? call_root->name : 0);
+   exit_program(1);
 }
 
 
@@ -677,8 +675,6 @@ Private void build_database(call_list_mode_t call_list_mode)
    int savetag, saveflags;
    level savelevel;
    callspec_block **local_call_list;
-
-   open_database();    /* This sets up the values of abs_max_calls and max_base_calls. */
 
    /* This list will be permanent. */
    base_calls = (callspec_block **) get_mem(max_base_calls * sizeof(callspec_block *));
@@ -961,7 +957,14 @@ extern void initialize_menus(call_list_mode_t call_list_mode)
       The user interface is never actually started, and we exit
       from the program after writing the list. */
 
+   /* Opening the database sets up the values of
+      abs_max_calls and max_base_calls.
+      Must do before telling the uims so any open failure messages
+      come out first. */
+   open_database();
+   uims_database_tick_max(10*16);
    build_database(call_list_mode);
+   uims_database_tick(10);
 
    the_array = main_call_lists[call_list_any];
    heapsort(number_of_calls[call_list_any]);
@@ -976,6 +979,7 @@ extern void initialize_menus(call_list_mode_t call_list_mode)
 
    global_main_call_name_list = (char **) get_mem(abs_max_calls * sizeof(char *));
    create_call_name_list();
+   uims_database_tick(5);
 
    /* Now temporary array "global_main_call_name_list" has the menu-presentable
       form of the text corresponding to "main_call_lists[call_list_any]". */
@@ -1033,6 +1037,7 @@ extern void initialize_menus(call_list_mode_t call_list_mode)
 
    /* This is the universal menu. */
    create_menu(call_list_any, global_main_call_name_list);
+   uims_database_tick(5);
 
    /* Create the special call menus for restricted setups. */
 

@@ -419,11 +419,12 @@ typedef struct {
 
 
 /* BEWARE!!  If change this next definition, be sure to update the definition of
-   "resolve_names" in SDTABLES. */
+   "resolve_names" in sdtables.c . */
 typedef enum {
    resolve_none,
    resolve_rlg, resolve_la,
    resolve_ext_rlg, resolve_ext_la,
+   resolve_slipclutch_rlg, resolve_slipclutch_la,
    resolve_circ_rlg, resolve_circ_la,
    resolve_pth_rlg, resolve_pth_la,
    resolve_tby_rlg, resolve_tby_la,
@@ -655,6 +656,7 @@ typedef enum {
    MPKIND__O_SPOTS,
    MPKIND__X_SPOTS,
    MPKIND__4_QUADRANTS,
+   MPKIND__4_EDGES,
    MPKIND__DMD_STUFF
 } mpkind;
 
@@ -969,8 +971,20 @@ typedef struct {
    setup the_setup;
 } startinfo;
 
-/* BEWARE!!  This next definition is keyed to stuff in SDRESOLVE, particularly the array "title_string". */
-typedef enum {search_anything, search_nice_setup, search_resolve, search_reconcile} search_kind;
+/* BEWARE!!  This next two definitions are keyed to stuff in SDRESOLVE or 
+   the UI, particularly the array "title_string". */
+typedef enum {
+   search_anything,
+   search_nice_setup,
+   search_resolve,
+   search_reconcile
+} search_kind;
+
+typedef enum {
+   resolver_display_ok,
+   resolver_display_searching,
+   resolver_display_failed
+} resolver_display_state;
 
 #define cross_by_level l_c1
 #define dixie_grand_level l_plus
@@ -1122,6 +1136,7 @@ extern long_boolean not_interactive;                                /* in SDMAIN
 extern long_boolean initializing_database;                          /* in SDMAIN */
 extern long_boolean testing_fidelity;                               /* in SDMAIN */
 extern selector_kind selector_for_initialize;                       /* in SDMAIN */
+extern int allowing_modifications;                                  /* in SDMAIN */
 
 extern int random_number;                                           /* in SDSI */
 extern int hashed_randoms;                                          /* in SDSI */
@@ -1143,6 +1158,7 @@ extern long_boolean (*pred_table[])(                                /* in PREDS 
 
 /* In SDMAIN */
 
+extern char *sd_version_string(void);
 extern parse_block *mark_parse_blocks(void);
 extern void release_parse_blocks_to_mark(parse_block *mark_point);
 extern void initialize_parse(void);
@@ -1160,6 +1176,8 @@ extern void get_real_subcall(
    parse_block **concptrout,
    callspec_block **callout,
    final_set *concout);
+extern long_boolean sequence_is_resolved(void);
+extern long_boolean write_sequence_to_file(void);
 
 /* In PREDS */
 
@@ -1217,9 +1235,16 @@ extern int uims_do_concept_popup(int kind);
 extern void uims_reduce_line_count(int n);
 extern void uims_add_new_line(char the_line[]);
 extern uims_reply uims_get_command(mode_kind mode, call_list_kind call_menu, int modifications_flag);
-extern void uims_update_resolve_menu(char *title);
+extern void uims_begin_search(search_kind goal);
+extern void uims_update_resolve_menu(search_kind goal, int cur, int max, resolver_display_state state);
+extern int uims_begin_reconcile_history(int currentpoint, int maxpoint);
+extern int uims_end_reconcile_history(void);
 extern void uims_terminate(void);
 extern char *uims_version_string(void);
+extern void uims_database_tick_max(int n);
+extern void uims_database_tick(int n);
+extern void uims_database_error(char *message, char *call_name);
+extern void uims_bad_argument(char *s1, char *s2, char *s3);
 
 /* In SDUTIL */
 
@@ -1274,6 +1299,11 @@ extern void overlapped_setup_move(setup *s, map_thing *maps,
 
 extern resolve_indicator resolve_p(setup *s);
 extern uims_reply full_resolve(search_kind goal);
+extern int concepts_in_place(void);
+extern int reconcile_command_ok(int **permutation_map_p, int *accept_extend_p);
+extern int resolve_command_ok(void);
+extern int nice_setup_command_ok(void);
+extern void create_resolve_menu_title(search_kind goal, int cur, int max, resolver_display_state state, char *title);
 
 /* In SDBASIC */
 

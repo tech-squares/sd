@@ -21,6 +21,11 @@
 /* This defines the following functions:
    resolve_p
    full_resolve
+   concepts_in_place
+   reconcile_command_ok
+   resolve_command_ok
+   nice_setup_command_ok
+   create_resolve_menu_title
 */
 
 #include "sd.h"
@@ -64,7 +69,7 @@ Private char *title_string[] = {
    "Resolve: ",
    "Reconcile: "};
 
-
+static void display_reconcile_history(int current_depth, int n);
 
 extern resolve_indicator resolve_p(setup *s)
 
@@ -138,19 +143,23 @@ extern resolve_indicator resolve_p(setup *s)
       case s2x4:
          switch (s->people[5].id1 & 0177) {
             case 010:
-               if (            /* Look for RLG from waves. */
-                     ((s->people[2].id1 - s->people[5].id1) & 0777) == 0200 &&
-                     ((s->people[1].id1 - s->people[2].id1) & 0777) == 0202 &&
-                     ((s->people[6].id1 - s->people[1].id1) & 0777) == 0200 &&
-                     ((s->people[5].id1 ^ s->people[4].id1) & 0777) == 0102 &&
-                     ((s->people[2].id1 ^ s->people[3].id1) & 0777) == 0102 &&
-                     ((s->people[1].id1 ^ s->people[0].id1) & 0777) == 0102 &&
-                     ((s->people[6].id1 ^ s->people[7].id1) & 0777) == 0102) {
-                  k.kind = resolve_rlg;
-                  k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 3;
-                  return(k);
+               switch ((s->people[5].id1 - s->people[4].id1) & 0777) {
+                  case 0676:
+                     if (            /* Look for RLG from waves. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0302 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0100 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0276 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0702 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0102 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0076) {
+                        k.kind = resolve_rlg;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 3;
+                        return(k);
+                     }
+                     break;
                }
-               else if (       /* Look for extend-RLG from waves. */
+
+               if (       /* Look for extend-RLG from waves. */
                      ((s->people[2].id1 - s->people[5].id1) & 0777) == 0200 &&
                      ((s->people[1].id1 - s->people[2].id1) & 0777) == 0202 &&
                      ((s->people[6].id1 - s->people[1].id1) & 0777) == 0200 &&
@@ -398,48 +407,116 @@ extern resolve_indicator resolve_p(setup *s)
                break;
          }
          break;
-      case s_crosswave:
+      case s_crosswave: case s_thar:
+         /* This makes use of the (accidental!) coincidence that the person numbering
+            in crossed lines and thars is identical. */
+
          switch (s->people[5].id1 & 0177) {
-            case 010:
-               if (            /* Look for RLG from crossed waves. */
-                     ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
-                     ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
-                     ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
-
-                     ((s->people[5].id1 ^ s->people[4].id1) & 0777) == 0102 &&
-                     ((s->people[2].id1 ^ s->people[3].id1) & 0777) == 0102 &&
-                     ((s->people[1].id1 ^ s->people[0].id1) & 0777) == 0102 &&
-                     ((s->people[6].id1 ^ s->people[7].id1) & 0777) == 0102) {
-                  k.kind = resolve_rlg;
-                  k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 2;
-                  return(k);
-               }
-               else if (       /* Look for promenade from crossed lines. */
-                     ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
-                     ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
-                     ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
-
-                     ((s->people[5].id1 ^ s->people[4].id1) & 0777) == 0100 &&
-                     ((s->people[2].id1 ^ s->people[3].id1) & 0777) == 0100 &&
-                     ((s->people[1].id1 ^ s->people[0].id1) & 0777) == 0100 &&
-                     ((s->people[6].id1 ^ s->people[7].id1) & 0777) == 0100) {
-                  k.kind = resolve_prom;
-                  k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 6;
-                  return(k);
+            case 0010:
+               switch ((s->people[5].id1 - s->people[4].id1) & 0777) {
+                  case 0700:
+                     if (       /* Look for promenade from crossed lines or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0700 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0700 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0700) {
+                        k.kind = resolve_prom;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 6;
+                        return(k);
+                     }
+                     break;
+                  case 0676:
+                     if (            /* Look for RLG from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0702 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0702 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0676) {
+                        k.kind = resolve_rlg;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 2;
+                        return(k);
+                     }
+                     break;
+                  case 0076:
+                     if (            /* Look for slip-the-clutch-RLG from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0102 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0102 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0076) {
+                        k.kind = resolve_slipclutch_rlg;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 1;
+                        return(k);
+                     }
+                     break;
                }
                break;
-            case 012:
-               if (            /* Look for LA from crossed waves. */
-                     ((s->people[3].id1 - s->people[5].id1) & 0777) == 0167 &&
-                     ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
-                     ((s->people[7].id1 - s->people[1].id1) & 0777) == 0173 &&
-                     ((s->people[5].id1 ^ s->people[2].id1) & 0777) == 0111 &&
-                     ((s->people[3].id1 ^ s->people[0].id1) & 0777) == 0113 &&
-                     ((s->people[1].id1 ^ s->people[6].id1) & 0777) == 0111 &&
-                     ((s->people[7].id1 ^ s->people[4].id1) & 0777) == 0113) {
-                  k.kind = resolve_la;
-                  k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 5;
-                  return(k);
+            case 0012:
+               switch ((s->people[5].id1 - s->people[4].id1) & 0777) {
+                  case 0102:
+                     if (            /* Look for LA from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0076 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0076 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0102) {
+                        k.kind = resolve_la;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 5;
+                        return(k);
+                     }
+                     break;
+                  case 0702:
+                     if (            /* Look for slip-the-clutch-LA from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0676 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0676 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0702) {
+                        k.kind = resolve_slipclutch_la;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 6;
+                        return(k);
+                     }
+                     break;
+               }
+               break;
+            case 0112:
+               switch ((s->people[5].id1 - s->people[4].id1) & 0777) {
+                  case 0702:
+                     if (            /* Look for cross-by-RLG from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0676 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0676 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0702) {
+                        k.kind = resolve_xby_rlg;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 2;
+                        return(k);
+                     }
+                     break;
+               }
+               break;
+            case 0110:
+               switch ((s->people[5].id1 - s->people[4].id1) & 0777) {
+                  case 0076:
+                     if (            /* Look for cross-by-LA from crossed waves or thar. */
+                           ((s->people[3].id1 - s->people[5].id1) & 0777) == 0173 &&
+                           ((s->people[1].id1 - s->people[3].id1) & 0777) == 0207 &&
+                           ((s->people[7].id1 - s->people[1].id1) & 0777) == 0167 &&
+                           ((s->people[1].id1 - s->people[0].id1) & 0777) == 0102 &&
+                           ((s->people[3].id1 - s->people[2].id1) & 0777) == 0102 &&
+                           ((s->people[7].id1 - s->people[6].id1) & 0777) == 0076) {
+                        k.kind = resolve_xby_la;
+                        k.distance = (s->rotation << 1) + (s->people[5].id1 >> 6) + 5;
+                        return(k);
+                     }
+                     break;
                }
                break;
          }
@@ -774,27 +851,18 @@ Private long_boolean inner_search(search_kind goal, resolve_rec *new_resolve, lo
 }
 
 
-Private int promperm[8] = {1, 0, 6, 7, 5, 4, 2, 3};
-Private int qtagperm[8] = {1, 0, 7, 6, 5, 4, 3, 2};
-Private int crossperm[8] = {5, 4, 3, 2, 1, 0, 7, 6};
-Private int laperm[8] = {1, 3, 6, 0, 5, 7, 2, 4};
-
-
 extern uims_reply full_resolve(search_kind goal)
 {
-   int j, k, dirmask;
+   int j, k;
    uims_reply reply;
-   char title[MAX_TEXT_LINE_LENGTH];
-   char junk[MAX_TEXT_LINE_LENGTH];
-   char *titleptr;
    int current_resolve_index, max_resolve_index;
    long_boolean show_resolve;
    personrec *current_people = history[history_ptr].state.people;
-   setup_kind current_kind = history[history_ptr].state.kind;
    long_boolean accept_extend = FALSE;
    int current_depth = 0;
    long_boolean find_another_resolve = TRUE;
    int *perm_map;
+   resolver_display_state state; /* for display to the user */
 
    /* Allocate or reallocate the huge_history_save save array if needed. */
 
@@ -821,45 +889,12 @@ extern uims_reply full_resolve(search_kind goal)
 
    switch (goal) {
       case search_resolve:
-         if (current_kind != s2x4 &&
-               current_kind != s1x8 &&
-               current_kind != s_qtag)
+         if (!resolve_command_ok())
             specialfail("Not in acceptable setup for resolve.");
          break;
       case search_reconcile:
-         /* Since we are going to go back 1 call, demand we have at least 3. ***** */
-         if (history_ptr < 3) specialfail("Can't reconcile sequence this short.");
-
-         /* Demand no concepts already in place. */
-         if (history[history_ptr+1].command_root)
-            specialfail("Can't do this when concepts are selected.");
-
-         dirmask = 0;
-         for (k=0; k<8; k++)
-            dirmask = (dirmask << 2) | (current_people[k].id1 & 3);
-
-         if (current_kind == s2x4 && dirmask == 0xA00A)
-            perm_map = promperm;            /* L2FL, looking for promenade. */
-         else if (current_kind == s_qtag && dirmask == 0x08A2)
-            perm_map = qtagperm;            /* RQTAG, looking for RLG. */
-         else if (current_kind == s_qtag && dirmask == 0x78D2)
-            perm_map = qtagperm;            /* diamonds with points facing, looking for RLG. */
-         else if (current_kind == s_crosswave && dirmask == 0x278D)
-            perm_map = crossperm;            /* crossed waves, looking for RLG. */
-         else if (current_kind == s2x4 && dirmask == 0x2288) {
-            /* Rwave, looking for RLG, we turn on "accept_extend" to tell it
-               to measure couple number only approximately. */
-            accept_extend = TRUE;
-            perm_map = promperm;
-         }
-         else if (current_kind == s2x4 && dirmask == 0x8822) {
-            /* Lwave, looking for LA, we turn on "accept_extend" to tell it
-               to measure couple number only approximately. */
-            accept_extend = TRUE;
-            perm_map = laperm;
-         }
-         else
-            specialfail("Not in acceptable setup for reconcile.");
+         if (!reconcile_command_ok(&perm_map, &accept_extend))
+            specialfail("Not in acceptable setup for reconcile, or sequence is too short, or concepts are selected.");
 
          for (j=0; j<8; j++)
             perm_array[j] = current_people[perm_map[j]].id1 & 0700;
@@ -871,11 +906,8 @@ extern uims_reply full_resolve(search_kind goal)
       case search_anything:
          break;
       case search_nice_setup:
-         if (current_kind != s4x4)
-            specialfail("Sorry, can only do this in 4x4 setup.");
-         /* Demand no concepts already in place. */
-         if (history[history_ptr+1].command_root)
-            specialfail("Can't do this when concepts are selected.");
+         if (!nice_setup_command_ok())
+            specialfail("Sorry, can only do this in 4x4 setup with no concepts selected.");
          break;
    }
 
@@ -885,31 +917,21 @@ extern uims_reply full_resolve(search_kind goal)
    huge_history_ptr = history_ptr;
    save_parse_state();
       
-   (void) (restore_parse_state());
+   (void) restore_parse_state();
    current_resolve_index = 0;
    show_resolve = TRUE;
    max_resolve_index = 0;
    avoid_list_size = 0;
 
+   uims_begin_search(goal);
+   if (goal == search_reconcile)
+      display_reconcile_history(current_depth, huge_history_ptr);
+
    for (;;) {
       /* We know the history is restored at this point. */
       if (find_another_resolve) {
          /* Put up the resolve title showing that we are searching. */
-
-         titleptr = title;
-         string_copy(&titleptr, title_string[goal]);
-         if (max_resolve_index != 0) {
-            /* We have a resolve, show which one it is and let the user stare at it
-               while we try to create another. */
-            add_resolve_indices(junk, current_resolve_index, max_resolve_index);
-            string_copy(&titleptr, junk);
-            string_copy(&titleptr, " searching ...");
-         }
-         else {
-            string_copy(&titleptr, "searching ...");
-         }
-
-         uims_update_resolve_menu(title);
+         uims_update_resolve_menu(goal, current_resolve_index, max_resolve_index, resolver_display_searching);
 
          (void) restore_parse_state();
    
@@ -921,27 +943,12 @@ extern uims_reply full_resolve(search_kind goal)
 
             /* Put up the resolve title showing this resolve,
                but without saying "searching". */
-      
-            titleptr = title;
-            string_copy(&titleptr, title_string[goal]);
-            add_resolve_indices(junk, current_resolve_index, max_resolve_index);
-            string_copy(&titleptr, junk);
+            state = resolver_display_ok;      
          }
          else {
             /* Display the sequence with the current resolve inserted. */
             /* Put up a resolve title indicating failure. */
-      
-            titleptr = title;
-            string_copy(&titleptr, title_string[goal]);
-            if (max_resolve_index != 0) {
-               add_resolve_indices(junk, current_resolve_index, max_resolve_index);
-               string_copy(&titleptr, junk);
-               string_copy(&titleptr, ", failed");
-            }
-            else {
-               /* We failed, and we don't even have an old one to show. */
-               string_copy(&titleptr, "failed");
-            }
+            state = resolver_display_failed;
          }
 
          written_history_items = -1;
@@ -955,16 +962,10 @@ extern uims_reply full_resolve(search_kind goal)
       else {
          /* Just display the sequence with the current resolve inserted. */
          /* Put up a neutral resolve title. */
-
-         titleptr = title;
-         string_copy(&titleptr, title_string[goal]);
-         if ((max_resolve_index != 0) && show_resolve) {
-            add_resolve_indices(junk, current_resolve_index, max_resolve_index);
-            string_copy(&titleptr, junk);
-         }
+         state = resolver_display_ok;
       }
 
-      uims_update_resolve_menu(title);
+      uims_update_resolve_menu(goal, current_resolve_index, max_resolve_index, state);
 
       /* Modify the history to show the current resolve. */
       /* Note that the currrent history has been restored to its saved state. */
@@ -1028,16 +1029,11 @@ extern uims_reply full_resolve(search_kind goal)
       }
       else {
          /* Don't show any resolve, because we want to display the current
-            insertion point.  Display what we have, with the insertion point. */
-         display_initial_history(huge_history_ptr-current_depth, 0);
-         if (current_depth) {
-            writestuff("------------------------------------");
-            newline();
-            for (j=huge_history_ptr-current_depth+1; j<=huge_history_ptr; j++) write_history_line(j, (char *) 0, FALSE, file_write_no);
-         }
+            insertion point. */
+         display_reconcile_history(current_depth, huge_history_ptr);
       }
 
-      if (history[history_ptr].resolve_flag.kind != resolve_none) {
+      if (show_resolve && (history[history_ptr].resolve_flag.kind != resolve_none)) {
          newline();
          writestuff("     resolve is:");
          newline();
@@ -1047,6 +1043,7 @@ extern uims_reply full_resolve(search_kind goal)
       }
 
       show_resolve = TRUE;
+
       for (;;) {          /* We ignore any "undo" clicks. */
          reply = uims_get_command(mode_resolve, call_list_any, FALSE);
          if ((reply != ui_command_select) || (uims_menu_index != command_undo)) break;
@@ -1105,5 +1102,131 @@ extern uims_reply full_resolve(search_kind goal)
 
       for (j=0; j<=history_ptr+1; j++)
          history[j] = huge_history_save[j];
+   }
+}
+
+static void display_reconcile_history(int current_depth, int n)
+{
+   int j;
+
+   /*
+    * The UI might display the reconcile history in a different window
+    * than the normal sequence.  In that case, our remembered history
+    * must be discarded.
+    */
+
+   if (uims_begin_reconcile_history(current_depth, n-2))
+       written_history_items = -1;
+   display_initial_history(n-current_depth, 0);
+   if (current_depth > 0) {
+      writestuff("------------------------------------");
+      newline();
+      for (j=n-current_depth+1; j<=n; j++)
+         write_history_line(j, (char *) 0, FALSE, file_write_no);
+   }
+   if (uims_end_reconcile_history())
+       written_history_items = -1;
+}
+
+extern int concepts_in_place(void)
+{
+   return history[history_ptr+1].command_root != 0;
+}
+
+
+Private int promperm[8] = {1, 0, 6, 7, 5, 4, 2, 3};
+Private int qtagperm[8] = {1, 0, 7, 6, 5, 4, 3, 2};
+Private int crossperm[8] = {5, 4, 3, 2, 1, 0, 7, 6};
+Private int laperm[8] = {1, 3, 6, 0, 5, 7, 2, 4};
+
+/* If this returns TRUE, it drops useful stuff into the places that its arguments
+   point to.  If you don't want that, point the arguments at dummies. */
+extern int reconcile_command_ok(int **permutation_map_p, int *accept_extend_p)
+{
+   int k;
+   int dirmask = 0;
+   personrec *current_people = history[history_ptr].state.people;
+   setup_kind current_kind = history[history_ptr].state.kind;
+
+   /* Since we are going to go back 1 call, demand we have at least 3. ***** */
+   /* Also, demand no concepts already in place. */
+   if ((history_ptr < 3) || concepts_in_place()) return FALSE;
+
+   for (k=0; k<8; k++)
+      dirmask = (dirmask << 2) | (current_people[k].id1 & 3);
+
+   *accept_extend_p = FALSE;
+
+   if (current_kind == s2x4 && dirmask == 0xA00A)
+      *permutation_map_p = promperm;            /* L2FL, looking for promenade. */
+   else if (current_kind == s_qtag && dirmask == 0x08A2)
+      *permutation_map_p = qtagperm;            /* RQTAG, looking for RLG. */
+   else if (current_kind == s_qtag && dirmask == 0x78D2)
+      *permutation_map_p = qtagperm;            /* diamonds with points facing, looking for RLG. */
+   else if ((current_kind == s_crosswave || current_kind == s_thar) && (dirmask == 0x278D || dirmask == 0xAF05))
+      *permutation_map_p = crossperm;            /* crossed waves or thar, looking for RLG or promenade. */
+   else if (current_kind == s2x4 && dirmask == 0x2288) {
+      /* Rwave, looking for RLG, we turn on "accept_extend" to tell it
+         to measure couple number only approximately. */
+      *accept_extend_p = TRUE;
+      *permutation_map_p = promperm;
+   }
+   else if (current_kind == s2x4 && dirmask == 0x8822) {
+      /* Lwave, looking for LA, we turn on "accept_extend" to tell it
+         to measure couple number only approximately. */
+      *accept_extend_p = TRUE;
+      *permutation_map_p = laperm;
+   }
+   else
+      return FALSE;
+
+   return TRUE;
+}
+
+extern int resolve_command_ok(void)
+{
+   setup_kind current_kind = history[history_ptr].state.kind;
+   return current_kind == s2x4 ||
+          current_kind == s1x8 ||
+          current_kind == s_qtag;
+}
+
+extern int nice_setup_command_ok(void)
+{
+   setup_kind current_kind = history[history_ptr].state.kind;
+   return current_kind == s4x4 && !concepts_in_place();
+}
+
+/*
+ * Create a string representing the search state.  Goal indicates which user command
+ * is being performed.  If there is no current solution,
+ * then M and N are both 0.  If there is a current
+ * solution, the M is the solution index (minimum value 1) and N is the maximum
+ * solution index (N>0).  State indicates whether a search is in progress or not, and
+ * if not, whether the most recent search failed.
+ */
+
+extern void create_resolve_menu_title(search_kind goal, int cur, int max, resolver_display_state state, char *title)
+{
+   char junk[MAX_TEXT_LINE_LENGTH];
+   char *titleptr;
+
+   titleptr = title;
+   string_copy(&titleptr, title_string[goal]);
+   if (max > 0) {
+      add_resolve_indices(junk, cur, max);
+      string_copy(&titleptr, junk);
+   }
+   switch (state) {
+      case resolver_display_ok:
+         break;
+      case resolver_display_searching:
+         if (max > 0) string_copy(&titleptr, " ");
+         string_copy(&titleptr, "searching ...");
+         break;
+      case resolver_display_failed:
+         if (max > 0) string_copy(&titleptr, " ");
+         string_copy(&titleptr, "failed");
+         break;
    }
 }

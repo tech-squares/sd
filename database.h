@@ -16,7 +16,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-    This is for version 28. */
+    This is for version 29. */
 
 /* These are written as the first two halfwords of the binary database file.
    The format version is not related to the version of the program or database.
@@ -27,7 +27,7 @@
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 34
+#define DATABASE_FORMAT_VERSION 36
 
 /* BEWARE!!  This list must track the tables "flagtab" and "nexttab"" in mkcalls.c .
    Because the constants are not defined contiguously, there are spacer items
@@ -59,7 +59,7 @@
 #define cflag__visible_fractions          0x00010000
 #define cflag__first_part_visible         0x00020000
 #define cflag__12_16_matrix_means_split   0x00040000
-/* space left for                         0x00080000 */
+#define cflag__imprecise_rotation         0x00080000
 /* space left for                         0x00100000 */
 #define cflag__diamond_is_inherited       0x00200000
 #define cflag__reverse_means_mirror       0x00400000
@@ -255,8 +255,9 @@ typedef enum {
 
 typedef enum {
    sq_none,
-   sq_wave_only,                    /* 1x4 or 2x4 - waves */
+   sq_wave_only,                    /* 1x4 or 2x4 - waves; 2x2 - real RH or LH box */
    sq_2fl_only,                     /* 1x4 or 2x4 - 2FL's */
+   sq_in_or_out,                    /* 2x2 - all facing in or all facing out */
    sq_miniwaves,                    /* 1x2, 1x4, 1x8, 2x4, 2x2, dmd, qtag, trngl - people
                                        are paired in miniwaves of various handedness.
                                        For diamonds and qtags, this applies just to the centers.

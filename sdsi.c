@@ -221,7 +221,6 @@ extern void *get_mem(unsigned int siz)
    buf = malloc(siz);
    if (!buf && siz != 0) {
       fprintf(stderr, "Can't allocate %d bytes of memory.\n", siz);
-      perror("malloc");
       exit_program(2);
    }
    return buf;
@@ -413,8 +412,10 @@ extern void open_database(void)
    /* The "b" in the mode is meaningless and harmless in POSIX.  Some systems,
       however, require it for correct handling of binary data. */
    if (!(fp = fopen(database_filename, "rb"))) {
-      fprintf(stderr, "Can't open database file.\n");
+      fprintf(stderr, "sd: Can't open database file.\n");
       perror(database_filename);
+      if (errno == ENOENT)
+	  fprintf(stderr, "Use the mkcalls program to create the database file.\n");
       exit_program(1);
    }
 

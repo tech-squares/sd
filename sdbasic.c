@@ -29,7 +29,7 @@
 
 
 /* This file uses a few bogus setups.  They are never allowed to escape:
-   8x8 =
+   s_8x8 =
      0   1   2   3  28  24  20  16 
      4   5   6   7  29  25  21  17
      8   9  10  11  30  26  22  18
@@ -39,7 +39,7 @@
     49  53  57  61  39  38  37  36
     48  52  56  60  35  34  33  32
 
-   x4dmd =
+   s_x4dmd =
       4        8       15
    7     5     9    14    12
       6       10       13
@@ -50,7 +50,7 @@
   28    30    25    21    23
      31       24       20
 
-   x1x6 =
+   s_x1x6 =
             3
             4
             5
@@ -1102,11 +1102,13 @@ Private void special_4_way_symm(
    int real_direction, northified_index;
    unsigned int z;
    int k, zzz, result_size, result_quartersize;
-   int *the_table;
+   int *the_table = (int *) 0;
 
    switch (result->kind) {
-      case s2x2: case s_galaxy: case s_c1phan: case s4x4: case s_hyperglass: case s_star: case s_1x1:
-         the_table = 0;
+      case s2x2: case s_galaxy:
+      case s_c1phan: case s4x4:
+      case s_hyperglass: case s_thar:
+      case s_star: case s_1x1:
          break;
       case s1x4:
          result->kind = s_hyperglass;
@@ -1589,6 +1591,9 @@ extern void basic_move(
             we can do "Z axle". */
    
          switch (livemask) {
+            case 0x6666:
+               division_maps = (*map_lists[s_1x2][3])[MPKIND__4_EDGES][0];
+               goto divide_us_no_recompute;
             case 0x7171:
                division_maps = &map_4x4_ns;
                warn(warn__each1x4);
@@ -1641,6 +1646,9 @@ extern void basic_move(
          }
 
          fail("You must specify a concept.");
+      case s_thar:
+         division_maps = (*map_lists[s_1x2][3])[MPKIND__4_EDGES][1];
+         goto divide_us_no_recompute;
       case s2x6:
          /* The call has no applicable 2x6 or 6x2 definition. */
 
@@ -2520,9 +2528,8 @@ extern void basic_move(
          to be part of doing the call.  If we someday were able to do a reverse flip of split
          phantom galaxies, we would want each galaxy to compress itself to a 2x4 before
          reassembling them.
-      If we handle 4x4 start setups in the future, we would NOT want to compress
-         a 4x4 to a 2x4 after a 16-matrix circulate!!!!!  This is why we compare the beginning and
-         ending setup sizes. */
+      When we do a 16-matrix circulate in a 4x4 start setup, we do NOT want to compress
+         the 4x4 to a 2x4!!!!!  This is why we compare the beginning and ending setup sizes. */
 
       if (setup_limits[ss->kind] < setup_limits[result->kind]) {
          int *permuter = (int *) 0;
@@ -2592,30 +2599,26 @@ extern void basic_move(
          }
          else if (result->kind == s_8x8) {
             /* See if people landed on 2x8 spots. */
-            if ((lilresult_mask[0] & 0x77770FFF) == 0 && (lilresult_mask[1] & 0x77770FFF) == 0) {
-               result->kind = s2x8;
-               permuter = octtranslateh;
-            }
-            else if ((lilresult_mask[0] & 0x0FFF7777) == 0 && (lilresult_mask[1] & 0x0FFF7777) == 0) {
-               result->kind = s2x8;
+            result->kind = s2x8;
+            permuter = octtranslateh;
+
+            if ((lilresult_mask[0] & 0x0FFF7777) == 0 && (lilresult_mask[1] & 0x0FFF7777) == 0) {
                permuter = octtranslatev;
                rotator = 1;
             }
-            else
+            else if ((lilresult_mask[0] & 0x77770FFF) != 0 || (lilresult_mask[1] & 0x77770FFF) != 0)
                fail("Call went to improperly-formed setup.");
          }
          else if (result->kind == s_x4dmd) {
             /* See if people landed on quad diamond spots. */
-            if ((lilresult_mask[0] & 0xAF50AF50) == 0) {
-               result->kind = s_4dmd;
-               permuter = qdmtranslateh;
-            }
-            else if ((lilresult_mask[0] & 0x50AF50AF) == 0) {
-               result->kind = s2x8;
+            result->kind = s_4dmd;
+            permuter = qdmtranslateh;
+
+            if ((lilresult_mask[0] & 0x50AF50AF) == 0) {
                permuter = qdmtranslatev;
                rotator = 1;
             }
-            else
+            else if ((lilresult_mask[0] & 0xAF50AF50) != 0)
                fail("Call went to improperly-formed setup.");
          }
          else if (result->kind == s_hyperglass) {

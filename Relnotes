@@ -1,5 +1,39 @@
-		    RELEASE NOTES FOR VERSION 28.6
-       Database version = 28.5, format = 34, X11 UI version 1.13.
+		    RELEASE NOTES FOR SD VERSION 28.64
+       Database version = 28.52, format = 34, X11 UI version 1.13.
+
+28.64:
+
+Implemented database reading ticks for sdtty only.
+
+sd.c renamed sdconcpt.c
+
+New file readme.txinfo.
+
+Changed address of Sd mailing lists to expo.lcs.mit.edu.
+
+README file now exactly the Introduction of the manual; they are
+generated from the same source.
+
+Added "Getting Started" chapter to the manual.  It is supposed to be a
+gentle introduction for people who aren't going to read the whole
+manual.  Have I succeeded?
+
+28.62:
+The file dbcompile.c has been changed to dbcomp.c .  Makefile fix fixed.
+
+Slightly improved getout detection (it can see cross by, left allemande
+from thars and crossed waves, for example.)
+
+28.61:
+The database compiler now consists of two files: dbcompile.c (later changed
+to dbcomp.c) and mkcalls.c .  The Makefiles have been changed to reflect this.
+
+Database format:  Added new qualifier "in_or_out", and improved qualifier
+"wave_only", to make centers' part of "bits and "pieces" work authentically.
+
+Added very rudimentary awareness of thar setups.
+
+New calls: slip the clutch, fractional tops, cross by.
 
 28.6:
 
@@ -18,10 +52,11 @@ that fractional twosom/solid was added.  This bug is serious.
 
 28.4:
 
-New calls:  [single] rotate from 6x1 and 8x1 columns.  Also, the concept "single"
-is now used to get single rotate -- single rotate is not separately listed in the menu.
-The call "single file rotate" is now listed separately.  This is the 4x1 call.
-The calls "little, ends go as you are" and "plenty, ends go as you are" were added.
+New calls: [single] rotate from 6x1 and 8x1 columns.  Also, the
+concept "single" is now used to get single rotate -- single rotate is
+not separately listed in the menu.  The call "single file rotate" is
+now listed separately.  This is the 4x1 call.  The calls "little, ends
+go as you are" and "plenty, ends go as you are" were added.
 These are intended to be called from diamonds.  Exactly how you would say these
 calls may depend on the audience.  Many callers and dancers believe that one
 could just say "little" or "plenty" from these setups.  Some very fussy people
@@ -31,9 +66,11 @@ intended effect.
 
 Build changes:
 
-default Makefile replaced by Makefile.in and configure.  See README
-for new build procedures.  If you are using xmkmf, the procedure does
-not change.
+The default Makefile is replaced by Makefile.in and configure.  See
+README (since changed to INSTALL) for the new build procedures.  If you are using xmkmf, the
+procedure does not change.  If you had to use Makefile before, chances
+were you had to edit it by hand.  Now "configure" does the editing for
+you.
 
 28.3:
 
@@ -61,4 +98,4 @@ do things like pass thru or slide thru.
 
 ===============================================================================
 
-See the file relnotes.archive for notes relating to older versions.
+See the file "oldnotes" for notes relating to older versions.

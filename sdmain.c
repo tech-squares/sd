@@ -19,9 +19,10 @@
     The version of this file is as shown immediately below.  This string
     gets displayed at program startup. */
 
-#define VERSION_STRING "28.6"
+#define VERSION_STRING "28.64"
 
 /* This defines the following functions:
+   sd_version_string
    mark_parse_blocks
    release_parse_blocks_to_mark
    initialize_parse
@@ -33,7 +34,9 @@
    query_for_call
    write_header_stuff
    main
+   write_sequence_to_file
    get_real_subcall
+   sequence_is_resolved
 
 and the following external variables:
    abs_max_calls
@@ -51,6 +54,7 @@ and the following external variables:
    initializing_database
    testing_fidelity
    selector_for_initialize
+   allowing_modifications
 */
 
 
@@ -59,9 +63,15 @@ and the following external variables:
 #include "sd.h"
 #include "paths.h"
    
+extern char *sd_version_string(void)
+{
+   return VERSION_STRING;
+}
 
 Private void display_help(void)
 {
+    printf("Sd version %s : ui%s\n",
+	   sd_version_string(), uims_version_string());
     printf("Usage: sd [flags ...] level\n");
     printf("  legal flags:\n");
     printf("-write_list filename        write out list for this level\n");
@@ -93,6 +103,7 @@ long_boolean not_interactive = FALSE;
 long_boolean initializing_database = FALSE;
 long_boolean testing_fidelity = FALSE;
 selector_kind selector_for_initialize;
+int allowing_modifications;
 
 /* These variables are are global to this file. */
 
@@ -101,7 +112,6 @@ Private long_boolean reply_pending;
 Private int error_flag;
 Private parse_block *parse_active_list;
 Private parse_block *parse_inactive_list;
-Private int allowing_modifications;
 Private int concept_sublist_sizes[NUM_CALL_LIST_KINDS];
 Private short int *concept_sublists[NUM_CALL_LIST_KINDS];
 
@@ -554,7 +564,7 @@ extern long_boolean query_for_call(void)
       
       display_initial_history(history_ptr, 2);
 
-      if (history[history_ptr].resolve_flag.kind != resolve_none) {
+      if (sequence_is_resolved()) {
          newline();
          writestuff("     resolve is:");
          newline();
@@ -885,21 +895,21 @@ Private call_list_mode_t call_list_mode;
 
 extern void write_header_stuff(void)
 {
-      /* log creation version info */
-      writestuff("Sd");
-      writestuff(VERSION_STRING);
-      writestuff(":db");
-      writestuff(major_database_version);
-      writestuff(".");
-      writestuff(minor_database_version);
-      writestuff("     ");
+   /* log creation version info */
+   writestuff("Sd");
+   writestuff(sd_version_string());
+   writestuff(":db");
+   writestuff(major_database_version);
+   writestuff(".");
+   writestuff(minor_database_version);
+   writestuff("     ");
 
-      /* log level info */
-      writestuff(getout_strings[calling_level]);
-      if (call_list_mode == call_list_mode_abridging)
-          writestuff(" (abridged)");
+   /* log level info */
+   writestuff(getout_strings[calling_level]);
+   if (call_list_mode == call_list_mode_abridging)
+       writestuff(" (abridged)");
 
-      newline();
+   newline();
 }
 
 
@@ -912,7 +922,7 @@ void main(int argc, char *argv[])
        display_help();		/* does not return */
 
    /* This lets the X user interface intercept command line arguments that it is
-      interested in. */
+      interested in.  It also handles the flags "-seq" and "-db". */
    uims_process_command_line(&argc, &argv);
 
    /* Do general initializations, which currently consist only of
@@ -938,18 +948,13 @@ void main(int argc, char *argv[])
             call_list_mode = call_list_mode_writing_full;
          else if (strcmp(&argv[argno][1], "abridge") == 0)
             call_list_mode = call_list_mode_abridging;
-         else {
-	     /* flags -seq and -db handled by uims_process_command_line */
-	     print_line("Unknown flag:");
-	     print_line(argv[argno]);
-	     goto bad_flag;
-	 }
+         else
+            uims_bad_argument("Unknown flag:", argv[argno], 0);
+
          argno++;
-         if (argno>=argc) {
-	     print_line("This flag must be followed by a file name:");
-	     print_line(argv[argno-1]);
-	     goto bad_flag;
-	 }
+         if (argno>=argc)
+            uims_bad_argument("This flag must be followed by a file name:", argv[argno-1], 0);
+
          if (open_call_list_file(call_list_mode, argv[argno]))
             exit_program(1);
       }
@@ -1074,7 +1079,7 @@ void main(int argc, char *argv[])
    show_banner:
 
    writestuff("Version ");
-   writestuff(VERSION_STRING);
+   writestuff(sd_version_string());
    writestuff(" : db");
    writestuff(major_database_version);
    writestuff(".");
@@ -1363,64 +1368,20 @@ void main(int argc, char *argv[])
                goto start_cycle;
             }
          case command_getout:
-            {
-               int getout_ind;
-               char date[MAX_TEXT_LINE_LENGTH];
-               char header[MAX_TEXT_LINE_LENGTH];
-               int j;
-            
-               /* Check that it is really resolved. */
-            
-               if (history[history_ptr].resolve_flag.kind == resolve_none)
-                  specialfail("This sequence is not resolved.");
-            
-               /* Put up the getout popup to see if the user wants to enter a header string. */
-            
-               getout_ind = uims_do_getout_popup(header);
-         
-               if (getout_ind == POPUP_DECLINE) goto start_cycle;    /* User didn't want to end this sequence after all. */
-            
-               /* User really wants this sequence.  Open the file and write it. */
-            
-               open_file();
-               enable_file_writing = TRUE;
-               doublespace_file();
 
-               clear_screen();
-               get_date(date);
-               writestuff(date);
-               writestuff("     ");
-               write_header_stuff();
+            /* Check that it is really resolved. */
 
-               if (getout_ind == POPUP_ACCEPT_WITH_STRING) {
-                  writestuff("             ");
-                  writestuff(header);
-                  newline();
-               }
-         
-               newline();
-         
-               for (j=whole_sequence_low_lim; j<=history_ptr; j++) write_history_line(j, (char *) 0, FALSE, file_write_double);
-            
-               doublespace_file();
-               writestuff(resolve_names[history[history_ptr].resolve_flag.kind]);
-               writestuff(resolve_distances[history[history_ptr].resolve_flag.distance & 7]);
-         
-               newline();
-               enable_file_writing = FALSE;
-               newline();
-            
-               close_file();     /* This will signal a "specialfail" if a file error occurs. */
-      
-               writestuff("Sequence written to \"");
-               writestuff(outfile_string);
-               writestuff("\".");
-               newline();
-         
-               global_age++;
-      
-               goto new_sequence;
-            }
+            if (!sequence_is_resolved())
+               specialfail("This sequence is not resolved.");
+            if (write_sequence_to_file() == 0)
+               goto start_cycle; /* user cancelled action */
+
+            writestuff("Sequence written to \"");
+            writestuff(outfile_string);
+            writestuff("\".");
+            newline();
+            goto new_sequence;
+
          default:
             goto normal_exit;
       }
@@ -1430,20 +1391,74 @@ void main(int argc, char *argv[])
    
    bad_level:
 
-   print_line("Unknown calling level argument:");
-   print_line(argv[argno]);
-   print_line("Known calling levels: m, p, a1, a2, c1, c2, c3a, c3, c3x, c4a, or c4.");
-
-   bad_flag:
-
-   print_line("Use the -help flag for help.");
-   exit_program(1);
+   uims_bad_argument("Unknown calling level argument:", argv[argno],
+      "Known calling levels: m, p, a1, a2, c1, c2, c3a, c3, c3x, c4a, or c4.");
 
    normal_exit:
    
    exit_program(0);
 }
 
+/* return TRUE if sequence was written */
+
+extern long_boolean write_sequence_to_file(void)
+{
+   int getout_ind;
+   char date[MAX_TEXT_LINE_LENGTH];
+   char header[MAX_TEXT_LINE_LENGTH];
+   int j;
+
+   /* Put up the getout popup to see if the user wants to enter a header string. */
+
+   getout_ind = uims_do_getout_popup(header);
+
+   if (getout_ind == POPUP_DECLINE)
+      return FALSE;    /* User didn't want to end this sequence after all. */
+
+   /* User really wants this sequence.  Open the file and write it. */
+
+   clear_screen();
+   open_file();
+   enable_file_writing = TRUE;
+   doublespace_file();
+
+   get_date(date);
+   writestuff(date);
+   writestuff("     ");
+   write_header_stuff();
+
+   if (getout_ind == POPUP_ACCEPT_WITH_STRING) {
+      writestuff("             ");
+      writestuff(header);
+      newline();
+   }
+
+   newline();
+
+   for (j=whole_sequence_low_lim; j<=history_ptr; j++)
+      write_history_line(j, (char *) 0, FALSE, file_write_double);
+
+   /* Echo the concepts entered so far.  */
+
+   if (parse_state.concept_write_ptr != &history[history_ptr+1].command_root) {
+      write_history_line(history_ptr+1, (char *) 0, FALSE, file_write_double);
+   }
+
+   if (sequence_is_resolved()) {
+      doublespace_file();
+      writestuff(resolve_names[history[history_ptr].resolve_flag.kind]);
+      writestuff(resolve_distances[history[history_ptr].resolve_flag.distance & 7]);
+   }
+
+   newline();
+   enable_file_writing = FALSE;
+   newline();
+
+   close_file();     /* This will signal a "specialfail" if a file error occurs. */
+
+   global_age++;
+   return TRUE;
+}
 
 
 Private long_boolean debug_popup = FALSE;
@@ -1636,4 +1651,9 @@ extern void get_real_subcall(
    *concptrout = (*newsearch)->subsidiary_root;
    *callout = NULLCALLSPEC;              /* We THROW AWAY the alternate call, because we want our user to get it from the concept list. */
    *concout = 0;
+}
+
+extern long_boolean sequence_is_resolved(void)
+{
+   return history[history_ptr].resolve_flag.kind != resolve_none;
 }

@@ -21,7 +21,7 @@
     at program startup, as the "db" part of the complete version.
 */
 
-version 28 5
+version 28 52
 
 /* ****************** TEMPORARY HACK FOR TESTING
 
@@ -122,6 +122,29 @@ call "000 triangle circulate CCW" mainstream
 call "(nothing)" mainstream tag nullcall
             dont_use_in_resolve
    nulldefine
+
+call "slip the clutch" mainstream tag slipclutch
+            imprecise_rotation
+   setup thar thar
+      array [0N 3E 0 0 4N 3W 0 0]
+   setup crosswave thar
+      array [0N 3E 0 0 4N 3W 0 0]
+   setup pcrosswave thar
+      array [0 0 2N 5E 0 0 6N 5W]
+
+call "cross by" c1
+            imprecise_rotation
+   setup thar thar
+      array [1N 2E 0 0 5N 2W 0 0]
+   setup crosswave thar
+      array [1N 2E 0 0 5N 2W 0 0]
+   setup pcrosswave thar
+      array [0 0 3N 4E 0 0 7N 4W]
+
+call "@b top" a1
+            neednumber imprecise_rotation
+   seq trade []
+   seq slipclutch [repeat_n]
 
 call "flip your lid" c3
    setup qtag qtag
@@ -3536,6 +3559,8 @@ call "4X4 leads wheel the sea" c4
 call "@gchase @eright@f" plus
             left_means_mirror
    setup 2x2 2x2
+      /* The original beau cannot roll.  It is box circulate two positions.
+         Callerlab plus definitions, page 1. */
       array [M2S R3N 0 0]
 
 call "mini chase" c3a
@@ -4336,6 +4361,7 @@ call "cut across" c4a
       array [R4W R5W L6E L7E M4E M5E M6W M7W]
 
 call "pass and roll your neighbor" a2
+            rear_back_from_r_wave left_means_mirror
    setup 4x1 1x4
       array [R0E 0 0 R3E]
 
@@ -5290,6 +5316,8 @@ call "counter rotate" c1 tag ctr_rot
       array [AL12W AL13W AL14W AL15W AL0W AL1W CR10E AL3W CR12E CR13E CR14E CR15E CR0E CR1E AL10W CR3E]
    setup c1phan c1phan
       array [CR4E CR5E CR6E CR7E AL0W AL1W AL2W AL3W AL4W AL5W AL6W AL7W CR0E CR1E CR2E CR3E]
+   setup thar thar
+      array [CR2E CR3E 0 0 AL2W AL3W 0 0]
    setup short6 short6 rotate
       array [CR0N 0 AL5S AL0N 0 CR5N]
    setup pshort6 short6 rotate
@@ -6052,10 +6080,10 @@ call "_centers 3/4 ends half circ" dontshow tag motivate2
    maybematrix_conc_star armturn_34 [] half_circ [conc_demand_lines]
 
 call "central bits and pieces" c4a tag ctr_bits_pieces
-   setup 2x2 2x2
-      preds "Can't do this with phantoms or T-boned people."
-         if x22_miniwave [L2N R3N R0N L1N]
-         if x22_couple [R0N R3N R0N R3N]
+   setup 2x2 2x2 qualifier wave_only
+      array [L2N R3N R0N L1N]
+   setup 2x2 2x2 qualifier in_or_out
+      array [R0N R3N R0N R3N]
 
 call "bits and pieces" c4a
    conc ctr_bits_pieces [] box_circ_and_trade [conc_demand_lines conc_force_columns endscando]

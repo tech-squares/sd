@@ -36,6 +36,7 @@ extern void canonicalize_rotation(setup *result) {
    else if ((result->kind == s4x4) ||
             (result->kind == s2x2) ||
             (result->kind == s_star) ||
+            (result->kind == s_thar) ||
             (result->kind == s_bigblob) ||
             (result->kind == s_c1phan) ||
             (result->kind == s_hyperglass) ||
@@ -237,7 +238,8 @@ Private void finish_matrix_call(
 
 {
    int i, place;
-   int xmax, xpar, ymax, ypar, signature, x, y, k;
+   int xmax, xpar, ymax, ypar, x, y, k;
+   unsigned int signature;
    coordrec *checkptr;
 
    xmax = xpar = ymax = ypar = signature = 0;
@@ -253,7 +255,7 @@ Private void finish_matrix_call(
       /* ****** This seems to be too restrictive.  There may have been good reason for doing this
          at one time, but now it makes all press and truck calls illegal in C1 phantoms.  The
          table for C1 phantoms has been carefully chosen to make things legal only within one's
-         own minwave, but it requires odd numbers.  Perhaps we need to double the resolution
+         own miniwave, but it requires odd numbers.  Perhaps we need to double the resolution
          of things in matrix_info[i].x or y, but that should wait until after version 28 is released. */
 
       if (((matrix_info[i].x | matrix_info[i].y) & 1) && (matrix_info[i].deltax | matrix_info[i].deltay))
@@ -303,8 +305,16 @@ Private void finish_matrix_call(
       checkptr = setup_coords[s_rigger];
       goto doit;
    }
-   if ((ypar == 0x00770077) && ((signature & (~0x00418004)) == 0)) {
+   else if ((ypar == 0x00770077) && ((signature & (~0x00418004)) == 0)) {
       checkptr = setup_coords[s_galaxy];
+      goto doit;
+   }
+   else if ((ypar == 0x00950095) && ((signature & (~0x22008080)) == 0)) {
+      checkptr = setup_coords[s_thar];
+      goto doit;
+   }
+   else if ((ypar == 0x00950075) && ((signature & (~0x20018000)) == 0)) {
+      checkptr = setup_coords[s_crosswave];
       goto doit;
    }
    else if ((ypar == 0x00A20026) && ((signature & (~0x01040420)) == 0)) {

@@ -1,8 +1,14 @@
-@c install.txinfo Time-stamp: <93/04/10 21:53:15 gildea>
+@c install.txinfo Time-stamp: <93/05/08 18:10:39 gildea>
+@c Included by sd_doc, also used to produce INSTALL.
 @node Installation, , Versions, Top
 @chapter Building and Installing
 
-To compile Sd, you need an ANSI C compiler.
+To compile Sd, you need C compiler that
+
+@itemize
+@item can handle full ANSI C, and
+@item has 32-bit integers.
+@end itemize
 
 @code{mkcalls} must be run once to compile @file{sd_calls.txt}, the
 calls database, into @file{sd_calls.dat}, the binary file used by Sd.
@@ -55,8 +61,12 @@ If you do not have X, type @code{make sdtty} to build the character-oriented
 version of the program.  This command builds the database as well.
 
 Sun's OpenWindows 3 has a buggy @code{xmkmf}, so you cannot use it.  Instead,
-set the environment variable @code{OPENWINHOME} appropriately, then type
-@code{imake -I$OPENWINHOME/lib/config}.
+set the environment variable @code{OPENWINHOME} appropriately
+(typically to @file{/usr/openwin}), then type
+
+@example
+imake -I$OPENWINHOME/lib/config
+@end example
 
 @node Building on the Mac, Building on DOS, Building on Unix, Installation
 @section Building on the Mac with Think C
@@ -190,6 +200,13 @@ do so to exit the program.
 
 (DOS support is not released yet.)
 @ignore
+@menu
+* Compiling with DJGPP::	Compiling with GCC on DOS
+* Running on DOS::		Requirements for running on DOS
+@end menu
+
+@subsection Compiling with DJGPP
+
 @code{sdtty} and @code{mkcalls} run on MS-DOS using the QEMM memory
 manager.  @code{sdtty} is about 2Mb.  The file @file{sdui-tpc.c}
 provides an interface to the console I/O package distributed with
@@ -200,4 +217,18 @@ create a @code{Makefile} for @code{qmake}, a make-like program
 distributed with Desqview/X.  Run @code{configure --with-pc}.
 Unfortunately, this step must be done on a Unix-like system and the
 resulting Makefile transferred to your DOS system.
+
+@subsection Running on DOS
+
+DJGPP says it supports 80386, 80387, 80486, XMS, himem.sys, VCPI,
+QEMM, 386MAX, and DesqView.
+We have also heard it works with Microsoft's EMM386 and Qualitas's 386~MAX.
+The authors have not tested Sd with all
+of these.
+
+You will need a system with at least 2 megabytes of memory.  There
+should be at least 175 kilobytes of memory free in the first 640Kb.
+The authors have not actually tried it on a system this small, and we
+would be interested in your experiences.
+
 @end ignore

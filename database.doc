@@ -403,8 +403,25 @@ trngl       |_____|_____|      (1 way symmetry -- leads to strange
 
 
 
-thar
-nothing            ??????
+                         _____
+                        |     |
+                        |  2  |
+                        |_____|
+                        |     |
+                        |  3  |
+             _____ _____|     |_____ _____
+            |     |      \   /      |     |
+thar        |  0  |  1           5  |  4  |      (4 way symmetry)
+            |_____|_____ /   \ _____|_____|
+                        |     |
+                        |  7  |
+                        |_____|
+                        |     |
+                        |  6  |
+                        |_____|
+
+
+
 normal_concentric  ??????
 
 
@@ -1702,6 +1719,7 @@ fudge_to_q_tag
 visible_fractions
 first_part_visible
 12_16_matrix_means_split
+imprecise_rotation
 diamond_is_legal
 reverse_means_mirror
 left_means_mirror
@@ -1759,7 +1777,7 @@ conc_force_otherway
 conc_concentric_rules
       If this call is invoked in a concentric definition, and these people
       finish on the outside in a 2x2, the finishing position will be as though
-      had said the concept "concentric" or "cross concentric".  That is,
+      the caller had said "concentric" or "cross concentric".  That is,
       they will use the "lines-to-lines/columns-to-columns" rule or the
       "opposite elongation" rule as appropriate.  This flag overrides any
       defaults or "parallel_conc_end" behavior specified in the invoked call
