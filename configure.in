@@ -1,4 +1,4 @@
-AC_REVISION(Time-stamp: "93/11/30 00:19:42 gildea")dnl
+AC_REVISION(Time-stamp: "93/12/01 16:33:31 gildea")dnl
 # configure script for Sd (square dance caller's helper)
 #
 # options:
@@ -27,8 +27,9 @@ TTY_FLAGS=
 TTY_LIBS=-lpc
 X11_LIBS=
 LN_S="ln -s"
-STRIP="strip \$@"
-AOUT2EXE="aout2exe \$@"
+dnl those are Tab characters in the next two lines
+STRIP="	strip \$@"
+AOUT2EXE="	aout2exe \$@"
 AC_SUBST(STRIP)dnl
 AC_SUBST(AOUT2EXE)dnl
 DEFAULT_TARGET=alltty

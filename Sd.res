@@ -40,7 +40,7 @@
 *command.getout: End this sequence
 *command.resolve: Resolve
 *command.reconcile: Reconcile
-*command.anything: Do anything
+*command.anything: Pick random call
 *command.nice: Normalize
 *command.savepic: Keep picture
 *resolve.abort: abort the search

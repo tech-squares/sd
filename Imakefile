@@ -1,6 +1,6 @@
 /*
  * Imakefile for Sd (square dance caller's helper)
- * Time-stamp: <93/11/26 16:10:23 gildea>
+ * Time-stamp: <93/12/07 08:27:21 gildea>
  *
  * Run "xmkmf" to generate a Makefile from this description.
  * Then run "make" to build the Sd system.
@@ -47,7 +47,7 @@ TTY_FLAGS = -I/usr/5include
 #endif
 CURSES = $(CURSES_LIB) -lcurses
 
-SpecialObjectRule(sdui-ttu.o, /**/,$(TTY_FLAGS))
+SpecialObjectRule(sdui-ttu.o,sdui-ttu.c,$(TTY_FLAGS))
 
 NormalProgramTarget(sdtty,$(SD_OBJS) $(SDTTY_OBJ), /**/, /**/,$(CURSES))
 

@@ -160,25 +160,30 @@ static void db_output_error(void);
 
 static FILE *db_input = NULL;
 static FILE *db_output = NULL;
-static char db_input_filename[200];
-static char db_output_filename[200];
+#define FILENAME_LEN 200
+static char db_input_filename[FILENAME_LEN];
+static char db_output_filename[FILENAME_LEN];
 
 
 void main(int argc, char *argv[])
 {
-   strcpy(db_input_filename, CALLS_FILENAME);
-   strcpy(db_output_filename, DATABASE_FILENAME);
+   if (argc == 2)
+       strncpy(db_input_filename, argv[1], FILENAME_LEN);
+   else
+       strncpy(db_input_filename, CALLS_FILENAME, FILENAME_LEN);
+
+   strncpy(db_output_filename, DATABASE_FILENAME, FILENAME_LEN);
 
    db_input = fopen(db_input_filename, "r");
    if (!db_input) {
-      printf("Can't open input file ");
+      fprintf(stderr, "Can't open input file ");
       perror(db_input_filename);
       exit(1);
    }
 
    if (remove(db_output_filename)) {
       if (errno != ENOENT) {
-	 printf("trouble deleting old output file ");
+	 fprintf(stderr, "trouble deleting old output file ");
 	 perror(db_output_filename);
          /* This one does NOT abort. */
       }
@@ -188,7 +193,7 @@ void main(int argc, char *argv[])
       however, require it for correct handling of binary data. */
    db_output = fopen(db_output_filename, "wb");
    if (!db_output) {
-      printf("Can't open output file ");
+      fprintf(stderr, "Can't open output file ");
       perror(db_output_filename);
       exit(1);
    }
@@ -287,7 +292,7 @@ db_close_output(void)
 static void
 db_input_error(void)
 {
-    printf("Error reading input file ");
+    fprintf(stderr, "Error reading input file ");
     perror(db_input_filename);
     exit(1);
 }
@@ -301,7 +306,7 @@ db_input_error(void)
 static void
 db_output_error(void)
 {
-    printf("Error writing output file ");
+    fprintf(stderr, "Error writing output file ");
     perror(db_output_filename);
     exit(1);
 }

@@ -1,5 +1,5 @@
 #!/bin/sh
-# From configure.in Time-stamp: 93/11/30 00:19:42 gildea
+# From configure.in Time-stamp: 93/12/01 16:33:31 gildea
 # configure script for Sd (square dance caller's helper)
 #
 # options:
@@ -159,8 +159,8 @@ TTY_FLAGS=
 TTY_LIBS=-lpc
 X11_LIBS=
 LN_S="ln -s"
-STRIP="strip \$@"
-AOUT2EXE="aout2exe \$@"
+STRIP="	strip \$@"
+AOUT2EXE="	aout2exe \$@"
 DEFAULT_TARGET=alltty
 # ****** End of PC section ******
 

@@ -10,15 +10,15 @@ computes the resulting setup and shows it to you.
 
    There are several user interfaces available with Sd.  The standard is
 an X Window System interface.  Also included is a terminal-based user
-interface featuring a completing reader.  Support for Apollo's Domain
-Dialog is available from the authors, but is not part of the
-distribution.
+interface featuring a completing reader that runs on both Unix systems
+and DOS, and a Macintosh interface.  Support for Apollo's Domain Dialog
+is available from the authors, but is not part of the distribution.
 
 Documentation
 =============
 
    The file `INSTALL' contains instructions for building and installing
-Sd.
+Sd and for formatting and printing its documentation.
 
    The file `sd_doc.txinfo' documents using Sd.  The file `db_doc.txt'
 gives internal information on the database format, useful only to
