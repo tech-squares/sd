@@ -1,18 +1,14 @@
-# Generated automatically from Makefile.in by configure.
-# Makefile for Sd (square dance caller's helper)
-# Time-stamp: <96/01/19 13:27:26 gildea>
+# Makefile for Sd/Sdtty for Cygnus gcc.
 
 srcdir = .
-# VPATH is for GNU make
 
 # This gives the compiler name and any switches that it needs to make
 # it operate the way we want (ANSI language, standards conformance,
 # target hardware, etc.)
-# To get gcc on Athena, "add outland" before running "configure".
-CC = /opt/ansic/bin/cc -Aa -z +DA1.1 -D_AES_SOURCE +w1
+CC = gcc
 
 # This gives any "-D" switches that we always need to send to the compiler.
-DEFS = 
+DEFS = -Wall -Wno-switch -Wno-uninitialized -Wno-char-subscripts
 
 # This gives the optimization and/or debug info.  These flags presumably
 # don't affect the semantics of the language and run-time environment, so you
@@ -22,32 +18,38 @@ DEFS =
 # this may compromise the ability to debug the program.  In this case, you may
 # need to choose different options, typically "-g", for debugging.
 # Consult your system, compiler, and debugger vendor for further information.
-CDEBUGFLAGS = +O3 +Onolimit
+CDEBUGFLAGS = -O2
 
-CFLAGS = $(DEFS) $(CDEBUGFLAGS)
+CFLAGS =$(CDEBUGFLAGS) $(DEFS)
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
 # of the X11 user interface (sdui-x11.c).
-X11_FLAGS = -I.
+X11_FLAGS = 
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
-# of the system-dependent part of the TTY user interface (sdui-ttu.c).
+# of the system-dependent part of the TTY user interface (sdui-ttu.cpp).
 TTY_FLAGS = 
 
 # These are the library flags that we must use for the final bind of
 # the X11 version of "sd".
-X11_LIBS = -L. -lXaw -lXmu -lXt -lXext -lX11 
+X11_LIBS = 
 
 # These are the library flags that we must use for the final bind of
 # "sdtty".
-TTY_LIBS = -lcurses
+# The following line brings in (statically, apparently) the file
+# \cygwin\lib\libncurses.dll.a .  This is apparently a stub for the
+# actual dll, which is \cygwin\bin\cygncurses5.dll .
+# Note that libncurses.dll.a is 259KB, whereas cygncurses5.dll is
+# 226KB.  Not a stunningly efficient stub.  (The complete static
+# library, libncurses.a, is 384KB).
+TTY_LIBS = -lncurses.dll
 
-SD_SRCS = sdmain.c sdinit.c sdutil.c sdbasic.c \
-          sdtables.c sdctable.c sdtop.c sdconcpt.c sdpreds.c \
-          sdgetout.c sdmoves.c sdtand.c sdconc.c sdistort.c \
-          sdpick.c sdsi.c
+SD_SRCS = sdmain.cpp sdutil.cpp sdbasic.cpp sdinit.cpp \
+          sdtables.c sdctable.c sdtop.cpp sdconcpt.cpp sdpreds.cpp \
+          sdgetout.cpp sdmoves.cpp sdtand.cpp sdconc.cpp sdistort.cpp \
+          sdpick.cpp sdsi.cpp
 
-SD_OBJS = sdmain.o sdinit.o sdutil.o sdbasic.o \
+SD_OBJS = sdmain.o sdutil.o sdbasic.o sdinit.o \
           sdtables.o sdctable.o sdtop.o sdconcpt.o sdpreds.o \
           sdgetout.o sdmoves.o sdtand.o sdconc.o sdistort.o \
           sdpick.o sdsi.o
@@ -55,14 +57,14 @@ SD_OBJS = sdmain.o sdinit.o sdutil.o sdbasic.o \
 SDX11_SRC = sdui-x11.c
 SDX11_OBJ = sdui-x11.o
 
-# This has all special source files for sdtty,
-# for making the distribution and running lint.
-SDTTY_SRC = sdui-tty.c sdmatch.c sdui-ttu.c
+# This has all special source files for sdtty and
+# making the distribution.
+SDTTY_SRC = sdui-tty.cpp sdmatch.cpp sdui-ttu.cpp
 SDTTY_OBJ_UNIX = sdui-tty.o sdmatch.o sdui-ttu.o
-SDTTY_OBJ_PC   = sdui-tty.o sdmatch.o sdui-tpc.o
+SDTTY_OBJ_PC   = sdui-tty.o sdmatch.o sdui-ttu.o
 # This has the special object files used for building this version of sdtty.
-SDTTY_OBJ = $(SDTTY_OBJ_UNIX)
-SDTTY_OBJS = $(SD_OBJS) $(SDTTY_OBJ)
+SDTTY_OBJ = $(SDTTY_OBJ_PC)
+SDTTY_OBJS = $(SD_OBJS) $(SDTTY_OBJ_PC)
 
 MKCALLS_SRCS = mkcalls.c dbcomp.c
 MKCALLS_OBJS = mkcalls.o dbcomp.o
@@ -71,61 +73,42 @@ SRCS = $(SD_SRCS) $(SDX11_SRC) $(SDTTY_SRC) $(MKCALLS_SRCS)
 OBJS = $(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ) $(MKCALLS_OBJS)
 
 all: alltty
-allx11: sd sd_calls.dat
-alltty: sdtty sd_calls.dat
-everything: allx11 sdtty
+allx11: sd.exe sd_calls.dat
+alltty: sdtty.exe sd_calls.dat
+everything: allx11 sdtty.exe
 
-LDPRELIBS = -Wl,+b:
-LDPOSTLIBS =
+LDPRELIBS = 
+LDPOSTLIBS = lib\crt0.o lib\libc.a
 
-
-sd: $(SD_OBJS) $(SDX11_OBJ)
+sd.exe: $(SD_OBJS) $(SDX11_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(SD_OBJS) $(SDX11_OBJ) $(LDPRELIBS) $(X11_LIBS) $(LDPOSTLIBS)
 
-mkcalls: $(MKCALLS_OBJS)
+mkcalls.exe: $(MKCALLS_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(MKCALLS_OBJS)
 
-
-
-# The coff2exe program is for djgpp on DOS
-
-sdtty: $(SD_OBJS) $(SDTTY_OBJ)
+sdtty.exe: $(SD_OBJS) $(SDTTY_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(SDTTY_OBJS) $(TTY_LIBS)
 
-
-
-sd_calls.dat: sd_calls.txt mkcalls
+sd_calls.dat: sd_calls.txt mkcalls.exe
 	./mkcalls $(srcdir)/sd_calls.txt
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
-# sdui-x11.c may need -D_POSIX_SOURCE with gcc 1.40 on Ultrix 4.2
+.cpp.o:
+	$(CC) $(CFLAGS) -c $<
 
 sdui-x11.o: sdui-x11.c
 	$(CC) $(CFLAGS) $(X11_FLAGS) -c $(srcdir)/$*.c
 
-sdui-ttu.o: sdui-ttu.c
-	$(CC) $(CFLAGS) $(TTY_FLAGS) -c $(srcdir)/$*.c
-
-sdui-tty.o sdmatch.o: sdmatch.h
+sdui-ttu.o: sdui-ttu.cpp
+	$(CC) $(CFLAGS) $(TTY_FLAGS) -c $(srcdir)/$*.cpp
 
 dbcomp.o sdmain.o sdsi.o sdui-x11.o: paths.h
 
 dbcomp.o: database.h
 
 $(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ): sd.h database.h
-
-$(SDTTY_OBJ): sdmatch.h
-
-configure: configure.in
-	-cd "$(srcdir)" && autoconf
-
-config.status: configure sdmain.c
-	./config.status --recheck
-
-Makefile: Makefile.in config.status
-	./config.status
 
 info: sd_doc.info
 dvi: sd_doc.dvi
@@ -137,16 +120,16 @@ DOCSRCS = sd_doc.txinfo readme.txinfo install.txinfo gpl.txinfo
 sd_doc.dvi sd_doc.info sd_doc.txt sd_doc_toc.html: $(DOCSRCS)
 
 # additional suffixes used for the documentation
-.SUFFIXES: .dvi .info .txt .txinfo
+.SUFFIXES: .dvi .info .txt .txinfo .cpp
 
-RM = rm -f
+RM = del
 
 MAKEINFO = makeinfo --no-split
 MAKE_ASCII = makeinfo --no-split --no-headers
 TXI2DVI = tex
 DVIPS = dvips
 TXI2HTML = texi2html
-
+MAKE=make
 
 # We do it twice, so cross references will be reconciled.
 .txinfo.dvi:
@@ -160,6 +143,15 @@ TXI2HTML = texi2html
 	$(MAKE_ASCII) -o $@ -I$(srcdir) $<
 
 sd_doc.ps: sd_doc.dvi
+	$(DVIPS) -o $@ $?
+
+sessions.ps: sessions.dvi
+	$(DVIPS) -o $@ $?
+
+relnotes.ps: relnotes.dvi
+	$(DVIPS) -o $@ $?
+
+demo.ps: demo.dvi
 	$(DVIPS) -o $@ $?
 
 sd_doc_toc.html:
@@ -182,10 +174,8 @@ docclean:
 	-$(RM) *.aux *.log *.toc *.dvi
 	-$(RM) *.cp *.cps *.fn *.fns *.ky *.kys *.pg *.pgs *.tp *.tps *.vr *.vrs
 
-clean:: docclean
 clean::
-	-$(RM) *.o sd sdtty mkcalls sd_calls.dat
-	-$(RM) lint.out
+	-$(RM) *.o sd.exe sdtty.exe mkcalls.exe sd_calls.dat
 
 distclean: clean
 	-$(RM) sequence.*
@@ -194,42 +184,3 @@ distclean: clean
 
 realclean: distclean
 	-$(RM) *.info *.PS *.html sd_doc.txt sd_doc.ps
-
-LINT = /usr/lang/alint
-
-lint:
-	$(LINT) -ux $(SD_SRCS) $(SDX11_SRC)
-
-DISTTXT = README INSTALL Relnotes oldnotes COPYING sample1.ini sample2.ini demo.ps demo.txt sessions.ps sessions.txt \
-            Imakefile Makefile.in configure.in configure Sd.res sd_calls.txt \
-            db_doc.txt sd_doc.PS sd_doc.txt
-DISTSRCS = sd.h database.h paths.h sdui-ttu.h sdmatch.h
-DISTFILES = $(DISTTXT) $(DOCSRCS) $(SRCS) $(DISTSRCS)
-
-TAR = tar
-TARFLAGS = cvfh
-DIST_TARFILE = sd-31.66.tar
-COMPRESS = compress
-
-dist: dist-files
-	$(TAR) $(TARFLAGS) $(DIST_TARFILE) $(DISTFILES)
-	$(RM) $(DIST_TARFILE).Z
-	$(COMPRESS) $(DIST_TARFILE)
-
-dist-files: configure Makefile INSTALL README sd_doc.txt sd_doc.PS
-
-ls:
-	@echo $(DISTFILES)
-
-BIN_TARFILE = sd-31.66-unknown.tar
-
-TARFILES1 = README Relnotes oldnotes
-TARFILES2 = sd sdtty mkcalls \
-	 sample1.ini sample2.ini demo.ps demo.txt sessions.ps sessions.txt \
-	 sd_calls.txt sd_calls.dat db_doc.txt \
-	 Sd.res sd_doc.txt sd_doc.PS
-
-$(BIN_TARFILE).Z: Makefile $(TARFILES2) $(TARFILES1)
-	$(TAR) $(TARFLAGS) $(BIN_TARFILE) $(TARFILES1) $(TARFILES2)
-	$(RM) $@
-	-$(COMPRESS) $(BIN_TARFILE)
