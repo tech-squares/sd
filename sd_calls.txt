@@ -33,7 +33,7 @@
     General Public License if you distribute the file.
 */
 
-version "34.2"
+version "34.21"
 
 call "nothing" mainstream tag nullcall
             dont_use_in_resolve
@@ -5878,7 +5878,7 @@ call "@w the line" mainstream
 // And the following 2 calls work with "tag the star", "snap the tag",
 // "circle the tag", and "loop and tag".
 
-call "@x @a" c3      /* How's that for a call name? */
+call "@x @a" c3      // How's this for a call name?
             neednumber left_means_mirror single_is_inherited singlefile_is_inherited
             nxn_is_inherited bigmatrix_is_inherited revert_is_inherited
    seq tagnullcall2 [inherit_left inherit_single inherit_nxn
@@ -5886,7 +5886,7 @@ call "@x @a" c3      /* How's that for a call name? */
    seq revert_if_needed [inherit_revert inherit_nxn]
    seq extend_n [inherit_single inherit_nxn inherit_bigmatrix]
 
-call "@x" c3         /* Or this? */
+call "@x" c3         // Or this?
             left_means_mirror single_is_inherited singlefile_is_inherited
             nxn_is_inherited bigmatrix_is_inherited revert_is_inherited
    seq tagnullcall2 [inherit_left inherit_single inherit_nxn
@@ -5894,16 +5894,16 @@ call "@x" c3         /* Or this? */
    seq revert_if_needed [inherit_revert inherit_nxn]
    seq extend_n [inherit_single inherit_nxn inherit_bigmatrix insert_number 4]
 
-/* And the following 2 calls work with "chase" and "invert". */
+/* And the following 2 calls work with "chase", "invert", and "double pass". */
 
-call "@y the tag @a" c1
+call "@y the tag @a" c2
             neednumber left_means_mirror singlefile_is_inherited
             nxn_is_inherited mxn_is_inherited revert_is_inherited
    seq tagnullcall3 [inherit_left inherit_singlefile inherit_nxn inherit_mxn]
    seq revert_if_needed [inherit_revert inherit_nxn]
    seq extend_n [inherit_nxn inherit_mxn]
 
-call "@y the tag" c1
+call "@y the tag" c2
             left_means_mirror singlefile_is_inherited
             nxn_is_inherited mxn_is_inherited revert_is_inherited
    seq tagnullcall3 [inherit_left inherit_singlefile inherit_nxn inherit_mxn]

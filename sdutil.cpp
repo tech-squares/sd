@@ -122,12 +122,13 @@ Cstring concept_key_table[] = {
    "sf3    pick concept call",
    "cf3    pick simple call",
    "f4     resolve",
+   "e4     resolve",            // home
    "sf4    reconcile",
    "cf4    normalize",
    "f5     refresh display",
    "sf5    keep picture",
    "cf5    insert a comment",
-   "e13    insert a comment",   /* insert */
+   "e13    insert a comment",   // insert
    "f6     simple modifications",
    "sf6    allow modifications",
    "cf6    centers",
@@ -146,6 +147,7 @@ Cstring concept_key_table[] = {
    "*sf9   abort the search",
    "f10    write this sequence",
    "*f10   write this sequence",
+   "*e3    write this sequence",    // end
    "sf10   change output file",
    "+sf10  change output file",
    "f11    pick level call",
@@ -155,10 +157,10 @@ Cstring concept_key_table[] = {
    "*sf12  accept current choice",
    "*cf12  previous",
    "*af12  next",
-   "*se6   raise reconcile point",  /* shift up arrow */
-   "*e5    previous",               /* left arrow */
-   "*e7    next",                   /* right arrow */
-   "*se8   lower reconcile point",  /* shift down arrow */
+   "*se6   raise reconcile point",  // shift up arrow
+   "*e5    previous",               // left arrow
+   "*e7    find another",           // right arrow
+   "*se8   lower reconcile point",  // shift down arrow
    (char *) 0};
 
 
@@ -1957,7 +1959,7 @@ static long_boolean write_sequence_to_file(void) THROW_DECL
    }
 
    if (sequence_number >= 0) {
-      (void) sprintf(seqstring, "#%d", sequence_number);
+      (void) sprintf(seqstring, "%d", sequence_number);
       writestuff("   ");
       writestuff(seqstring);
    }

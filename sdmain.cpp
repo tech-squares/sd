@@ -21,7 +21,7 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "34.2"
+#define VERSION_STRING "34.21"
 #define TIME_STAMP "wba@alum.mit.edu  6 July 00 $"
 
 /* This defines the following functions:
@@ -814,7 +814,8 @@ extern long_boolean query_for_call(void)
    if (interactivity == interactivity_database_init || interactivity == interactivity_verify)
       fail("This shouldn't get printed.");
    else if (interactivity != interactivity_normal)
-      if (deposit_call(do_pick(), &null_options)) goto recurse_entry;
+      if (deposit_call(do_pick(), &null_options))
+         fail("This shouldn't get printed.");
 
    /* Check our "stack" and see if we have recursive invocations to clean up. */
 

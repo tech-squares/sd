@@ -4340,10 +4340,10 @@ static void do_concept_inner_outer(
                                             make them look like inner ones. */
          }
 
-         /* Demand that the center Z be solidly filled. */
+         // Demand that the center Z be solidly filled.
 
          switch (livemask & 0141141) {
-         case 0101101:   /* Center Z is CW. */
+         case 0101101:   // Center Z is CW.
             if ((livemask & 0210210) == 0) {
                misc2_zflag = CMD_MISC2__IN_Z_CW;
                goto do_real_z_stuff;
@@ -4354,7 +4354,7 @@ static void do_concept_inner_outer(
             }
 
             break;
-         case 0041041:   /* Center Z is CCW. */
+         case 0041041:   // Center Z is CCW.
             if ((livemask & 0420420) == 0) {
                misc2_zflag = CMD_MISC2__IN_Z_CCW;
                goto do_real_z_stuff;
@@ -4366,12 +4366,31 @@ static void do_concept_inner_outer(
 
             break;
          }
-
-         fail("Can't find the indicated formation.");
-      default:
-         fail("Must have 3x6 for this concept.");
+         break;
+      case s2x5:
+         if (parseptr->concept->value.arg1 & 8) break;
+         switch (livemask) {
+         case 0x2F7:
+            misc2_zflag = CMD_MISC2__IN_Z_CW;
+            goto do_real_z_stuff;
+         case 0x3BD:
+            misc2_zflag = CMD_MISC2__IN_Z_CCW;
+            goto do_real_z_stuff;
+         }
+         break;
+      case sd2x5:
+         if (parseptr->concept->value.arg1 & 8) break;
+         switch (livemask) {
+         case 0x3DE:
+            misc2_zflag = CMD_MISC2__IN_Z_CW;
+            goto do_real_z_stuff;
+         case 0x37B:
+            misc2_zflag = CMD_MISC2__IN_Z_CCW;
+            goto do_real_z_stuff;
+         }
+         break;
       }
-      break;
+      fail("Can't find the indicated formation.");
    }
 
  ready:
