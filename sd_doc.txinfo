@@ -3,8 +3,9 @@
 @c See the file INSTALL for how to format and view.
 @setfilename sd_doc.info
 @settitle Sd
-@set sd-version 30.0
-@set Time-stamp: Dec 10, 1993
+@set sd-version 30.0.1
+@set Time-stamp: Jan 9, 1994
+@set full-manual
 @c %**end of header
 @iftex
 @finalout
@@ -81,6 +82,7 @@ This is the summary table of contents:
 * Resolving and Searching::     Resolving and Searching
 * Misc Commands::               Miscellaneous Commands
 * Terminal Interface::          Terminal Interface
+* Linguistic Idiosyncrasies::   Linguistic Idiosyncrasies
 * Call Notes::                  Call Notes
 * Concept Notes::               Concept Notes
 * Bugs::                        Known Bugs and Misfeatures (very incomplete)
@@ -145,12 +147,15 @@ Miscellaneous Commands
 * Abort/Exit/Undo::             Abort, Exit, and Undo
 * Inserting Comments::          Inserting Comments
 * Keeping Pictures::            Keeping Pictures of the Setup
+* Hiding Couple Numbers::       Hiding Couple Numbers on the Macintosh
 
 Terminal Interface
 
 * Sdtty::                       The @code{sdtty} program
 * Sdtty on the PC::             The PC version
 * Sdtty on Unix::               The Unix version
+
+Linguistic Idiosyncrasies
 
 Call Notes
 
@@ -169,6 +174,8 @@ Concept Notes
 * Two Calls::                   Two Calls in Succession
 * Diamond::                     Diamond
 * Implied Piecewise::           Implied Piecewise
+* Do it Twice::                 Do it Twice
+* Precede it or Follow it::     Precede it or Follow it
 * So-And-So Do Your Part::      So-And-So Do Your Part
 * 12 Matrix and 16 Matrix::     12 Matrix and 16 Matrix
 
@@ -182,7 +189,6 @@ Installation
 
 @end menu
 
-@set full-manual
 @include readme.txinfo
 
 @node Getting Started, Invoking Sd, Intro, Top
@@ -431,8 +437,8 @@ level you have selected.
 
 @code{Sd} allows you to alter the set of calls it knows about by
 striking out specific calls.  This feature can be used, for example,
-when teaching a class to avoid using calls that have not yet been
-taught.
+when teaching a class, so that calls that have not yet been taught
+will not be used.
 
 To use this feature, you must first prepare a text file containing the
 names of the calls to be avoided.  The @code{Sd} menu contains a
@@ -861,7 +867,7 @@ then enter the call on the next line.  Even though a concept and the call
 to which it applies will appear on the same line in the final transcript,
 each concept and each call is entered on its own line.
 
-Some concepts require a numeric designator (e.g., @i{interrupt after the third
+Some concepts require a numeric designator (e.g., @i{interrupt after the 3rd
 part}) or a people designator (e.g., @i{girls are stable}).  The handling
 is the same as for calls that require these.
 
@@ -1203,6 +1209,7 @@ sequences.
 * Abort/Exit/Undo::             Abort, Exit, and Undo
 * Inserting Comments::          Inserting Comments
 * Keeping Pictures::            Keeping Pictures of the Setup
+* Hiding Couple Numbers::       Hiding Couple Numbers on the Macintosh
 @end menu
 
 @node Save Sequence, Change Output File,  , Misc Commands
@@ -1280,7 +1287,7 @@ the transcript exactly where it was entered.  Because of the way the program
 assembles mouse-clicks into transcript lines, it is not possible to enter
 a comment at the end of a line.
 
-@node Keeping Pictures,  , Inserting Comments, Misc Commands
+@node Keeping Pictures, Hiding Couple Numbers, Inserting Comments, Misc Commands
 @section Keeping Pictures
 
 The program shows pictures on the screen for the current position
@@ -1302,6 +1309,7 @@ Special Font} command in the @code{Edit} menu.  This command is like the
 text, where each graphical symbol is represented by a single ASCII
 character.
 
+@node Hiding Couple Numbers, , Keeping Pictures, Misc Commands
 @section Hiding Couple Numbers
 
 If you are using the Macintosh version and displaying formations using
@@ -1309,7 +1317,7 @@ graphical symbols, you can select whether or not to display couple
 numbers using the @code{Hide Couple Numbers} or @code{Reveal Couple
 Numbers} commands in the @code{Sequence} menu.
 
-@node Terminal Interface, Call Notes, Misc Commands, Top
+@node Terminal Interface, Linguistic Idiosyncrasies, Misc Commands, Top
 @chapter Terminal Interface
 
 @menu
@@ -1408,7 +1416,53 @@ counterproductive.  If so, you can turn this feature off
 by giving the command-line switch
 @code{-no_line_delete} at program startup.
 
-@node Call Notes, Concept Notes, Terminal Interface, Top
+@node Linguistic Idiosyncrasies, Call Notes, Terminal Interface, Top
+@chapter Linguistic Idiosyncrasies
+
+In a number of cases, the program behaves in a way that could be considered
+idiosyncratic, peculiar, or simply wrong.  Some of these cases are admittedly bugs
+or shortcomings of the program.  Others are inevitable consequences of what the
+program is trying to do.
+
+The syntax, semantics, and general structure of the square dance calling
+``language'' is fairly regular and precise---much more so than, for
+eaxmple, the English language.  That is, the correspondence between dancer
+actions and verbal phrases is fairly regular.  However, there are exceptions.
+A very simple example of this is the fact that callers generally say @samp{quarter
+top} and @samp{half the top}, using the word ``the'' in one case but not the other.
+
+The program handles these exceptions by calling in an occasionally stilted but
+unambiguous ``computer-ese'' dialect.  This dialect is intended to be
+very close to the words you would use when calling, but it is sometimes different.
+The rationale for this is that it is too hard to make the program always use
+the words that a caller would use.  When writing sequences, be aware that the
+dancers do not necessarily know this ``computer-ese'' dialect.  Use the words
+that you think are correct and natural.  Your judgement is much better than any
+program's judgement can ever be.
+
+The program sometimes reguires you to say various ``helper'' words, such as @code{left}
+in cases where their necessity is is not universally agreed upon.  For example,
+from a left-handed quarter-tag, @code{scoot and plenty} is not considered legal---you
+are required to enter @code{left scoot and plenty}, even though the Callerlab
+definition does not require the word @code{left} in this case.  What helper
+words you use or don't use when calling is, of course, up to you.
+
+There are some innocent-looking things that the program can generate for which
+appropriate words do not exist.  You must not write sequences containing such
+things, because you won't be able to call them.  For example, from boy-boy-girl-girl
+waves, it is perfectly
+straightforward for a caller to say @samp{boys hinge}.  (However, the program requires
+that you enter this as @samp{boys only hinge}.)  From boy-girl-boy-girl waves,
+@samp{boys hinge} is meaningless, but @samp{boys do your part, hinge} could be
+considered meaningful.  However, the dancer action for @samp{boys do your part, hinge} is
+so horrible that, even at C4, it is just not considered acceptable.
+
+A number of concepts are particularly vulnerable to this phenomenon.
+@xref{Do it Twice}
+@xref{Precede it or Follow it}
+@xref{So-And-So Do Your Part}
+
+@node Call Notes, Concept Notes, Linguistic Idiosyncrasies, Top
 @chapter Call Notes
 
 @menu
@@ -1427,7 +1481,7 @@ by giving the command-line switch
 all assume a sweeping direction.
 The program does not currently remember sweeping direction from the
 preceding call.  Hence, it assumes clockwise.  Click on @code{REVERSE} if you want
-it the other way.
+it the other way.  Of course, you must not say the word @i{reverse} when calling it.
 
 @node C1 Single Rotate, Spread, Sweeping Direction, Call Notes
 @section C1 @i{Single Rotate}
@@ -1490,6 +1544,8 @@ To permit fractional use of recycle, as with
 * Two Calls::                   Two Calls in Succession
 * Diamond::                     Diamond
 * Implied Piecewise::           Implied Piecewise
+* Do it Twice::                 Do it Twice
+* Precede it or Follow it::     Precede it or Follow it
 * So-And-So Do Your Part::      So-And-So Do Your Part
 * 12 Matrix and 16 Matrix::     12 Matrix and 16 Matrix
 @end menu
@@ -1549,7 +1605,8 @@ and the wings have right hands and are expected to rear back.  The
 centers do not know whether they were in lines or columns because the
 ends are not in an acceptable setup.  The centers do @i{not} use the
 ``checkpoint elongate perpendicular to the 1x4 rule''---that rule does not
-apply here.  If the outsides are in a pinwheel or whatever, each center
+apply here.  If the outsides are in a pinwheel, that is, occupying a 4x4
+matrix in an irregular way, each center
 makes the line vs.@: columns decision based on the end person in their own
 quadrant.  That is, the center person's own facing direction and that
 end person's @i{location,} but not that end person's facing direction.
@@ -1567,7 +1624,8 @@ the same as the long axis of the whole set.
 If the concept was @i{cross concentric}, so these people started in
 the center in a 1x4 or diamond, their own long axis might not be the
 long axis of the set.  If we do @i{cross concentric @w{square thru 2}}
-from a crossedwave, so everyone rears back, the original centers
+from a center wave perpendicular to outside miniwaves, so everyone
+rears back, the original centers
 finish perpendicular to their own 1x4, not the original ends' 1x4.
 They finish in approximately the places where the ends began.
 If we do it from a 1/4 tag, the centers finish where the ends began.
@@ -1582,7 +1640,7 @@ a @samp{concentric (recycle ; roll)} and have the lines-to-lines
 rule embrace the roll.  The script will appear as above.  The proper way
 to say the concept when calling is problematical.  Something like @samp{consider
 the following two calls to be one unit, and do a stable swing thru and turn thru}
-might be appropriate.  Or you could just read the parentheses.
+might be appropriate.
 
 @node Diamond, Implied Piecewise, Two Calls, Concept Notes
 @section Diamond
@@ -1599,7 +1657,7 @@ diamond, alter the diamond}, and clicking on @code{magic},
 right} will get @samp{magic interlocked diamond, diamond as couples
 quarter right}.
 
-@node Implied Piecewise, So-And-So Do Your Part, Diamond, Concept Notes
+@node Implied Piecewise, Do it Twice, Diamond, Concept Notes
 @section Implied Piecewise
 
 Some of the replacement/interruption meta-concepts push the
@@ -1643,8 +1701,38 @@ If you think that some instance of a replacement or interruption will
 cause confusion on the dance floor because of this sort of issue,
 you should not use it.
 
+@node Do it Twice, Precede it or Follow it, Implied Piecewise, Concept Notes
+@section Do it Twice
 
-@node So-And-So Do Your Part, 12 Matrix and 16 Matrix, Implied Piecewise, Concept Notes
+The @code{do it Twice} concept simply causes the subject call to be executed
+twice.  This is a notion familiar at all levels from Mainstream
+(@samp{spin chain thru, the girls double circulate}) to C4 (@samp{piecewise
+twice, recoil}).  No universally recognized words for this exist, so the program
+uses the generic phrase @code{do it twice}.  When calling, use whatever words
+you think are appropriate.
+
+@node Precede it or Follow it, So-And-So Do Your Part, Do it Twice, Concept Notes
+@section Precede it or Follow it
+
+The concepts @code{precede it by} and @code{follow it by} take two subject
+calls.  They perform the first call (first in textual order, that is)
+@i{before} or @i{after}, respectively, the second.  For example,
+@code{follow it by roll, swing thru} does a swing thru and roll.
+There is only one context in which these concepts are sensible---they can be
+the subject of the @code{piecewise}, @code{random}, or @code{reverse random}
+meta-concepts.  For example, @code{piecewise follow it by criss cross the
+deucey, turn the key} will do a @samp{criss cross the deucey}
+after each of the three parts of @samp{turn the key}.
+
+These concepts are among the situations in which the program does not attempt
+to print out the exact words that are appropriate to use when calling, but
+instead prints out an unambiguous description of what is supposed to happen.
+The exact words you should use depend on the context and on your judgement.
+You might say @code{piecewise add a criss cross the deucey, and turn the key},
+or @code{do a criss cross the deucey after each part, and turn the key}, or
+something similar.
+
+@node So-And-So Do Your Part, 12 Matrix and 16 Matrix, Precede it or Follow it, Concept Notes
 @section So-And-So Do Your Part
 
 This concept means that the designees do their part of the call in the
@@ -1805,14 +1893,6 @@ The @dfn{funny} concept is not fully implemented.  Only @dfn{funny circulate}
 types of calls are supported, as in @i{funny go first class} or @i{funny bingo}.
 Do not attempt a @i{funny square thru} or @i{funny slide thru}.
 
-The behavior of the @dfn{ends} concept is far too lenient.  It will
-allow the ends of a 2x4 to do any 2x2 call, ignorant of the fact that
-real people will object to having the centers in the way.  For example,
-from a column or DPT, it will allow the ends to circulate.  Don't do
-this.
-
-This chapter is very incomplete.
-
 @node Misc Advice, Customization, Bugs, Top
 @chapter Miscellaneous Advice and Warnings
 
@@ -1827,15 +1907,14 @@ you have just entered may not be a reasonable thing to call.  It is not
 necessarily the case that reading the warning aloud when calling the
 sequence is the correct thing to do, though it might be.  The call
 might simply be inappropriate, or it might be wise to say something along
-the lines of ``be careful; everyone do your part,'' or something like that.
+the lines of ``be careful; everyone do your part.''
 The significance of a warning may also depend on the level.  Some things
 that are extremely peculiar but barely legal at high challenge levels are
 simply not done at lower levels.  You should use your judgement.  
 
 Warning:  The database is not without errors or misunderstandings in
 nonstandard uses of calls.  The program generally tries to be extremely
-conservative.
-However,
+conservative.  However,
 you should not blindly accept what the program does, particularly if
 a call was used in an unusual way.  The management will not be
 responsible for any sequences left unattended.

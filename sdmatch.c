@@ -157,6 +157,11 @@ matcher_initialize(long_boolean show_commands_last)
     int concept_number;
     concept_descriptor *p;
     concept_item *item, *level_item;
+    concept_kind end_marker = concept_diagnose;
+
+    /* Decide whether we allow the "diagnose" concept, by deciding
+        when we will stop the concept list scan. */
+    if (diagnostic_mode) end_marker = marker_end_of_list;
 
     commands_last_option = show_commands_last;
 
@@ -174,7 +179,7 @@ matcher_initialize(long_boolean show_commands_last)
         if (p->kind == concept_comment) {
             continue;
         }
-        if (p->kind == marker_end_of_list) {
+        if (p->kind == end_marker) {
             break;
         }
         concept_list_length++;
@@ -197,7 +202,7 @@ matcher_initialize(long_boolean show_commands_last)
         if (p->kind == concept_comment) {
             continue;
         }
-        if (p->kind == marker_end_of_list) {
+        if (p->kind == end_marker) {
             break;
         }
         item->number = concept_number;

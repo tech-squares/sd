@@ -1,6 +1,6 @@
 /* SD -- square dance caller's helper.
 
-    Copyright (C) 1990, 1991, 1992, 1993  William B. Ackerman.
+    Copyright (C) 1990, 1991, 1992, 1993, 1994  William B. Ackerman.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-    This is for version 30. */
+    This is for version 31. */
 
 /* These are written as the first two halfwords of the binary database file.
    The format version is not related to the version of the program or database.
@@ -27,7 +27,7 @@
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 43
+#define DATABASE_FORMAT_VERSION 44
 
 
 
@@ -114,6 +114,8 @@
 #define CFLAG1_REQUIRES_DIRECTION         0x00800000
 #define CFLAG1_LEFT_MEANS_TOUCH_OR_CHECK  0x01000000
 #define CFLAG1_CAN_BE_FAN_OR_YOYO         0x02000000
+#define CFLAG1_NO_CUTTING_THROUGH         0x04000000
+#define CFLAG1_NO_ELONGATION_ALLOWED      0x08000000
 
 
 /* Beware!!  This list must track the table "matrixcallflagtab" in dbcomp.c . */
@@ -139,9 +141,7 @@ typedef enum {
 /* These are the states that people can be in, and the "ending setups" that can appear
    in the call data base. */
 /* BEWARE!!  This list must track the array "estab" in dbcomp.c . */
-/* BEWARE!!  This list must track the array "keytab" in sdtables.c . */
-/* BEWARE!!  This list must track the array "setup_coords" in sdtables.c . */
-/* BEWARE!!  This list must track the array "nice_setup_coords" in sdtables.c . */
+/* BEWARE!!  This list must track the array "setup_attrs" in sdtables.c . */
 /* BEWARE!!  This list must track the array "setup_limits" in sdtables.c . */
 /* BEWARE!!  This list must track the array "map_lists" in sdtables.c . */
 /* BEWARE!!  This list must track the array "bigconctab" in sdconc.c . */
@@ -160,6 +160,7 @@ typedef enum {
    sdmd,
    s_star,
    s_trngl,
+   s_trngl4,
    s_bone6,
    s_short6,
    s_qtag,
@@ -202,7 +203,7 @@ typedef enum {
 
 /* These are the "beginning setups" that can appear in the call data base. */
 /* BEWARE!!  This list must track the array "sstab" in dbcomp.c . */
-/* BEWARE!!  This list must track the array "begin_sizes" in dbcomp.c . */
+/* BEWARE!!  This list must track the array "begin_sizes" in mkcalls.c . */
 /* BEWARE!!  This list must track the array "begin_sizes" in sdtables.c . */
 
 typedef enum {
@@ -218,6 +219,8 @@ typedef enum {
    b_star,
    b_trngl,
    b_ptrngl,
+   b_trngl4,
+   b_ptrngl4,
    b_bone6,
    b_pbone6,
    b_short6,
@@ -401,7 +404,14 @@ typedef enum {
            NOTE: the above 8 flags are specified only in the second spec, even if the concept is
               cross-concentric, in which case the "demand" flags might be considered to belong
               with the first spec.
-   dfm1_call_mod_mask                --  concdefine/seqdefine: can substitute something under certain circumstances
+   DFM1_CALL_MOD_MASK                 --  concdefine/seqdefine: can substitute something under certain circumstances
+                  specific encodings within this mask are:
+                     1   "or_anycall"
+                     2   "mandatory_anycall"
+                     3   "allow_plain_mod"
+                     4   "allow_forced_mod"
+                     5   "or_secondary_call"
+                     6   "mandatory_secondary_call"
    dfm1_repeat_n                      --  seqdefine: take a numeric argument and replicate this part N times
    dfm1_repeat_n_alternate            --  seqdefine: take a numeric argument and replicate this part and the next one N times alternately
    dfm1_endscando                     --  concdefine outers: can tell ends only to do this
@@ -467,7 +477,15 @@ typedef enum {
    stb_a,         /* "A" - person turns anticlockwise from 1 to 4 quadrants */
    stb_c,         /* "C" - person turns clockwise from 1 to 4 quadrants */
    stb_ac,        /* "AC" - person turns anticlockwise once, then clockwise 1 to 4 quadrants */
-   stb_ca         /* "CA" - person turns clockwise once, then anticlockwise 1 to 4 quadrants */
+   stb_ca,        /* "CA" - person turns clockwise once, then anticlockwise 1 to 4 quadrants */
+   stb_aac,       /* "AAC" - person turns anticlockwise twice, then clockwise 1 to 4 quadrants */
+   stb_cca,       /* "CCA" - person turns clockwise twice, then anticlockwise 1 to 4 quadrants */
+   stb_aaac,      /* "AAAC" - person turns anticlockwise 3 times, then clockwise 1 to 4 quadrants */
+   stb_ccca,      /* "CCCA" - person turns clockwise 3 times, then anticlockwise 1 to 4 quadrants */
+   stb_aaaac,     /* "AAAAC" - person turns anticlockwise 4 times, then clockwise 1 to 4 quadrants */
+   stb_cccca,     /* "CCCCA" - person turns clockwise 4 times, then anticlockwise 1 to 4 quadrants */
+   stb_aa,        /* "AA" - person turns anticlockwise from 5 to 8 quadrants */
+   stb_cc         /* "CC" - person turns clockwise from 5 to 8 quadrants */
 } stability;
 
 /* These define the format of the short int (16 bits, presumably) items emitted
