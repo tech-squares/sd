@@ -1,6 +1,4 @@
-# Makefile for Sd/Sdtty for Cygnus gcc.
-
-srcdir = .
+# Makefile for Sd/Sdtty for Cygwin gcc.
 
 # This gives the compiler name and any switches that it needs to make
 # it operate the way we want (ANSI language, standards conformance,
@@ -20,7 +18,16 @@ DEFS = -Wall -Wno-switch -Wno-uninitialized -Wno-char-subscripts
 # Consult your system, compiler, and debugger vendor for further information.
 CDEBUGFLAGS = -O2
 
-CFLAGS =$(CDEBUGFLAGS) $(DEFS)
+# Apparently the Cygwin people don't believe that the compiler should
+# set itself up with the standard location of the standard include files
+# in the default include search path.  So we explicitly tell it WHAT EVERY
+# UNIX SOFTWARE DEVELOPER KNOWS: the include files that we want when we
+# say something like "#include <stdio.h>" are in "/usr/include" relative
+# to the system root.  A quick check of the directory structure of the
+# installation of Cygwin will reveal that the "unix system root" is
+# (in Windoze notation) C:\cygwin.
+
+CFLAGS =$(CDEBUGFLAGS) $(DEFS) -I/cygwin/usr/include/ncurses -I/cygwin/usr/include
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
 # of the X11 user interface (sdui-x11.c).
@@ -28,7 +35,7 @@ X11_FLAGS =
 
 # These are the "-I"  and "-D" flags that we must use for the compilation
 # of the system-dependent part of the TTY user interface (sdui-ttu.cpp).
-TTY_FLAGS = 
+TTY_FLAGS =
 
 # These are the library flags that we must use for the final bind of
 # the X11 version of "sd".
@@ -36,41 +43,20 @@ X11_LIBS =
 
 # These are the library flags that we must use for the final bind of
 # "sdtty".
-# The following line brings in (statically, apparently) the file
-# \cygwin\lib\libncurses.dll.a .  This is apparently a stub for the
-# actual dll, which is \cygwin\bin\cygncurses5.dll .
-# Note that libncurses.dll.a is 259KB, whereas cygncurses5.dll is
-# 226KB.  Not a stunningly efficient stub.  (The complete static
-# library, libncurses.a, is 384KB).
-TTY_LIBS = -lncurses.dll
-
-SD_SRCS = sdmain.cpp sdutil.cpp sdbasic.cpp sdinit.cpp \
-          sdtables.c sdctable.c sdtop.cpp sdconcpt.cpp sdpreds.cpp \
-          sdgetout.cpp sdmoves.cpp sdtand.cpp sdconc.cpp sdistort.cpp \
-          sdpick.cpp sdsi.cpp
+TTY_LIBS = /cygwin/lib/crt0.o /cygwin/lib/libc.a -lncurses
 
 SD_OBJS = sdmain.o sdutil.o sdbasic.o sdinit.o \
           sdtables.o sdctable.o sdtop.o sdconcpt.o sdpreds.o \
           sdgetout.o sdmoves.o sdtand.o sdconc.o sdistort.o \
           sdpick.o sdsi.o
 
-SDX11_SRC = sdui-x11.c
 SDX11_OBJ = sdui-x11.o
+SDTTY_OBJS = sdui-tty.o sdmatch.o sdui-ttu.o
 
-# This has all special source files for sdtty and
-# making the distribution.
-SDTTY_SRC = sdui-tty.cpp sdmatch.cpp sdui-ttu.cpp
-SDTTY_OBJ_UNIX = sdui-tty.o sdmatch.o sdui-ttu.o
-SDTTY_OBJ_PC   = sdui-tty.o sdmatch.o sdui-ttu.o
-# This has the special object files used for building this version of sdtty.
-SDTTY_OBJ = $(SDTTY_OBJ_PC)
-SDTTY_OBJS = $(SD_OBJS) $(SDTTY_OBJ_PC)
+SDTTY_LINK_OBJS = $(SD_OBJS) $(SDTTY_OBJS)
 
-MKCALLS_SRCS = mkcalls.c dbcomp.c
 MKCALLS_OBJS = mkcalls.o dbcomp.o
 
-SRCS = $(SD_SRCS) $(SDX11_SRC) $(SDTTY_SRC) $(MKCALLS_SRCS)
-OBJS = $(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ) $(MKCALLS_OBJS)
 
 all: alltty
 allx11: sd.exe sd_calls.dat
@@ -78,7 +64,7 @@ alltty: sdtty.exe sd_calls.dat
 everything: allx11 sdtty.exe
 
 LDPRELIBS = 
-LDPOSTLIBS = lib\crt0.o lib\libc.a
+LDPOSTLIBS =
 
 sd.exe: $(SD_OBJS) $(SDX11_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(SD_OBJS) $(SDX11_OBJ) $(LDPRELIBS) $(X11_LIBS) $(LDPOSTLIBS)
@@ -86,11 +72,13 @@ sd.exe: $(SD_OBJS) $(SDX11_OBJ)
 mkcalls.exe: $(MKCALLS_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(MKCALLS_OBJS)
 
-sdtty.exe: $(SD_OBJS) $(SDTTY_OBJ)
-	$(CC) $(CFLAGS) -o $@ $(SDTTY_OBJS) $(TTY_LIBS)
+sdtty.exe: $(SD_OBJS) $(SDTTY_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(SDTTY_LINK_OBJS) $(TTY_LIBS)
 
 sd_calls.dat: sd_calls.txt mkcalls.exe
-	./mkcalls $(srcdir)/sd_calls.txt
+	./mkcalls sd_calls.txt
+
+.SUFFIXES: .c .cpp
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -99,88 +87,22 @@ sd_calls.dat: sd_calls.txt mkcalls.exe
 	$(CC) $(CFLAGS) -c $<
 
 sdui-x11.o: sdui-x11.c
-	$(CC) $(CFLAGS) $(X11_FLAGS) -c $(srcdir)/$*.c
+	$(CC) $(CFLAGS) $(X11_FLAGS) -c $<
 
 sdui-ttu.o: sdui-ttu.cpp
-	$(CC) $(CFLAGS) $(TTY_FLAGS) -c $(srcdir)/$*.cpp
+	$(CC) $(CFLAGS) $(TTY_FLAGS) -c $<
 
 dbcomp.o sdmain.o sdsi.o sdui-x11.o: paths.h
 
 dbcomp.o: database.h
 
-$(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJ): sd.h database.h
+$(SD_OBJS) $(SDX11_OBJ) $(SDTTY_OBJS): sd.h database.h
 
-info: sd_doc.info
-dvi: sd_doc.dvi
-ps: sd_doc.ps
-html: sd_doc_toc.html
-
-DOCSRCS = sd_doc.txinfo readme.txinfo install.txinfo gpl.txinfo
-
-sd_doc.dvi sd_doc.info sd_doc.txt sd_doc_toc.html: $(DOCSRCS)
-
-# additional suffixes used for the documentation
-.SUFFIXES: .dvi .info .txt .txinfo .cpp
 
 RM = del
-
-MAKEINFO = makeinfo --no-split
-MAKE_ASCII = makeinfo --no-split --no-headers
-TXI2DVI = tex
-DVIPS = dvips
-TXI2HTML = texi2html
-MAKE=make
-
-# We do it twice, so cross references will be reconciled.
-.txinfo.dvi:
-	$(TXI2DVI) $<
-	$(TXI2DVI) $<
-
-.txinfo.info:
-	$(MAKEINFO) -I$(srcdir) $<
-
-.txinfo.txt:
-	$(MAKE_ASCII) -o $@ -I$(srcdir) $<
-
-sd_doc.ps: sd_doc.dvi
-	$(DVIPS) -o $@ $?
-
-sessions.ps: sessions.dvi
-	$(DVIPS) -o $@ $?
-
-relnotes.ps: relnotes.dvi
-	$(DVIPS) -o $@ $?
-
-demo.ps: demo.dvi
-	$(DVIPS) -o $@ $?
-
-sd_doc_toc.html:
-	$(TXI2HTML) -split_node -menu sd_doc.txinfo
-
-# Stephen's fancy way of producing a pretty, compact PostScript file.
-# You don't want to know.
-sd_doc.PS: $(DOCSRCS)
-	if [ -r make-ps ]; then make-ps $@ $(DOCSRCS); \
-	else $(MAKE) sd_doc.ps && mv sd_doc.ps sd_doc.PS; fi
-
-INSTALL: install.txinfo
-	$(MAKE_ASCII) -o $@ --no-validate $(srcdir)/install.txinfo
-
-README: readme.txinfo
-	$(MAKE_ASCII) -o $@ --no-validate $(srcdir)/readme.txinfo
-
-
-docclean:
-	-$(RM) *.aux *.log *.toc *.dvi
-	-$(RM) *.cp *.cps *.fn *.fns *.ky *.kys *.pg *.pgs *.tp *.tps *.vr *.vrs
 
 clean::
 	-$(RM) *.o sd.exe sdtty.exe mkcalls.exe sd_calls.dat
 
 distclean: clean
-	-$(RM) sequence.*
-	-$(RM) *~ core
 	-$(RM) *.tar *.tar.Z
-
-realclean: distclean
-	-$(RM) *.info *.PS *.html sd_doc.txt sd_doc.ps
