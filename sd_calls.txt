@@ -28,7 +28,7 @@
     General Public License if you distribute the file.
 */
 
-version "28.60"
+version "28.61"
 
 /* ****************** TEMPORARY HACK FOR TESTING
 
@@ -1196,6 +1196,22 @@ call "put centers out" c3x
       array [6W 0 0W 1W 2W 3W 0 5W]
    setup 2x4 2x4 rotate
       array [6W 0 0 1W 2W 0 0 5W]
+
+call "split the outsides, around 1 to a line" mainstream
+   setup 4x2 2x4 rotate
+      array [ZM6W 0 AL0E ZM1W ZM2W CR3E 0 ZM5W]
+
+call "separate, around 1 to a line" mainstream
+   setup 4x2 2x4 rotate
+      array [ZM7W 0 0 ZM0W ZM3W 0 0 ZM4W]
+   setup 2x4 2x4 rotate
+      array [0 AL6N CR1S 0 0 0 0 0]
+
+call "separate, around 2 to a line" mainstream
+   setup 4x2 2x4 rotate
+      array [ZM6W 0 0 ZM1W ZM2W 0 0 ZM5W]
+   setup 2x4 2x4 rotate
+      array [0 AL4N CR3S 0 0 0 0 0]
 
 call "pass thru" mainstream tag passthru
             rear_back_from_r_wave
@@ -4071,6 +4087,11 @@ call "_the top" dontshow tag tagthetop
    setup 2x4 1x8 rotate
    array [1S 0S 0N 1N 2N 7S 7N 2S]
 
+call "_and trade" dontshow tag tagntrade
+            dont_use_in_resolve
+   setup 2x4 qtag
+      array [CR1S CR1S AL0S AL0S AL7S AL6S CR2S CR3S]
+
 call "_delight" dontshow tag delight
             dont_use_in_resolve
    setup 2x4 2x4 rotate
@@ -4127,6 +4148,11 @@ call "@2tag @3the top" c3
             first_part_visible
    seq halftag [or_anycall must_be_tag_call]
    seq tagthetop []
+
+call "3/4 @2tag @3 and trade" c4
+            first_part_visible
+   seq halftag [or_anycall must_be_tag_call]
+   seq tagntrade []
 
 call "@2tagg@3er's delight" c3a
             first_part_visible
@@ -4253,16 +4279,16 @@ call "ship ahoy" c3x
          if always [R0E R7E L6E 0 0 R3W R2E M5W]
 
 call "extend" mainstream tag extend
-   setup 4x1 dmd                     /* 0/4 tag to 1/4 tag */
+   setup 4x1 dmd qualifier 2fl_only  /* 0/4 tag to 1/4 tag */
       array [0N 1N 0 0]
+   setup 2x2 dmd rotate qualifier miniwaves
+      array [0W 0W 1W 3W]            /* 1/2 tag to 3/4 tag */
    setup pmd 1x4 qualifier 3_4_tag   /* 3/4 tag to 4/4 tag */
       array [0 3N 2N 3N]
    setup pmd 2x2
       preds "???"                    /* 1/4 tag to 1/2 tag */
          if dmd_ctrs_rh [0N 1N 0 2N]
          if always [3N 1N 0 2N]
-   setup 2x2 dmd rotate qualifier miniwaves
-      array [0W 0W 1W 3W]            /* 1/2 tag to 3/4 tag */
    setup 2x1 1x2 rotate
       array [0W 0]         /* People facing: touch. */
    setup 1x2 1x2 rotate qualifier miniwaves

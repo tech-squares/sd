@@ -27,7 +27,7 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "28.7"
+#define VERSION_STRING "28.71"
 
 /* This defines the following functions:
    sd_version_string

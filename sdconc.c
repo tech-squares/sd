@@ -1236,7 +1236,7 @@ extern void concentric_move(
       localmods1 = localmodsout1;
    }
 
-   if ((DFM1_CONC_DEMAND_COLUMNS & localmods1) && (orig_outers_start_kind == s2x2)) {
+   if ((DFM1_CONC_DEMAND_LINES & localmods1) && (orig_outers_start_kind == s2x2)) {
       /* We make use of the fact that the setup, being a 2x2, is canonicalized. */
       if ((begin_outer_elongation < 0) ||
             (orig_outers_start_dirs & (1 << 3*(begin_outer_elongation & 1))))
@@ -1658,7 +1658,7 @@ extern void merge_setups(setup *ss, setup *result)
 
    /* If one of the setups was a "concentric" setup in which there are no ends, we can still handle it. */
 
-   if (res2->kind == s_normal_concentric) {
+   if (res2->kind == s_normal_concentric && res2->outer.skind == nothing) {
       res2->kind = res2->inner.skind;
       res2->rotation = res2->inner.srotation;
       goto tryagain;    /* Need to recanonicalize setup order. */
@@ -1784,6 +1784,24 @@ extern void merge_setups(setup *ss, setup *result)
       canonicalize_rotation(result);
       return;
    }
+   else if (res2->kind == s4x4 && res1->kind == s2x4) {
+      *result = *res2;
+      result->rotation -= r;
+      canonicalize_rotation(result);
+
+      install_person(result, 10, res1, 0);
+      install_person(result, 15, res1, 1);
+      install_person(result, 3,  res1, 2);
+      install_person(result, 1,  res1, 3);
+      install_person(result, 2,  res1, 4);
+      install_person(result, 7,  res1, 5);
+      install_person(result, 11, res1, 6);
+      install_person(result, 9,  res1, 7);
+
+      result->rotation += r;
+      canonicalize_rotation(result);
+      return;
+   }
    else if (res2->kind == s2x6 && res1->kind == s2x2) {
       result->kind = s2x6;
       for (i=0; i<12; i++)
@@ -1835,12 +1853,30 @@ extern void merge_setups(setup *ss, setup *result)
       normalize_concentric(schema_concentric, 1, res1, res2, outer_elongation, result);
       return;
    }
+   else if (res2->kind == s_ptpd && res1->kind == s1x8 && r == 0 &&
+            (!(res1->people[1].id1 | res1->people[3].id1 | res1->people[5].id1 | res1->people[7].id1))) {
+      *result = *res2;
+
+      install_person(result, 0, res1, 0);
+      install_person(result, 2, res1, 2);
+      install_person(result, 4, res1, 4);
+      install_person(result, 6, res1, 6);
+      return;
+   }
+   else if (res2->kind == s_ptpd && res1->kind == s1x8 && r == 0 &&
+            (!(res2->people[1].id1 | res2->people[3].id1 | res2->people[5].id1 | res2->people[7].id1))) {
+      *result = *res1;
+
+      install_person(result, 0, res2, 0);
+      install_person(result, 2, res2, 2);
+      install_person(result, 4, res2, 4);
+      install_person(result, 6, res2, 6);
+      return;
+   }
    else if (res2->kind == s2x6 && res1->kind == s2x4 && r == 0) {
       /* Because of canonicalization, we know that r = 0 unless
          they are 90 degrees from each other. */
-      result->kind = s2x6;
-      for (i=0; i<12; i++)
-         (void) copy_person(result, i, res2, i);
+      *result = *res2;
 
       install_person(result, 1, res1, 0);
       install_person(result, 2, res1, 1);

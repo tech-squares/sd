@@ -331,7 +331,7 @@ typedef enum {
 typedef enum {
    sq_none,
    sq_wave_only,                    /* 1x4 or 2x4 - waves; 2x2 - real RH or LH box */
-   sq_2fl_only,                     /* 1x4 or 2x4 - 2FL's */
+   sq_2fl_only,                     /* 1x4 or 2x4 - 2FL; 4x1 - single DPT or single CDPT */
    sq_in_or_out,                    /* 2x2 - all facing in or all facing out */
    sq_miniwaves,                    /* 1x2, 1x4, 1x8, 2x4, 2x2, dmd, qtag, trngl - people
                                        are paired in miniwaves of various handedness.

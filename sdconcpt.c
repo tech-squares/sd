@@ -2071,14 +2071,14 @@ Private void do_concept_meta(
    /* These are the concepts that we are interested in. */
 
    if (parseptrcopy->concept->kind <= marker_end_of_list)
-      fail("Need a real concept here.");
+      fail("Sorry, can't do this with this concept.");
 
-   if (new_final_concepts) fail("Need a real concept here.");
+   if (new_final_concepts) fail("Sorry, can't do this with this concept.");
 
    /* Examine the concept.  It must be a real one. */
 
    if (concept_table[parseptrcopy->concept->kind].concept_action == 0)
-      fail("Need a real concept here.");
+      fail("Sorry, can't do this with this concept.");
 
    if (concept_table[parseptrcopy->concept->kind].concept_prop & CONCPROP__SECOND_CALL)
       fail("Can't use a concept that takes a second call.");
@@ -2165,14 +2165,14 @@ Private void do_concept_nth_part(
    /* These are the concepts that we are interested in. */
 
    if (parseptrcopy->concept->kind <= marker_end_of_list)
-      fail("Need a real concept here.");
+      fail("Sorry, can't do this with this concept.");
 
-   if (new_final_concepts) fail("Need a real concept here.");
+   if (new_final_concepts) fail("Sorry, can't do this with this concept.");
 
    /* Examine the concept.  It must be a real one. */
 
    if (concept_table[parseptrcopy->concept->kind].concept_action == 0)
-      fail("Need a real concept here.");
+      fail("Sorry, can't do this with this concept.");
 
    if (concept_table[parseptrcopy->concept->kind].concept_prop & CONCPROP__SECOND_CALL)
       fail("Can't use a concept that takes a second call.");
@@ -2428,9 +2428,7 @@ Private void do_concept_do_phantom_2x4(
    /* If not T-boned, we can do something glorious. */
 
    if ((global_tbonetest & 011) != 011) {
-      int rot;
-      
-      rot = (global_tbonetest ^ parseptr->concept->value.arg2) & 1;
+      int rot = (global_tbonetest ^ parseptr->concept->value.arg2 ^ 1) & 1;
       ss->rotation += rot;   /* Just flip the setup around and recanonicalize. */
       canonicalize_rotation(ss);
       divided_setup_move(ss, parseptr->next, NULLCALLSPEC, 0, parseptr->concept->value.maps,

@@ -1045,18 +1045,15 @@ startinfo startinfolist[] = {
         map_thing map_intlk_phantom_box = {{0, 1, 4, 5, 10, 11, 14, 15},   {2, 3, 6, 7, 8, 9, 12, 13},     {0}, {0}, MPKIND__INTLK,       2,  s2x8,   s2x4,      0, 0};
         map_thing map_phantom_dmd       = {{0, 3, 4, 5, 8, 11, 12, 13},    {1, 2, 6, 7, 9, 10, 14, 15},    {0}, {0}, MPKIND__CONCPHAN,    2,  s_4dmd, s_qtag,    0, 0};
         map_thing map_intlk_phantom_dmd = {{0, 2, 6, 7, 9, 11, 12, 13},    {1, 3, 4, 5, 8, 10, 14, 15},    {0}, {0}, MPKIND__INTLK,       2,  s_4dmd, s_qtag,    0, 0};
-        map_thing map_split_f           = {{13, 15, 11, 6, 8, 9, 10, 12},  {0, 1, 2, 4, 5, 7, 3, 14},      {0}, {0}, MPKIND__SPLIT,       2,  s4x4,   s2x4,      1, 0};
-        map_thing map_intlk_f           = {{14, 3, 7, 5, 8, 9, 10, 12},    {0, 1, 2, 4, 6, 11, 15, 13},    {0}, {0}, MPKIND__INTLK,       2,  s4x4,   s2x4,      1, 0};
-        map_thing map_full_f            = {{0, 1, 2, 4, 8, 9, 10, 12},     {14, 3, 7, 5, 6, 11, 15, 13},   {0}, {0}, MPKIND__CONCPHAN,    2,  s4x4,   s2x4,      1, 0};
-        map_thing map_stagger           = {{14, 1, 7, 4, 6, 9, 15, 12},    {0, 3, 2, 5, 8, 11, 10, 13},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      1, 0};
-        map_thing map_stairst           = {{13, 1, 11, 4, 5, 9, 3, 12},    {0, 15, 2, 6, 8, 7, 10, 14},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      1, 0};
-        map_thing map_ladder            = {{14, 3, 2, 4, 6, 11, 10, 12},   {0, 1, 7, 5, 8, 9, 15, 13},     {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      1, 0};
-        map_thing map_but_o             = {{14, 1, 2, 5, 6, 9, 10, 13},    {0, 3, 7, 4, 8, 11, 15, 12},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      1, 0};
-        map_thing map_o_s2x4_3          = {{14, 1, 2, 5, 6, 9, 10, 13},    {0, 3, 7, 4, 8, 11, 15, 12},    {0}, {0}, MPKIND__O_SPOTS,     2,  s4x4,   s2x4,      1, 0};
-        map_thing map_x_s2x4_3          = {{14, 1, 2, 5, 6, 9, 10, 13},    {0, 3, 7, 4, 8, 11, 15, 12},    {0}, {0}, MPKIND__X_SPOTS,     2,  s4x4,   s2x4,      1, 0};
-Private map_thing map_o_s2x4_2          = {{10, 13, 14, 1, 2, 5, 6, 9},    {12, 15, 3, 0, 4, 7, 11, 8},    {0}, {0}, MPKIND__O_SPOTS,     2,  s4x4,   s2x4,      0, 0};
-Private map_thing map_x_s2x4_2          = {{10, 13, 14, 1, 2, 5, 6, 9},    {12, 15, 3, 0, 4, 7, 11, 8},    {0}, {0}, MPKIND__X_SPOTS,     2,  s4x4,   s2x4,      0, 0};
-        map_thing map_offset            = {{13, 15, 2, 4, 5, 7, 10, 12},   {0, 1, 11, 6, 8, 9, 3, 14},     {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      1, 0};
+        map_thing map_stagger           = {{10, 13, 3, 0, 2, 5, 11, 8},    {12, 15, 14, 1, 4, 7, 6, 9},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      0, 1};
+        map_thing map_stairst           = {{9, 13, 7, 0, 1, 5, 15, 8},     {12, 11, 14, 2, 4, 3, 6, 10},   {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      0, 1};
+        map_thing map_ladder            = {{10, 15, 14, 0, 2, 7, 6, 8},    {12, 13, 3, 1, 4, 5, 11, 9},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      0, 1};
+        map_thing map_offset            = {{9, 11, 14, 0, 1, 3, 6, 8},     {12, 13, 7, 2, 4, 5, 15, 10},   {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      0, 1};
+        map_thing map_but_o             = {{10, 13, 14, 1, 2, 5, 6, 9},    {12, 15, 3, 0, 4, 7, 11, 8},    {0}, {0}, MPKIND__NONE,        2,  s4x4,   s2x4,      0, 1};
+        map_thing map_o_s2x4_3          = {{10, 13, 14, 1, 2, 5, 6, 9},    {12, 15, 3, 0, 4, 7, 11, 8},    {0}, {0}, MPKIND__O_SPOTS,     2,  s4x4,   s2x4,      0, 0};
+        map_thing map_x_s2x4_3          = {{10, 13, 14, 1, 2, 5, 6, 9},    {12, 15, 3, 0, 4, 7, 11, 8},    {0}, {0}, MPKIND__X_SPOTS,     2,  s4x4,   s2x4,      0, 0};
+Private map_thing map_o_s2x4_2          = {{14, 1, 2, 5, 6, 9, 10, 13},    {0, 3, 7, 4, 8, 11, 15, 12},    {0}, {0}, MPKIND__O_SPOTS,     2,  s4x4,   s2x4,      1, 0};
+Private map_thing map_x_s2x4_2          = {{14, 1, 2, 5, 6, 9, 10, 13},    {0, 3, 7, 4, 8, 11, 15, 12},    {0}, {0}, MPKIND__X_SPOTS,     2,  s4x4,   s2x4,      1, 0};
         map_thing map_4x4v     = {{12, 10, 8, 9},       {13, 15, 6, 11},      {14, 3, 5, 7},      {0, 1, 4, 2},      MPKIND__SPLIT,       4,  s4x4,   s1x4,      1, 0};
         map_thing map_blocks   = {{12, 14, 7, 9},       {13, 0, 2, 11},       {15, 1, 4, 6},      {10, 3, 5, 8},     MPKIND__NONE,        4,  s4x4,   s2x2,      0, 0};
         map_thing map_trglbox  = {{12, 14, 15, 9},      {13, 0, 2, 3},        {7, 1, 4, 6},       {10, 11, 5, 8},    MPKIND__NONE,        4,  s4x4,   s2x2,      0, 0};
@@ -1071,9 +1068,9 @@ Private map_thing map_intlk_phan_grand  = {{0, 1, 3, 2, 12, 13, 15, 14},   {4, 5
 Private map_thing map_conc_phan_grand   = {{0, 1, 3, 2, 8, 9, 11, 10},     {4, 5, 7, 6, 12, 13, 15, 14},   {0}, {0}, MPKIND__CONCPHAN,    2,  s1x16,  s1x8,      0, 0};
         map_thing map_hv_2x4_2          = {{0, 1, 2, 3, 12, 13, 14, 15},   {4, 5, 6, 7, 8, 9, 10, 11},     {0}, {0}, MPKIND__SPLIT,       2,  s2x8,   s2x4,      0, 0};
         map_thing map_3x4_2x3           = {{1, 11, 8, 9, 10, 0},           {3, 4, 6, 7, 5, 2},             {0}, {0}, MPKIND__SPLIT,       2,  s3x4,   s_2x3,     1, 0};
-Private map_thing map_4x4_2x4v          = {{9, 11, 7, 2, 4, 5, 6, 8},      {12, 13, 14, 0, 1, 3, 15, 10},  {0}, {0}, MPKIND__SPLIT,       2,  s4x4,   s2x4,      0, 1};
-Private map_thing map_4x4_2x4intv       = {{10, 15, 3, 1, 4, 5, 6, 8},     {12, 13, 14, 0, 2, 7, 11, 9},   {0}, {0}, MPKIND__INTLK,       2,  s4x4,   s2x4,      0, 1};
-Private map_thing map_4x4_2x4concv      = {{12, 13, 14, 0, 4, 5, 6, 8},    {10, 15, 3, 1, 2, 7, 11, 9},    {0}, {0}, MPKIND__CONCPHAN,    2,  s4x4,   s2x4,      0, 1};
+        map_thing map_split_f           = {{9, 11, 7, 2, 4, 5, 6, 8},      {12, 13, 14, 0, 1, 3, 15, 10},  {0}, {0}, MPKIND__SPLIT,       2,  s4x4,   s2x4,      0, 1};
+        map_thing map_intlk_f           = {{10, 15, 3, 1, 4, 5, 6, 8},     {12, 13, 14, 0, 2, 7, 11, 9},   {0}, {0}, MPKIND__INTLK,       2,  s4x4,   s2x4,      0, 1};
+        map_thing map_full_f            = {{12, 13, 14, 0, 4, 5, 6, 8},    {10, 15, 3, 1, 2, 7, 11, 9},    {0}, {0}, MPKIND__CONCPHAN,    2,  s4x4,   s2x4,      0, 1};
 Private map_thing map_2x4_2x2           = {{0, 1, 6, 7},                   {2, 3, 4, 5},                   {0}, {0}, MPKIND__SPLIT,       2,  s2x4,   s2x2,      0, 0};
 Private map_thing map_2x3_1x3           = {{5, 4, 3},                      {0, 1, 2},                      {0}, {0}, MPKIND__SPLIT,       2,  s_2x3,  s_1x3,     0, 1};
 Private map_thing map_2x4_1x4           = {{7, 6, 4, 5},                   {0, 1, 3, 2},                   {0}, {0}, MPKIND__SPLIT,       2,  s2x4,   s1x4,      0, 1};
@@ -1083,8 +1080,8 @@ Private map_thing map_3dmd_dmd = {{0, 10, 8, 9},                  {1, 5, 7, 11},
         map_thing map_4x6_2x4  = {{1, 10, 19, 16, 17, 18, 11, 0}, {3, 8, 21, 14, 15, 20, 9, 2},
                                                                   {5, 6, 23, 12, 13, 22, 7, 4},                 {0}, MPKIND__SPLIT,       3,  s4x6,   s2x4,      1, 0};
         map_thing map_hv_qtg_2          = {{0, 1, 15, 14, 10, 11, 12, 13}, {2, 3, 4, 5, 8, 9, 7, 6},       {0}, {0}, MPKIND__SPLIT,       2,  s_4dmd, s_qtag,    0, 0};
-Private map_thing map_1x6_1x3   = {{0, 1, 2},                         {5, 4, 3},                           {0}, {0}, MPKIND__SPLIT,       2,  s_1x6,  s_1x3,     0, 0};
-Private map_thing map_1x8_1x4   = {{0, 1, 2, 3},                      {6, 7, 4, 5},                        {0}, {0}, MPKIND__SPLIT,       2,  s1x8,   s1x4,      0, 0};
+Private map_thing map_1x6_1x3  = {{0, 1, 2},                          {5, 4, 3},                           {0}, {0}, MPKIND__SPLIT,       2,  s_1x6,  s_1x3,     0, 0};
+Private map_thing map_1x8_1x4  = {{0, 1, 2, 3},                       {6, 7, 4, 5},                        {0}, {0}, MPKIND__SPLIT,       2,  s1x8,   s1x4,      0, 0};
 Private map_thing map_1x12_1x4 = {{0, 1, 3, 2},                   {4, 5, 10, 11},                {9, 8, 6, 7},  {0}, MPKIND__SPLIT,       3,  s1x12,  s1x4,      0, 0};
 Private map_thing map_1x2_1x1           = {{0},                            {1},                            {0}, {0}, MPKIND__SPLIT,       2,  s_1x2,  s_1x1,     0, 0};
 Private map_thing map_1x4_1x2           = {{0, 1},                         {3, 2},                         {0}, {0}, MPKIND__SPLIT,       2,  s1x4,   s_1x2,     0, 0};
@@ -1254,8 +1251,8 @@ Private map_hunk mm_qtg_2 = {{0, 0},
                     {&map_hv_qtg_2, 0},
                              {0, 0},  {&map_ov_qtag_0, 0},
                                                {&map_intlk_phantom_dmd, 0},
-/* ***** Shouldn't this next line start with map_phantom_dmd ??? */
-                                                        {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0}};
+                                                        {&map_phantom_dmd, 0},
+                                                                 {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0}};
                 
 Private map_hunk mm_1x3_2 = {{0, 0},
                     {&map_1x6_1x3, &map_2x3_1x3},
@@ -1282,12 +1279,12 @@ Private map_hunk mm_1x8_3 = {{0, 0},
                                                {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0},  {0, 0}};
          
 Private map_hunk mm_2x4_2 = {{0, 0},
-                    {&map_hv_2x4_2, &map_4x4_2x4v},
+                    {&map_hv_2x4_2, &map_split_f},
                              {0, 0},  {&map_ov_2x4_0, &map_ov_2x4_1},
-                                               {&map_intlk_phantom_box, &map_4x4_2x4intv},
-                                                        {&map_phantom_box, &map_4x4_2x4concv},
-                                                                 {0, 0},  {0, 0},  {0, 0},  {0, 0},  {&map_o_s2x4_2, &map_o_s2x4_3},
-                                                                                                              {&map_x_s2x4_2, &map_x_s2x4_3},
+                                               {&map_intlk_phantom_box, &map_intlk_f},
+                                                        {&map_phantom_box, &map_full_f},
+                                                                 {0, 0},  {0, 0},  {0, 0},  {0, 0},  {&map_o_s2x4_3, &map_o_s2x4_2},
+                                                                                                              {&map_x_s2x4_3, &map_x_s2x4_2},
                                                                                                                        {0, 0},  {0, 0},  {0, 0}};
                 
 Private map_hunk mm_2x3_2 = {{0, 0},

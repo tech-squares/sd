@@ -1607,7 +1607,7 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec)
                   default:
                      goto good;                 /* We don't understand the setup -- we'd better accept it. */
                }
-            case sq_2fl_only:                     /* 1x4 or 2x4 - 2FL */
+            case sq_2fl_only:                     /* 1x4 or 2x4 - 2FL; 4x1 - single DPT or single CDPT */
                switch (ss->kind) {
                   case s1x4:
                      if (t = ss->people[0].id1) { k |=  t; i &=  t; }

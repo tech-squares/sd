@@ -1,7 +1,21 @@
-		    RELEASE NOTES FOR SD VERSION 28.7
-       Database version = 28.60, format = 40, X11 UI version 1.13.
+		    RELEASE NOTES FOR SD VERSION 28.71
+       Database version = 28.61, format = 40, X11 UI version 1.13.
 
-Changes since 28.01:
+Changes since 28.7:
+
+More bugs fixed.  One recently introduced bug in 28.7 could lead to
+incorrect execution of calls from column setups that should be illegal.
+For example, regroup, trip the set, detour, change lanes, etc. could in
+some cases be executed from lines, even though that is not correct.
+Some rather bizarre cases of phantom bigblock and similar things were
+fixed.
+
+"Extend" is finally a little bit smarter.
+
+New calls: separate around 1 or 2 to a line, split the outsides around
+1 to a line, 3/4 tag/flip/etc and trade.
+
+Changes since 28.01 to 28.7:
 
 The sdtty version runs under DOS.  See INSTALL for system requirements.
 
