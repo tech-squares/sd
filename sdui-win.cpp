@@ -2486,7 +2486,7 @@ void ShowListBox(int nWhichOne)
             scan_menu(main_call_lists[nLastOne][i]->menu_name,
                       hDC, &nLongest, MAKELONG(i, (int) ui_call_select));
 
-         int *item;
+         short int *item;
          int menu_length;
 
          if (allowing_all_concepts) {
