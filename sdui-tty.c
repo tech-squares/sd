@@ -469,14 +469,16 @@ extern void uims_create_menu(call_list_kind cl)
 
 extern void uims_set_window_title(char s[])
 {
+   char full_text[MAX_TEXT_LINE_LENGTH];
+
    if (journal_name[0]) {
-      char full_text[MAX_TEXT_LINE_LENGTH];
-      (void) sprintf(full_text, "%s {%s}", s, journal_name);
-      ttu_set_window_title(full_text);
+      (void) sprintf(full_text, "Sdtty %s {%s}", s, journal_name);
    }
    else {
-      ttu_set_window_title(s);
+      (void) sprintf(full_text, "Sdtty %s", s);
    }
+
+   ttu_set_window_title(full_text);
 }
 
 
@@ -860,6 +862,7 @@ Private long_boolean get_user_input(char *prompt, int which)
    (void) fputs("\nParsing error during diagnostic.\n", stdout);
    (void) fputs("\nParsing error during diagnostic.\n", stderr);
    final_exit(1);
+   return FALSE;
 }
 
 

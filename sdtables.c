@@ -134,67 +134,68 @@
 */
 
 #include "sd.h"
+#include "resource.h"
 
 command_list_menu_item command_menu[] = {
-   {"exit the program",               command_quit},
-   {"quit the program",               command_quit},
-   {"simple modifications",           command_simple_mods},
-   {"allow modifications",            command_all_mods},
-   {"toggle concept levels",          command_toggle_conc_levels},
-   {"toggle active phantoms",         command_toggle_act_phan},
-   {"toggle retain after error",      command_toggle_retain_after_error},
-   {"toggle nowarn mode",             command_toggle_nowarn_mode},
-   {"undo last call",                 command_undo},
-   {"discard entered concepts",       command_erase},
-   {"abort this sequence",            command_abort},
-   {"insert a comment",               command_create_comment},
-   {"change output file",             command_change_outfile},
-   {"change title",                   command_change_header},
-   {"write this sequence",            command_getout},
-   {"end this sequence",              command_getout},
-   {"cut to clipboard",               command_cut_to_clipboard},
-   {"clipboard cut",                  command_cut_to_clipboard},
-   {"delete entire clipboard",        command_delete_entire_clipboard},
-   {"clipboard delete all",           command_delete_entire_clipboard},
-   {"delete one call from clipboard", command_delete_one_call_from_clipboard},
-   {"clipboard delete one",           command_delete_one_call_from_clipboard},
-   {"paste one call",                 command_paste_one_call},
-   {"clipboard paste one",            command_paste_one_call},
-   {"paste all calls",                command_paste_all_calls},
-   {"clipboard paste all",            command_paste_all_calls},
-   {"keep picture",                   command_save_pic},
-   {"refresh display",                command_refresh},
-   {"resolve",                        command_resolve},
-   {"normalize",                      command_normalize},
-   {"standardize",                    command_standardize},
-   {"reconcile",                      command_reconcile},
-   {"pick random call",               command_random_call},
-   {"pick simple call",               command_simple_call},
-   {"pick concept call",              command_concept_call},
-   {"pick level call",                command_level_call},
-   {"pick 8 person level call",       command_8person_level_call},
-   {"create any lines",               command_create_any_lines},
-   {"create waves",                   command_create_waves},
-   {"create 2fl",                     command_create_2fl},
-   {"create lines in",                command_create_li},
-   {"create lines out",               command_create_lo},
-   {"create inverted lines",          command_create_inv_lines},
-   {"create 3x1 lines",               command_create_3and1_lines},
-   {"create any columns",             command_create_any_col},
-   {"create columns",                 command_create_col},
-   {"create magic columns",           command_create_magic_col},
-   {"create dpt",                     command_create_dpt},
-   {"create cdpt",                    command_create_cdpt},
-   {"create trade by",                command_create_tby},
-   {"create 8 chain",                 command_create_8ch},
-   {"create any 1/4 tag",             command_create_any_qtag},
-   {"create 1/4 tag",                 command_create_qtag},
-   {"create 3/4 tag",                 command_create_3qtag},
-   {"create 1/4 line",                command_create_qline},
-   {"create 3/4 line",                command_create_3qline},
-   {"create diamonds",                command_create_dmd},
-   {"create any tidal setup",         command_create_any_tidal},
-   {"create tidal wave",              command_create_tidal_wave},
+   {"exit the program",               command_quit, ID_FILE_EXIT},
+   {"quit the program",               command_quit, -1},
+   {"simple modifications",           command_simple_mods, -1},
+   {"allow modifications",            command_all_mods, -1},
+   {"toggle concept levels",          command_toggle_conc_levels, ID_COMMAND_TOGGLE_CONC},
+   {"toggle active phantoms",         command_toggle_act_phan, ID_COMMAND_TOGGLE_PHAN},
+   {"toggle retain after error",      command_toggle_retain_after_error, -1},
+   {"toggle nowarn mode",             command_toggle_nowarn_mode, -1},
+   {"undo last call",                 command_undo, ID_COMMAND_UNDO},
+   {"discard entered concepts",       command_erase, ID_COMMAND_DISCARD_CONCEPT},
+   {"abort this sequence",            command_abort, ID_COMMAND_ABORTTHISSEQUENCE},
+   {"insert a comment",               command_create_comment, ID_COMMAND_COMMAND},
+   {"change output file",             command_change_outfile, ID_COMMAND_CH_OUTFILE},
+   {"change title",                   command_change_header, ID_COMMAND_CH_TITLE},
+   {"write this sequence",            command_getout, -1},
+   {"end this sequence",              command_getout, ID_COMMAND_ENDTHISSEQUENCE},
+   {"cut to clipboard",               command_cut_to_clipboard, -1},
+   {"clipboard cut",                  command_cut_to_clipboard, ID_COMMAND_CLIPBOARD_CUT},
+   {"delete entire clipboard",        command_delete_entire_clipboard, -1},
+   {"clipboard delete all",           command_delete_entire_clipboard, ID_COMMAND_CLIPBOARD_DEL_ALL},
+   {"delete one call from clipboard", command_delete_one_call_from_clipboard, -1},
+   {"clipboard delete one",           command_delete_one_call_from_clipboard, ID_COMMAND_CLIPBOARD_DEL_ONE},
+   {"paste one call",                 command_paste_one_call, -1},
+   {"clipboard paste one",            command_paste_one_call, ID_COMMAND_CLIPBOARD_PASTE_ONE},
+   {"paste all calls",                command_paste_all_calls, ID_COMMAND_CLIPBOARD_PASTE_ALL},
+   {"clipboard paste all",            command_paste_all_calls, -1},
+   {"keep picture",                   command_save_pic, ID_COMMAND_CLIPBOARD_KEEP_PIC},
+   {"refresh display",                command_refresh, -1},
+   {"resolve",                        command_resolve, ID_COMMAND_RESOLVE},
+   {"normalize",                      command_normalize, ID_COMMAND_NORMALIZE},
+   {"standardize",                    command_standardize, ID_COMMAND_STANDARDIZE},
+   {"reconcile",                      command_reconcile, ID_COMMAND_RECONCILE},
+   {"pick random call",               command_random_call, ID_COMMAND_PICK_RANDOM},
+   {"pick simple call",               command_simple_call, ID_COMMAND_PICK_SIMPLE},
+   {"pick concept call",              command_concept_call, ID_COMMAND_PICK_CONCEPT},
+   {"pick level call",                command_level_call, ID_COMMAND_PICK_LEVEL},
+   {"pick 8 person level call",       command_8person_level_call, ID_COMMAND_PICK_8P_LEVEL},
+   {"create waves",                   command_create_waves, ID_COMMAND_CREATE_WAVES},
+   {"create 2fl",                     command_create_2fl, ID_COMMAND_CREATE_2FL},
+   {"create lines in",                command_create_li, ID_COMMAND_CREATE_LINESIN},
+   {"create lines out",               command_create_lo, ID_COMMAND_CREATE_LINESOUT},
+   {"create inverted lines",          command_create_inv_lines, ID_COMMAND_CREATE_INVLINES},
+   {"create 3x1 lines",               command_create_3and1_lines, ID_COMMAND_CREATE_3N1LINES},
+   {"create any lines",               command_create_any_lines, ID_COMMAND_CREATE_ANYLINES},
+   {"create columns",                 command_create_col, ID_COMMAND_CREATE_COLUMNS},
+   {"create magic columns",           command_create_magic_col, ID_COMMAND_CREATE_MAGCOL},
+   {"create dpt",                     command_create_dpt, ID_COMMAND_CREATE_DPT},
+   {"create cdpt",                    command_create_cdpt, ID_COMMAND_CREATE_CDPT},
+   {"create 8 chain",                 command_create_8ch, ID_COMMAND_CREATE_8CH},
+   {"create trade by",                command_create_tby, ID_COMMAND_CREATE_TRBY},
+   {"create any columns",             command_create_any_col, ID_COMMAND_CREATE_ANYCOLS},
+   {"create tidal wave",              command_create_tidal_wave, ID_COMMAND_CREATE_GWV},
+   {"create any tidal setup",         command_create_any_tidal, ID_COMMAND_CREATE_ANY_TIDAL},
+   {"create diamonds",                command_create_dmd, ID_COMMAND_CREATE_DMD},
+   {"create 1/4 tag",                 command_create_qtag, ID_COMMAND_CREATE_QTAG},
+   {"create 3/4 tag",                 command_create_3qtag, ID_COMMAND_CREATE_3QTAG},
+   {"create 1/4 line",                command_create_qline, ID_COMMAND_CREATE_QLINE},
+   {"create 3/4 line",                command_create_3qline, ID_COMMAND_CREATE_3QLINE},
+   {"create any 1/4 tag",             command_create_any_qtag, ID_COMMAND_CREATE_ANY_QTAG},
    {(Cstring) 0}};
 
 resolve_list_menu_item resolve_menu[] = {
@@ -211,7 +212,7 @@ resolve_list_menu_item resolve_menu[] = {
    {"write this sequence",    resolve_command_write_this},
    {(Cstring) 0}};
 
-/* BEWARE!!  This list is keyed to the definition of "start_select_kind" in sd.h . */
+/* BEWARE!!  This list is keyed to the definition of "start_select_kind" in sdui.h . */
 Cstring startup_commands[] = {
    "exit from the program",
    "heads 1p2p",
@@ -1049,9 +1050,9 @@ dance_level higher_acceptable_level[] = {
 Cstring concept_key_table[] = {
    /* These are the standard bindings. */
    "cu     deleteline",
-   "cv     deleteword",
-   "e6     lineup",                 /* up arrow */
-   "e8     linedown",               /* down arrow */
+   "cw     deleteword",
+   "e6     lineup",
+   "e8     linedown",
    "e1     pageup",
    "e2     pagedown",
    "+f1    heads start",
@@ -1063,7 +1064,6 @@ Cstring concept_key_table[] = {
    "sf3    pick concept call",
    "cf3    pick simple call",
    "f4     resolve",
-   "e4     resolve",            /* home */
    "sf4    reconcile",
    "cf4    normalize",
    "af4    exit the program",
@@ -1090,8 +1090,6 @@ Cstring concept_key_table[] = {
    "*sf9   abort the search",
    "f10    write this sequence",
    "*f10   write this sequence",
-   "e3     write this sequence",    /* end */
-   "*e3    write this sequence",    /* end */
    "sf10   change output file",
    "+sf10  change output file",
    "f11    pick level call",
@@ -1111,12 +1109,12 @@ Cstring menu_names[] = {
    "???",
    "???",
    "(any setup)",
-   "grand wave",
-   "left grand wave",
+   "tidal wave",
+   "left tidal wave",
    "dpt",
    "cdpt",
-   "column",
-   "left column",
+   "columns",
+   "left columns",
    "8 chain",
    "trade by",
    "facing lines",
@@ -1125,7 +1123,7 @@ Cstring menu_names[] = {
    "left waves",
    "2-faced lines",
    "left 2-faced lines",
-   "grand column",
+   "tidal column",
    "diamond/qtag"};
 
 
@@ -2040,21 +2038,26 @@ cm_thing conc_init_table[] = {
              6, 12, s1x6,    s2x6,     18, 0, 0, 1, 1,  0x2FB, schema_concentric},
 
 
-   {s4x4,           Z, {11, 15, 3, 7,
-                           12, 13, 14, 0, 4, 5, 6, 8},     4, 8, s2x2,     s2x4,     16, 1, 0, 2, 1,  0x2F7, schema_concentric},
-   {s4x4,           Z, {15, 3, 7, 11,
-                           12, 13, 14, 0, 4, 5, 6, 8},     4, 8, s2x2,     s2x4,     16, 0, 0, 2, 1,  0x2FB, schema_concentric},
-   {s2x6,           Z, {9, 2, 3, 8,
-                           0, 1, 4, 5, 6, 7, 10, 11},      4, 8, s2x2,     s2x4,     12, 1, 0, 9, 1,  0x2FD, schema_concentric},
-   {s2x6,           Z, {2, 3, 8, 9,
-                           0, 1, 4, 5, 6, 7, 10, 11},      4, 8, s2x2,     s2x4,     12, 0, 0, 9, 1,  0x2FE, schema_concentric},
-   {s3dmd,         G3, {9, 10, 11, 3, 4, 5,                                             /* This was 2FE VVV */
-                                  0, 1, 2, 6, 7, 8},       6, 6, s1x6,     s2x3,     12, 0, 0, 2, 1,  0x0FB, schema_concentric},
-   {s3x8,          G3, {21, 22, 23, 9, 10, 11,
-                                  19, 20, 0, 7, 8, 12},    6, 6, s1x6,     s2x3,     24, 0, 1, 1, 1,  0x0F7, schema_concentric},
+   {s4x4,           Z, {11, 15, 3, 7,    12, 13, 14, 0, 4, 5, 6, 8},
+             4, 8, s2x2,     s2x4,     16, 1, 0, 2, 1,  0x2F7, schema_concentric},
+   {s4x4,           Z, {15, 3, 7, 11,    12, 13, 14, 0, 4, 5, 6, 8},
+             4, 8, s2x2,     s2x4,     16, 0, 0, 2, 1,  0x2FB, schema_concentric},
 
-   {s4dmd,         C4, {12, 13, 15, 14, 4, 5, 7, 6,
-                          0, 1, 2, 3, 8, 9, 10, 11},       8, 8, s1x8,     s2x4,     16, 0, 0, 2, 1,  0x0FB, schema_concentric},
+   {s2x6,           Z, {9, 2, 3, 8,      0, 1, 4, 5, 6, 7, 10, 11},
+             4, 8, s2x2,     s2x4,     12, 1, 0, 9, 1,  0x2FD, schema_concentric},
+   {s2x6,           Z, {2, 3, 8, 9,      0, 1, 4, 5, 6, 7, 10, 11},
+             4, 8, s2x2,     s2x4,     12, 0, 0, 9, 1,  0x2FE, schema_concentric},
+
+   {s3dmd,         G3, {9, 10, 11, 3, 4, 5,          0, 1, 2, 6, 7, 8},
+             6, 6, s1x6,     s2x3,     12, 0, 0, 2, 1,  0x0FB, schema_concentric},
+   {s3x8,          G3, {21, 22, 23, 9, 10, 11,       19, 20, 0, 7, 8, 12},
+             6, 6, s1x6,     s2x3,     24, 0, 1, 1, 1,  0x0F7, schema_concentric},
+
+   {s4dmd,         C4, {12, 13, 15, 14, 4, 5, 7, 6,      0, 1, 2, 3, 8, 9, 10, 11},
+             8, 8, s1x8,     s2x4,     16, 0, 0, 2, 1,  0x0FB, schema_concentric},
+   {s4dmd,         L4, {12, 13, 15, 14, 4, 5, 7, 6,      0, 1, 2, 3, 8, 9, 10, 11},
+             8, 8, s1x8,     s2x4,     16, 0, 0, 2, 1,  0x100, XXX},
+
 
    {sbigrig,        Z, {11, 4, 5, 10,
                            0, 1, 3, 2, 6, 7, 9, 8},        4, 8, s2x2,     s1x8,     12, 1, 0, 9, 1,  0x2F5, schema_concentric},
@@ -2391,7 +2394,8 @@ static Const fixer box6c;
 static Const fixer box9c;
 static Const fixer fdrhgl_bb;
 static Const fixer frigctr;
-
+static Const fixer f2x4right;
+static Const fixer f2x4left;
 
 /*                              ink   outk       rot  el numsetup 1x2         1x2rot      1x4    1x4rot dmd         dmdrot 2x2      2x2v             nonrot  */
 
@@ -2620,8 +2624,10 @@ static Const fixer fdrhgl1   = {s2x2, s_dhrglass,  0, 1, 1,       0,          0,
 static Const fixer f1x8endd  = {s1x4, s1x8,        0, 0, 1,       0,          0,          &f1x8endd,  &fxwve, 0,     0,    &f2x4endd,  &f2x4endd,  {0, 1, 4, 5}};
 static Const fixer f1x8endo  = {s1x2, s1x8,        0, 0, 2,       &f1x8endo,  &fboneendo, 0,          0, 0,          0,    0,          0,          {0, 1, 5, 4}};
 
-static Const fixer f1x8lowf  = {s1x4, s1x8,        0, 0, 1,       0,          0,          &f1x8lowf,  0, 0,          0,    0,          0,          {0, 1, 2, 3}};
-static Const fixer f1x8hif   = {s1x4, s1x8,        0, 0, 1,       0,          0,          &f1x8hif,   0, 0,          0,    0,          0,          {6, 7, 4, 5}};
+static Const fixer f1x8lowf  = {s1x4, s1x8,        0, 0, 1,       0,          0,          &f1x8lowf, &f2x4far, 0,    0,    &f2x4left,  &f2x4left,  {0, 1, 2, 3}};
+static Const fixer f1x8hif   = {s1x4, s1x8,        0, 0, 1,       0,          0,          &f1x8hif,  &f2x4near, 0,   0,    &f2x4right, &f2x4right, {6, 7, 4, 5}};
+
+/*                              ink   outk       rot  el numsetup 1x2         1x2rot      1x4    1x4rot dmd         dmdrot 2x2      2x2v             nonrot  */
 
 static Const fixer fbonectr  = {s1x4, s_bone,      0, 0, 1,       0,          0,          &fbonectr,  0, 0,          0,    &bar55d,    &bar55d,    {6, 7, 2, 3}};
 static Const fixer fbonetgl  = {s_bone6, s_bone,   0, 0, 1,       0,          0,          0,          0, 0,          0,    0,          0,          {0, 1, 3, 4, 5, 7}};
@@ -2630,12 +2636,19 @@ static Const fixer fboneendo = {s1x2, s_bone,      1, 0, 2,       &fboneendo, &f
 static Const fixer frigendd  = {s1x4, s_rigger,    0, 0, 1,       0,          0,          &frigendd,  0, 0,          0,    &f2x4endd,  &f2x4endd,  {6, 7, 2, 3}};
 static Const fixer frigctr   = {s2x2, s_rigger,    0, 0, 1,       0,          0,          &f1x8ctr,   0, 0,          0,    &frigctr,   &frigctr,   {0, 1, 4, 5}};
 static Const fixer f2x4ctr   = {s2x2, s2x4,        0, 0, 1,       0,          0,          &fbonectr,  0, 0,          0,    &f2x4ctr,   &f2x4ctr,   {1, 2, 5, 6}};
+
+
+static Const fixer f2x4lr    = {s2x2, s2x4,        1, 0, 1,       0,          0,          0,          0, 0,          0,    0,          0,          {3, 4, 5, 2}};
+static Const fixer f2x4rl    = {s2x2, s2x4,        1, 0, 1,       0,          0,          0,          0, 0,          0,    0,          0,          {1, 6, 7, 0}};
+
+
 /* These 26 are unsymmetrical. */
-       Const fixer f2x4far   = {s1x4, s2x4,        0, 0, 1,       0,          0,          &f2x4far,   0, 0,          0,    0,          0,          {0, 1, 3, 2}};
-       Const fixer f2x4near  = {s1x4, s2x4,        0, 0, 1,       0,          0,          &f2x4near,  0, 0,          0,    0,          0,          {7, 6, 4, 5}};
+       Const fixer f2x4far   = {s1x4, s2x4,        0, 0, 1,       0,          0,          &f2x4far, &f1x8hif, 0,     0,    &f2x4rl,   &f2x4rl,     {0, 1, 3, 2}};
+       Const fixer f2x4near  = {s1x4, s2x4,        0, 0, 1,       0,          0,          &f2x4near, &f1x8lowf, 0,   0,    &f2x4lr,   &f2x4lr,     {7, 6, 4, 5}};
 
        Const fixer f4dmdiden = {s4dmd, s4dmd,      0, 0, 1,       0,          0,          0,          0, 0,          0,    0,          0,          {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
 
+/*                              ink   outk       rot  el numsetup 1x2         1x2rot      1x4    1x4rot dmd         dmdrot 2x2      2x2v             nonrot  */
 
 static Const fixer f2x4pos1  = {s1x2, s2x4,        1, 0, 1,       &f2x4pos1,  0,         0,           0, 0,          0,    0,          0,          {0, 7}};
 static Const fixer f2x4pos2  = {s1x2, s2x4,        1, 0, 1,       &f2x4pos2,  0,         0,           0, 0,          0,    0,          0,          {1, 6}};
@@ -2658,8 +2671,8 @@ static Const fixer f2x4poss  = {s1x2, s2x4,        0, 0, 2,       &f2x4poss,  0,
 static Const fixer f2x4posy  = {s1x2, s2x4,        0, 0, 3,       &f2x4posy,  0,         0,           0, 0,          0,    0,          0,          {0, 1, 2, 3, 6, 5}};
 static Const fixer f2x4posz  = {s1x2, s2x4,        0, 0, 3,       &f2x4posz,  0,         0,           0, 0,          0,    0,          0,          {1, 2, 7, 6, 5, 4}};
 
-static Const fixer f2x4left  = {s2x2, s2x4,        0, 0, 1,       0,          0,          0,          0, 0,          0,    &f2x4left,  &f2x4left,  {0, 1, 6, 7}};
-static Const fixer f2x4right = {s2x2, s2x4,        0, 0, 1,       0,          0,          0,          0, 0,          0,    &f2x4right, &f2x4right, {2, 3, 4, 5}};
+static Const fixer f2x4left  = {s2x2, s2x4,        0, 0, 1,       0,          0,     &f1x8lowf, &f2x4far, 0,         0,    &f2x4left,  &f2x4left,  {0, 1, 6, 7}};
+static Const fixer f2x4right = {s2x2, s2x4,        0, 0, 1,       0,          0,     &f1x8hif,  &f2x4near, 0,        0,    &f2x4right, &f2x4right, {2, 3, 4, 5}};
 static Const fixer f2x4dleft = {s2x2, s2x4,        0, 0, 1,       0,          0,          0,          0, 0,          0,    &f2x4dleft, &f2x4dleft, {0, 2, 5, 7}};
 static Const fixer f2x4dright= {s2x2, s2x4,        0, 0, 1,       0,          0,          0,          0, 0,          0,    &f2x4dright,&f2x4dright,{1, 3, 4, 6}};
 
@@ -2892,8 +2905,8 @@ sel_item sel_init_table[] = {
    {LOOKUP_NONE,               s1x8,        0x33,   &f1x8endo,   (fixer *) 0, -1},
 
    {LOOKUP_NONE,               s1x8,        0x77,   &f1x8_77_3,  (fixer *) 0, -1},
-   {LOOKUP_NONE,               s1x8,        0x0F,   &f1x8lowf,   (fixer *) 0, -1},   /* Unsymmetrical */
-   {LOOKUP_NONE,               s1x8,        0xF0,   &f1x8hif,    (fixer *) 0, -1},   /* Unsymmetrical */
+   {LOOKUP_NONE,               s1x8,        0x0F,   &f1x8lowf,   (fixer *) 0, -1},   /* Unsymm */
+   {LOOKUP_NONE,               s1x8,        0xF0,   &f1x8hif,    (fixer *) 0, -1},   /* Unsymm */
 
    {LOOKUP_NONE,               s_bone,      0x33,   &fboneendo,  (fixer *) 0, -1},
    {LOOKUP_NONE,               s_ptpd,      0xAA,   &foozz,      (fixer *) 0, -1},

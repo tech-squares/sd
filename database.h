@@ -98,14 +98,15 @@ typedef Const char *Cstring;
    database format version. */
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 144
+#define DATABASE_FORMAT_VERSION 146
 
 /* BEWARE!!  These must track the items in "tagtabinit" in dbcomp.c . */
 typedef enum {
    base_call_unused,
    base_call_null,
    base_call_null_second,
-   base_call_cast_3_4,
+   base_call_basetag0,
+   base_call_armturn_34,
    base_call_ends_shadow,
    base_call_chreact_1,
    base_call_makepass_1,
@@ -630,6 +631,7 @@ typedef enum {
    cr_diamond_like,
    cr_qtag_like,
    cr_pu_qtag_like,
+   cr_gen_qbox,            /* Qualifier only. */
    cr_nice_diamonds,       /* Restriction only. */
    cr_magic_only,
    cr_li_lo,               /* Qualifier only. */

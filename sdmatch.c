@@ -284,6 +284,15 @@ extern void do_accelerator_spec(Cstring qq)
    else if (!strcmp(&qq[ccount], "deleteword")) {
       user_match.match.index = special_index_deleteword;
    }
+   else if (!strcmp(&qq[ccount], "copytext")) {
+      user_match.match.index = special_index_copytext;
+   }
+   else if (!strcmp(&qq[ccount], "cuttext")) {
+      user_match.match.index = special_index_cuttext;
+   }
+   else if (!strcmp(&qq[ccount], "pastetext")) {
+      user_match.match.index = special_index_pastetext;
+   }
    else if (!strcmp(&qq[ccount], "lineup")) {
       user_match.match.index = special_index_lineup;
    }
@@ -1403,6 +1412,8 @@ Private void scan_concepts_and_calls(
          saved_result_p->match.call_conc_options = null_options;
          current_result = saved_result_p;
          saved_result_p->yield_depth = new_depth;
+         if (cb->callflags1 & CFLAG1_YIELD_IF_AMBIGUOUS)
+            saved_result_p->yield_depth++;
          match_suffix_2(user, firstchar, &p2b, patxi);
       }
 
@@ -1453,6 +1464,8 @@ Private void scan_concepts_and_calls(
       saved_result_p->match.call_conc_options = null_options;
       current_result = saved_result_p;
       saved_result_p->yield_depth = new_depth;
+      if (cb->callflags1 & CFLAG1_YIELD_IF_AMBIGUOUS)
+         saved_result_p->yield_depth++;
       match_suffix_2(user, firstchar, &p2b, patxi);
    }
 

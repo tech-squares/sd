@@ -2404,21 +2404,16 @@ Private long_boolean get_real_subcall(
       xx->options = current_options;
       xx->options.star_turn_option = 0;
       xx->replacement_key = 0;
-
-      if (current_options.star_turn_option < 0)
-         xx->call = base_calls[base_call_null];
-      else {
-         xx->call = base_calls[base_call_turnstar_n];
-         xx->options.number_fields <<= 4;
-         xx->options.number_fields += current_options.star_turn_option;
-         xx->options.howmanynumbers++;
-      }
-
+      xx->call = orig_call;
+      xx->options.number_fields &= ~0xF;
+      xx->no_check_call_level = TRUE;
       xx->call_to_print = xx->call;
+
+      if (current_options.star_turn_option >= 0)
+         xx->options.number_fields += current_options.star_turn_option;
+
       cmd_out->parseptr = xx;
       cmd_out->callspec = (callspec_block *) 0;
-      cmd_out->cmd_final_flags.her8it = 0;
-      cmd_out->cmd_final_flags.final = 0;
       goto ret_true;
    }
 
@@ -2598,7 +2593,12 @@ Private long_boolean get_real_subcall(
       modify_popup_kind kind;
       char pretty_call_name[MAX_TEXT_LINE_LENGTH];
 
-      unparse_call_name(orig_call->name, pretty_call_name, &current_options);
+      /* Star turn calls can have funny names like "nobox". */
+
+      unparse_call_name(
+         (orig_call->callflags1 & CFLAG1_IS_STAR_CALL) ?
+         "turn the star @b" : orig_call->name,
+         pretty_call_name, &current_options);
 
       if (this_is_tagger) kind = modify_popup_only_tag;
       else if (this_is_tagger_circcer) kind = modify_popup_only_circ;
@@ -4045,9 +4045,11 @@ Private calldef_schema fixup_conc_schema(Const callspec_block *callspec, setup *
    uint32 herit_concepts = ss->cmd.cmd_final_flags.her8it;
 
    if (the_schema == schema_maybe_single_concentric)
-      the_schema = (herit_concepts & INHERITFLAG_SINGLE) ? schema_single_concentric : schema_concentric;
+      the_schema = (herit_concepts & INHERITFLAG_SINGLE) ?
+         schema_single_concentric : schema_concentric;
    else if (the_schema == schema_maybe_single_cross_concentric)
-      the_schema = (herit_concepts & INHERITFLAG_SINGLE) ? schema_single_cross_concentric : schema_cross_concentric;
+      the_schema = (herit_concepts & INHERITFLAG_SINGLE) ?
+         schema_single_cross_concentric : schema_cross_concentric;
    else if (the_schema == schema_maybe_grand_single_concentric) {
       if (herit_concepts & INHERITFLAG_GRAND) {
          if (herit_concepts & INHERITFLAG_SINGLE)
@@ -4056,10 +4058,8 @@ Private calldef_schema fixup_conc_schema(Const callspec_block *callspec, setup *
             fail("You must not use \"grand\" without \"single\".");
       }
       else {
-         if (herit_concepts & INHERITFLAG_SINGLE)
-            the_schema = schema_single_concentric;
-         else
-            the_schema = schema_concentric;
+         the_schema = (herit_concepts & INHERITFLAG_SINGLE) ?
+            schema_single_concentric : schema_concentric;
       }
    }
    else if (the_schema == schema_maybe_grand_single_cross_concentric) {
@@ -4082,20 +4082,26 @@ Private calldef_schema fixup_conc_schema(Const callspec_block *callspec, setup *
          in three pairs. */
 
       if (herit_concepts & INHERITFLAG_SINGLE) {
-         if (herit_concepts & (INHERITFLAG_GRAND | INHERITFLAG_NXNMASK)) {
+         if (herit_concepts & (INHERITFLAG_GRAND | INHERITFLAG_NXNMASK))
             the_schema = schema_concentric_others;
-         }
-         else {
+         else
             the_schema = schema_single_concentric;
-         }
       }
       else {
-         if (herit_concepts & (INHERITFLAG_GRAND | INHERITFLAG_NXNMASK)) {
+         if ((herit_concepts & (INHERITFLAG_GRAND | INHERITFLAG_NXNMASK)) == INHERITFLAG_GRAND)
             fail("You must not use \"grand\" without \"single\" or \"nxn\".");
-         }
-         else {
+         else if ((herit_concepts & (INHERITFLAG_GRAND | INHERITFLAG_NXNMASK)) == 0)
             the_schema = schema_concentric;
-         }
+         else if ((herit_concepts &
+                   (INHERITFLAG_NXNMASK | INHERITFLAG_12_MATRIX | INHERITFLAG_16_MATRIX)) ==
+                  (INHERITFLAGNXNK_4X4 | INHERITFLAG_16_MATRIX))
+            the_schema = schema_4x4_lines_concentric;
+         else if ((herit_concepts &
+                   (INHERITFLAG_NXNMASK | INHERITFLAG_12_MATRIX | INHERITFLAG_16_MATRIX)) ==
+                  (INHERITFLAGNXNK_3X3 | INHERITFLAG_12_MATRIX))
+            the_schema = schema_3x3_concentric;
+         else
+            fail("Can't use this combination of modifiers.");
       }
    }
    else if (the_schema == schema_maybe_nxn_lines_concentric) {
@@ -4258,11 +4264,17 @@ Private void move_with_real_call(
       return;
    }
 
-   if ((callspec->callflagsf & CFLAG2_FRACTAL_NUM) &&
-       (TEST_HERITBITS(ss->cmd.cmd_final_flags,INHERITFLAG_FRACTAL))) {
-      if ((current_options.number_fields & 0xD) == 1)
-         current_options.number_fields ^= 2;
-      ss->cmd.cmd_final_flags.her8it &= ~INHERITFLAG_FRACTAL;
+   if ((callspec->callflagsf & CFLAG2_YOYO_FRACTAL_NUM)) {
+      if ((TEST_HERITBITS(ss->cmd.cmd_final_flags,INHERITFLAG_FRACTAL))) {
+         if ((current_options.number_fields & 0xD) == 1)
+            current_options.number_fields ^= 2;
+         ss->cmd.cmd_final_flags.her8it &= ~INHERITFLAG_FRACTAL;
+      }
+      else if ((TEST_HERITBITS(ss->cmd.cmd_final_flags,INHERITFLAG_YOYO))) {
+         if ((current_options.number_fields & 0xF) == 2)
+            current_options.number_fields++;
+         ss->cmd.cmd_final_flags.her8it &= ~INHERITFLAG_YOYO;
+      }
    }
 
 
@@ -4984,7 +4996,9 @@ that probably need to be put in. */
          /* We demand that the final concepts that remain be only those in the following list,
             which includes all of the "heritable" concepts. */
 
-      if (ss->cmd.cmd_final_flags.final & ~(FINAL__SPLIT | FINAL__SPLIT_SQUARE_APPROVED | FINAL__SPLIT_DIXIE_APPROVED))
+      if (ss->cmd.cmd_final_flags.final &
+          ~(FINAL__SPLIT | FINAL__SPLIT_SQUARE_APPROVED |
+            FINAL__SPLIT_DIXIE_APPROVED | FINAL__LEADTRIANGLE))
          fail("This concept not allowed here.");
 
          /* Now we figure out how to dispose of "heritable" concepts.  In general, we will selectively inherit them to
@@ -5512,12 +5526,14 @@ extern void move(
             call, after saving its old contents. */
          callspec_block *saved_new_call;
          callspec_block *saved_old_call = ss->cmd.callspec;
-
          parse_block *z1 = t;
          ss->cmd.callspec = (callspec_block *) 0;
          while (z1->concept->kind > marker_end_of_list) z1 = z1->next;
-         if (z1->concept->kind == concept_another_call_next_mod) {
-            z1 = z1->next->subsidiary_root;
+
+         if (saved_old_call != base_calls[base_call_basetag0]) {
+            if (z1->concept->kind == concept_another_call_next_mod) {
+               z1 = z1->next->subsidiary_root;
+            }
          }
 
          saved_new_call = z1->call;

@@ -413,7 +413,7 @@ extern int get_char(void)
             else continue;
          }
          else if (key == 0x23) npdigit = '1';    /* Numeric keypad -- */
-         else if (key == 0x28) npdigit = '2';    /*just treat as normal digits. */
+         else if (key == 0x28) npdigit = '2';    /* just treat as normal digits. */
          else if (key == 0x22) npdigit = '3';
          else if (key == 0x25) npdigit = '4';
          else if (key == 0x0C) npdigit = '5';

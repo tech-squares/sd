@@ -548,6 +548,7 @@ static expand_thing step_qtgctr_stuff = {{7, 0, 2, 1, 3, 4, 6, 5}, 8, nothing, s
 static full_expand_thing step_8ch_pair      = {warn__none,       0, &step_8ch_stuff};
 static full_expand_thing rear_1x2_pair      = {warn__rear_back,  8, &step_1x2_stuff};
 static full_expand_thing rear_bone_pair     = {warn__some_rear_back, 0, &rear_bone_stuffb};
+static full_expand_thing rear_2x2_pair      = {warn__rear_back,  8, &step_2x2v_stuff};
 static full_expand_thing step_2x2v_pair     = {warn__none,    16+2, &step_2x2v_stuff};
 static full_expand_thing step_2x2h_pair     = {warn__none,    16+1, &step_2x2h_stuff};
 static full_expand_thing step_dmd_pair      = {warn__some_touch, 0, &step_dmd_stuff};
@@ -809,6 +810,12 @@ extern void touch_or_rear_back(
       if (scopy->kind == s1x2 && livemask != 0) {
          if (((directions ^ 0x2UL) & livemask) == 0) {
             tptr = &rear_1x2_pair;
+            goto found_tptr;
+         }
+      }
+      if (scopy->kind == s1x4 && livemask != 0) {
+         if (((directions ^ 0x28UL) & livemask) == 0) {
+            tptr = &rear_2x2_pair;
             goto found_tptr;
          }
       }

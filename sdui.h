@@ -564,7 +564,10 @@ enum {
     special_index_pagedown = -4,
     special_index_deleteline = -5,
     special_index_deleteword = -6,
-    special_index_quote_anything = -7
+    special_index_quote_anything = -7,
+    special_index_copytext = -8,
+    special_index_cuttext = -9,
+    special_index_pastetext = -10
 };
 
 
@@ -639,6 +642,7 @@ typedef struct {
    char specialprompt[MAX_TEXT_LINE_LENGTH];
    uint32 topcallflags1;
    call_list_kind call_list_to_use;
+   call_list_kind base_call_list_to_use;
 } parse_state_type;
 
 typedef struct {
@@ -668,8 +672,9 @@ typedef enum {
    into a menu.  For "ui_start_select" it is a start_select_kind.
    For other replies, it is one of the following constants: */
 
-/* BEWARE!!  This list must track the array "startup_commands" in sdmatch.c . */
+/* BEWARE!!  This list must track the array "startup_commands" in sdtables.c . */
 /* BEWARE!!  This list must track the array "startup_resources" in sdui-x11.c . */
+/* BEWARE!!!!!!!!  Lots of implications for "centersp" and all that! */
 /* BEWARE!!  If change this next definition, be sure to update the definition of
    "startinfolist" in sdtables.c, and also necessary stuff in the user interfaces.
    The latter includes the definition of "start_choices" in sd.dps
@@ -779,6 +784,7 @@ typedef enum {
 typedef struct {
    Cstring command_name;
    command_kind action;
+   int resource_id;
 } command_list_menu_item;
 
 typedef struct {

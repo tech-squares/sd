@@ -23,8 +23,8 @@
     General Public License if you distribute the file.
 */
 
-#define VERSION_STRING "32.6"
-#define TIME_STAMP "wba@an.hp.com  26 January 99 $"
+#define VERSION_STRING "32.65"
+#define TIME_STAMP "wba@an.hp.com  20 May 99 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -140,7 +140,7 @@ Private void display_help(void)
    printf("-no_warnings                do not display or print any warning messages\n");
    printf("-retain_after_error         retain pending concepts after error\n");
    printf("-active_phantoms            use active phantoms for \"assume\" operations\n");
-   printf("-sequence filename          base name for sequence output (def \"%s\")\n",
+   printf("-sequence filename          name for sequence output file (def \"%s\")\n",
           SEQUENCE_FILENAME);
    printf("-db filename                calls database file (def \"%s\")\n",
           DATABASE_FILENAME);
@@ -437,7 +437,9 @@ extern void initialize_parse(void)
    parse_state.concept_write_base = &history[history_ptr+1].command_root;
    parse_state.concept_write_ptr = parse_state.concept_write_base;
    *parse_state.concept_write_ptr = (parse_block *) 0;
-   parse_state.call_list_to_use = find_proper_call_list(&history[history_ptr].state);
+   parse_state.parse_stack_index = 0;
+   parse_state.base_call_list_to_use = find_proper_call_list(&history[history_ptr].state);
+   parse_state.call_list_to_use = parse_state.base_call_list_to_use;
    history[history_ptr+1].centersp = 0;
    for (i=0 ; i<WARNING_WORDS ; i++) history[history_ptr+1].warnings.bits[i] = 0;
    history[history_ptr+1].draw_pic = FALSE;
@@ -445,7 +447,6 @@ extern void initialize_parse(void)
    if (written_history_items > history_ptr)
       written_history_items = history_ptr;
 
-   parse_state.parse_stack_index = 0;
    parse_state.specialprompt[0] = '\0';
    parse_state.topcallflags1 = 0;
 }
@@ -1998,7 +1999,7 @@ int main(int argc, char *argv[])
 
    {
       char numstuff[50];
-      char title[200];
+      char title[MAX_TEXT_LINE_LENGTH];
 
       if (sequence_number >= 0)
          (void) sprintf(numstuff, " (%d:%d)", starting_sequence_number, sequence_number);
@@ -2006,10 +2007,10 @@ int main(int argc, char *argv[])
          numstuff[0] = '\0';
 
       if (header_comment[0])
-         (void) sprintf(title, "Sdtty %s  %s%s",
+         (void) sprintf(title, "%s  %s%s",
                         &filename_strings[calling_level][1], header_comment, numstuff);
       else
-         (void) sprintf(title, "Sdtty %s%s",
+         (void) sprintf(title, "%s%s",
                         &filename_strings[calling_level][1], numstuff);
 
       uims_set_window_title(title);
@@ -2020,7 +2021,7 @@ int main(int argc, char *argv[])
    reply = uims_get_startup_command();
 
    if (reply == ui_command_select && uims_menu_index == command_quit) goto normal_exit;
-   if (reply != ui_start_select || uims_menu_index == 0) goto normal_exit;           /* Huh? */
+   if (reply != ui_start_select) goto normal_exit;           /* Huh? */
 
    switch (uims_menu_index) {
    case start_select_toggle_conc:
@@ -2125,6 +2126,8 @@ int main(int argc, char *argv[])
       (void) uims_do_header_popup(header_comment);
       need_new_header_comment = FALSE;
       goto new_sequence;
+   case start_select_exit:
+      goto normal_exit;
    }
    
    history_ptr = 1;              /* Clear the position history. */
@@ -2388,7 +2391,13 @@ int main(int argc, char *argv[])
          goto start_cycle;
       case command_undo:
          if (backup_one_item()) {
-            /* We succeeded in backing up by one concept.  Continue from that point. */
+            /* We succeeded in backing up by one concept.  Continue from that point.
+               But if we backed all the way to the beginning, reset the call menu list. */
+
+            if (parse_state.concept_write_base == parse_state.concept_write_ptr &&
+                parse_state.parse_stack_index == 0)
+               parse_state.call_list_to_use = parse_state.base_call_list_to_use;
+
             reply_pending = FALSE;
             goto simple_restart;
          }
@@ -2643,6 +2652,7 @@ int main(int argc, char *argv[])
 
    normal_exit:
    
+
    exit_program(0);
 
    /* NOTREACHED */

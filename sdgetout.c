@@ -2,7 +2,7 @@
 
 /* SD -- square dance caller's helper.
 
-    Copyright (C) 1990-1998  William B. Ackerman.
+    Copyright (C) 1990-1999  William B. Ackerman.
 
     This file is unpublished and contains trade secrets.  It is
     to be used by permission only and not to be disclosed to third
@@ -356,13 +356,11 @@ extern resolve_indicator resolve_p(setup *s)
          /* The add of "expected_id" and "firstperson" may overflow out of the "700" bits
             into the next 2 bits.  (One bit for each add.) */
 
-         if (  (
-                  s->people[testptr->locations[i]].id1   /* The person under test. */
-                              ^                          /* XOR */
-                  (expected_id + firstperson + (directionword & 0xF))   /* What we check against. */
-               )
-                  &
-               0777)    /* The bits we check -- the person ID and the direction. */
+         if ((s->people[testptr->locations[i]].id1                  /* The person under test */
+              ^                                                     /* XOR */
+              (expected_id + firstperson + (directionword & 0xF)))  /* what we check against */
+             &                                                      /* but only test some bits */
+             0777)    /* The bits we check -- the person ID and the direction. */
             goto not_this_one;
       }
 

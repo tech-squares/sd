@@ -881,7 +881,7 @@ typedef struct {
 #define CFLAGHSPARE_6                     0x00001000UL
 /* These are the continuation of the "CFLAG1" bits, that have to overflow into this word.
    They must lie in the top 8 bits for now. */
-#define CFLAG2_FRACTAL_NUM                0x01000000UL
+#define CFLAG2_YOYO_FRACTAL_NUM           0x01000000UL
 
 
 /* These flags go along for the ride, in some parts of the code (BUT NOT

@@ -494,6 +494,8 @@ static restriction_thing wave_3x1d     = {6, {0, 1, 2, 6, 5, 4},                
 
 static restriction_thing miniwave_ptpd = {2, {1, 7, 3, 5},                                           {2}, {0}, {0}, TRUE,  chk_anti_groups};    /* check for miniwaves in center of each diamond */
 
+static restriction_thing gen_qbox      = {4, {0}, {8, 0, 1, 2, 3, 4, 5, 6, 7},                {2, 1, 2}, {2, 5, 6}, FALSE, chk_dmd_qtag};
+
 static restriction_thing dmd_gq        = {4, {0}, {4, 0, 1, 2, 3},                            {1, 0},    {1, 2},    FALSE, chk_dmd_qtag};
 static restriction_thing qtag_gq       = {4, {8, 0, 1, 2, 3, 4, 5, 6, 7}, {0},                {2, 4, 5}, {2, 0, 1}, FALSE, chk_dmd_qtag};
 static restriction_thing ptpd_gq       = {4, {0}, {8, 0, 1, 2, 3, 4, 5, 6, 7},                {2, 0, 6}, {2, 2, 4}, FALSE, chk_dmd_qtag};
@@ -751,6 +753,7 @@ static restr_initializer restr_init_table2[] = {
    {s_ptpd, cr_diamond_like, &ptpd_d},
    {s_ptpd, cr_qtag_like, &ptpd_gq},
    {s_ptpd, cr_pu_qtag_like, &ptpd_pq},
+   {s2x4, cr_gen_qbox, &gen_qbox},
    {s2x2, cr_wave_only, &box_wave},
    {s2x2, cr_all_facing_same, &box_1face},
    {s2x2, cr_2fl_only, &box_1face},
@@ -1938,27 +1941,21 @@ extern void print_recurse(parse_block *thing, int print_recurse_arg)
                if (!subsidiary_ptr) continue;
                cc = subsidiary_ptr->call_to_print;
 
-               if (     !cc ||    /* If no call pointer, it isn't a tag base call. */
-                           (
-                              !(cc->callflags1 & (CFLAG1_BASE_TAG_CALL_MASK)) &&
-                                 (
-                                    !(cc->callflags1 & (CFLAG1_BASE_CIRC_CALL)) ||
-                                    search->call_to_print != base_calls[base_call_circcer]
-                                 )
-                           )) {
-
-
+               if (!cc ||    /* If no call pointer, it isn't a tag base call. */
+                   (!(cc->callflags1 & CFLAG1_BASE_TAG_CALL_MASK) &&
+                    (!(cc->callflags1 & CFLAG1_BASE_CIRC_CALL) ||
+                     search->call_to_print != base_calls[base_call_circcer]))) {
                   callspec_block *replaced_call = search->call_to_print;
 
                   /* Need to check for case of replacing one star turn with another. */
 
                   if ((first_replace == 0) &&
-                        (replaced_call->callflags1 & CFLAG1_IS_STAR_CALL) &&
-                              ((subsidiary_ptr->concept->kind == marker_end_of_list) ||
-                              subsidiary_ptr->concept->kind == concept_another_call_next_mod) &&
-                              cc &&
-                              ((cc->callflags1 & CFLAG1_IS_STAR_CALL) ||
-                              cc->schema == schema_nothing)) {
+                      (replaced_call->callflags1 & CFLAG1_IS_STAR_CALL) &&
+                      ((subsidiary_ptr->concept->kind == marker_end_of_list) ||
+                       subsidiary_ptr->concept->kind == concept_another_call_next_mod) &&
+                      cc &&
+                      ((cc->callflags1 & CFLAG1_IS_STAR_CALL) ||
+                       cc->schema == schema_nothing)) {
                      first_replace++;
 
                      if (cc->schema == schema_nothing)
@@ -1973,8 +1970,8 @@ extern void print_recurse(parse_block *thing, int print_recurse_arg)
                      case 1:
                      case 2:
                      case 3:
-                        /* This is a natural replacement.  It may already
-                           have been taken care of. */
+                        /* This is a natural replacement.
+                           It may already have been taken care of. */
                         if (pending_subst1 || search->replacement_key == 3) {
                            write_blank_if_needed();
                            if (search->replacement_key == 3)
@@ -1987,8 +1984,8 @@ extern void print_recurse(parse_block *thing, int print_recurse_arg)
                         break;
                      case 5:
                      case 6:
-                        /* This is a secondary replacement.  It may already
-                           have been taken care of. */
+                        /* This is a secondary replacement.
+                           It may already have been taken care of. */
                         if (pending_subst2) {
                            write_blank_if_needed();
                            writestuff("[modification: ");
@@ -2005,7 +2002,13 @@ extern void print_recurse(parse_block *thing, int print_recurse_arg)
                         else
                            writestuff("AND REPLACE ");
 
-                        writestuff_with_decorations(&search->options, replaced_call->name);
+                        /* Star turn calls can have funny names like "nobox". */
+
+                        writestuff_with_decorations(
+                           &search->options,
+                           (replaced_call->callflags1 & CFLAG1_IS_STAR_CALL) ?
+                           "turn the star @b" : replaced_call->name);
+
                         writestuff(" WITH [");
                         print_recurse(subsidiary_ptr, PRINT_RECURSE_STAR);
                         writestuff("]");
@@ -3520,6 +3523,7 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec)
       case cr_qtag_mwv:
       case cr_qtag_mag_mwv:
       case cr_dmd_ctrs_1f:
+      case cr_gen_qbox:
          goto check_tt;
       case cr_ctr_pts_rh:
       case cr_ctr_pts_lh:
@@ -4513,5 +4517,5 @@ extern long_boolean fix_n_results(int arity, setup_kind goal, setup z[], uint32 
    lose:
 
    fail("This is an inconsistent shape or orientation changer!!");
-   /* NOTREACHED */
+   return FALSE;
 }
