@@ -496,7 +496,7 @@ concept_descriptor concept_descriptor_table[] = {
    {"3X3",                                   concept_3x3,                   l_c3x},
    {"4X4",                                   concept_4x4,                   l_c3x},
 /* -------- column break -------- */
-#define mm__2_size 42
+#define mm__2_size 47
    {"CENTERS",                               concept_centers_or_ends,       l_mainstream, {0, 0}},
    {"ENDS",                                  concept_centers_or_ends,       l_mainstream, {0, 1}},
    {"CENTERS AND ENDS",                      concept_centers_and_ends,      l_mainstream, {0, 0}},
@@ -515,7 +515,12 @@ concept_descriptor concept_descriptor_table[] = {
          {"", concept_comment, l_nonexistent_concept},
    {"ON YOUR OWN",                           concept_on_your_own,           l_c4a},
    {"<ANYONE> DO YOUR PART,",                concept_so_and_so_only,        l_mainstream, {0, 0}},
-   {"OWN THE <ANYONE>",                      concept_some_vs_others,        l_c3a,        {0, 1}},
+   {"<ANYONE> DO YOUR PART, (while the others)", concept_some_vs_others,    l_mainstream, {0, 1}},
+   {"OWN THE <ANYONE>",                      concept_some_vs_others,        l_c3a,        {0, 3}},
+   {"<ANYONE> ONLY",                         concept_so_and_so_only,        l_mainstream, {0, 4}},
+   {"<ANYONE> ONLY (while the others)",      concept_some_vs_others,        l_mainstream, {0, 5}},
+   {"<ANYONE> DISCONNECTED",                 concept_so_and_so_only,        l_c2, {0, 6}},
+   {"<ANYONE> DISCONNECTED (while the others)", concept_some_vs_others,     l_c2, {0, 7}},
    {"<ANYONE> START",                        concept_so_and_so_begin,       l_c2,         {0, 0}},
          {"", concept_comment, l_nonexistent_concept},
    {"two calls in succession",               concept_sequential,            l_mainstream},

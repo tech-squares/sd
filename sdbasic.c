@@ -533,6 +533,16 @@ extern void check_line_restriction(setup *ss, call_restriction restr, unsigned i
                    ((q5&3) && ((~q7)&3) && (q4&3) && ((~q6)&3)))
                   goto ldef_failed;
                break;
+            case cr_leads_only:
+               /* check for everyone a lead, and not T-boned */
+               q0 = 0; q2 = 3;
+               if ((t = ss->people[0].id1) != 0) { q0 |= t;     q2 &= t; }
+               if ((t = ss->people[1].id1) != 0) { q0 |= t;     q2 &= (t^2); }
+               if ((t = ss->people[2].id1) != 0) { q0 |= (t^2); q2 &= (t^2); }
+               if ((t = ss->people[3].id1) != 0) { q0 |= (t^2); q2 &= t; }
+               if ((q0&3) && ((~q2)&3))
+                  goto ldef_failed;
+               break;
             case cr_peelable_box:
                /* check for a "peelable" (everyone in genuine tandem somehow) box */
                q0 = 0; q1 = 0; q2 = 3; q3 = 3;

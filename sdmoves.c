@@ -2022,7 +2022,7 @@ extern void move(
          must be in a global variable.  Therefore, we explicitly save and restore that
          global variable (in a dynamic variable local to this instance) rather than passing
          it as an explicit argument.  By saving it and restoring it in this way, we make
-         things like "checkpoint bounce the beaux by bounce the belles" work. */
+         things like "checkpoint bounce the beaus by bounce the belles" work. */
 
       current_selector = parseptrcopy->selector;
       current_direction = parseptrcopy->direction;

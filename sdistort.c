@@ -548,6 +548,7 @@ extern void do_phantom_2x4_concept(
          
          rot = 0;
          maps = (*map_lists[s1x8][1])[parseptr->concept->value.arg3][0];
+         if (!maps) fail("This concept not allowed in this setup.");
          break;
       case s4x4:
 
@@ -888,7 +889,9 @@ extern void distorted_2x2s_move(
    a2.kind = s2x2;
    a2.rotation = 0;
 
+   update_id_bits(&a1);
    move(&a1, FALSE, &res1);
+   update_id_bits(&a2);
    move(&a2, FALSE, &res2);
    
    if (res1.kind != s2x2 || res2.kind != s2x2) fail("Can't do shape-changer with this concept.");
