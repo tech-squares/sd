@@ -1548,17 +1548,17 @@ extern callarray *assoc(begin_kind key, setup *ss, callarray *spec)
    callarray *p;
    int t, u, i, k, mask;
 
+   /* Can't be bothered to figure out what setup to create when
+      calling this during initialization, so it sends nil.
+      Therefore, we always accept such a thing. */
+   if (!ss) goto good;
+
    for (p = spec; p; p = p->next) {
 
       /* First, we demand that the starting setup be correct.  Also, if a qualifier
          number was specified, it must match. */
 
       if ((begin_kind) p->start_setup != key) continue;
-
-      /* During initialization, we will be called with a null pointer for ss.
-         We need to be careful, and err on the side of acceptance. */
-
-      if (!ss) goto good;
 
       if (p->qual_num != 0) {
          number_used = TRUE;
