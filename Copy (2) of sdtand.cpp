@@ -311,16 +311,16 @@ static tm_thing maps_isearch_twosome[] = {
 
    {{15, 14, 13, 12, 11, 10, 9, 8, 16, 17, 18, 19, 20, 21, 22, 23,
      0, 1, 2, 3, 4, 5, 6, 7, 31, 30, 29, 28, 27, 26, 25, 24},
-    0,0,          0,          16, 0,  s2x8,  shyper4x8a},
+    0,0,          0,          16, 0,  s2x8,  shyper4x8},
    {{0, 2, 4, 6, 8, 10, 12, 14, 17, 19, 21, 23, 25, 27, 29, 31,
      1, 3, 5, 7, 9, 11, 13, 15, 16, 18, 20, 22, 24, 26, 28, 30},
     044444,022222222222, 0xFFFFFFFF, 16, 0,  s2x8,  shyper2x16},
    {{6, 9, 30, 11, 17, 19, 21, 28, 23, 24, 15, 26, 0, 2, 4, 13,
      7, 8, 31, 10, 16, 18, 20, 29, 22, 25, 14, 27, 1, 3, 5, 12},
-    044444,022222222222, 0xFFFFFFFF, 16, 0,  s4x4,  shyper4x8a},
+    044444,022222222222, 0xFFFFFFFF, 16, 0,  s4x4,  shyper4x8},
    {{17, 19, 21, 28, 23, 24, 15, 26, 0, 2, 4, 13, 6, 9, 30, 11,
      16, 18, 20, 29, 22, 25, 14, 27, 1, 3, 5, 12, 7, 8, 31, 10},
-    0,0,          0xFFFFFFFF, 16, 1,  s4x4,  shyper4x8a},
+    0,0,          0xFFFFFFFF, 16, 1,  s4x4,  shyper4x8},
 
    {{0}, 0,0, 0, 0, 0, nothing, nothing}};
 
@@ -421,26 +421,17 @@ static tm_thing maps_isearch_boxsome[] = {
    {{10, 3, 5, 8,      12, 14, 7, 9,     15, 1, 4, 6,      13, 0, 2, 11},        0,0,        0,       4, 0,  s2x2,  s4x4},
 
 
-   // Special maps for couples 1/8 twosome stuff.
-   // These need further work in the table initializer.
-   {{3, 4, 28, 27,        13, 9, 30, 26,   14, 10, 29, 25,   12, 11, 19, 20},      0,03333,    0xFF,  4, 0,  s2x2,  shyper4x8b},
-   {{14, 10, 29, 25,      3, 4, 28, 27,    12, 11, 19, 20,   13, 9, 30, 26},       0,01111,    0xFF,  4, 0,  s2x2,  shyper4x8b},
-   {{14, 4, 29, 27,       3, 9, 28, 26,    12, 10, 19, 25,   13, 11, 30, 20},      0,03131,    0xFF,  4, 0,  s2x2,  shyper4x8b},
-   {{3, 10, 28, 25,       13, 4, 30, 27,   14, 11, 29, 20,   12, 9, 19, 26},       0,01313,    0xFF,  4, 0,  s2x2,  shyper4x8b},
-   {{20, 22, 9, 11,       2, 3, 5, 4,      17, 16, 14, 15,   21, 23, 8, 10},       0,01111,    0xFF,  4, 0,  s1x4,  shyper3x8},
-   {{2, 3, 5, 4,          21, 23, 8, 10,   20, 22, 9, 11,    17, 16, 14, 15},      0,03333,    0xFF,  4, 0,  s1x4,  shyper3x8},
-   {{20, 3, 9, 4,         2, 23, 5, 10,    17, 22, 14, 11,   21, 16, 8, 15},       0,03131,    0xFF,  4, 0,  s1x4,  shyper3x8},
-   {{2, 22, 5, 11,        21, 3, 8, 4,     20, 16, 9, 15,    17, 23, 14, 10},      0,01313,    0xFF,  4, 0,  s1x4,  shyper3x8},
-   {{6, 3,       0, 1,      5, 4,    7, 2},       0,011,       0xF,  2, 0,  s1x2,  slittlestars},
-   {{0, 1,       7, 2,      6, 3,    5, 4},       0,033,       0xF,  2, 0,  s1x2,  slittlestars},
-   {{6, 1,       0, 2,      5, 3,    7, 4},       0,031,       0xF,  2, 0,  s1x2,  slittlestars},
-   {{0, 3,       7, 1,      6, 4,    5, 2},       0,013,       0xF,  2, 0,  s1x2,  slittlestars},
+   // ***** Special 1/8 maps.
+   // ****** Bug!!!!!!   This shouldn't be a 4x4.  Should be a "hyper4x4" to be sure stripping happens correctly.
+   // But this will do for now.
+   // Well, actually, an "s8x8" exists and will do nicely.
+   {{13, 14, 7, 11,    15, 1, 2, 11,     10, 3, 7, 9,      15, 3, 5, 6},      0,03333,    0xFF,       4, 0,  s2x2,  s4x4},
+   {{10, 3, 7, 9,      13, 14, 7, 11,    15, 3, 5, 6,      15, 1, 2, 11},     0,01111,    0xFF,       4, 0,  s2x2,  s4x4},
 
-
-   {{11, 2, 7, 20,     10, 3, 6, 21,     18, 9, 22, 15,    19, 8, 23, 14},        0,02222,0x0FCCFCC,  4, 0,  sdmd,  s4x6},
-   {{18, 9, 22, 15,    11, 2, 7, 20,     19, 8, 23, 14,    10, 3, 6, 21},              0,0,       0,  4, 0,  sdmd,  s4x6},
+   {{11, 2, 7, 20,     10, 3, 6, 21,     18, 9, 22, 15,    19, 8, 23, 14},    0,02222,0x0FCCFCC,      4, 0,  sdmd,  s4x6},
+   {{18, 9, 22, 15,    11, 2, 7, 20,     19, 8, 23, 14,    10, 3, 6, 21},        0,0,        0,       4, 0,  sdmd,  s4x6},
    {{0, 2, 4, 22, 20, 18,     1, 3, 5, 23, 21, 19,
-     11, 9, 7, 13, 15, 17,    10, 8, 6, 12, 14, 16},                             0,0222222,0xFFFFFF,  6, 0,  s2x3,  s4x6},
+     11, 9, 7, 13, 15, 17,    10, 8, 6, 12, 14, 16},                         0,0222222, 0xFFFFFF,     6, 0,  s2x3,  s4x6},
    {{0}, 0,0, 0, 0, 0,  nothing, nothing}};
 
 
@@ -778,34 +769,14 @@ static void unpack_us(
       }
    }
 
-   static const veryshort fixer_4x8a_4x4[24] = {
+   static const veryshort fixer_4x8_4x4[24] = {
       5, 10, 29, 11, 18, 19, 20, 28,
       21, 26, 13, 27, 2, 3, 4, 12,
       -1, -1, -1, -1, -1, -1, -1, -1};
 
-   static const veryshort fixer_4x8a_2x8[24] = {
+   static const veryshort fixer_4x8_2x8[24] = {
       15, 14, 13, 12, 11, 10, 9, 8,
       31, 30, 29, 28, 27, 26, 25, 24,
-      -1, -1, -1, -1, -1, -1, -1, -1};
-
-   static const veryshort fixer_4x8b_2x4h[24] = {
-      14, 13, 10, 9, 30, 29, 26, 25,
-      -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1};
-
-   static const veryshort fixer_4x8b_2x4v[24] = {
-      4, 11, 28, 19, 20, 27, 12, 3,
-      -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1};
-
-   static const veryshort fixer_2x4_3x8[24] = {
-      2, 3, 4, 5, 14, 15, 16, 17,
-      -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1};
-
-   static const veryshort fixer_1x8_3x8[24] = {
-      20, 21, 23, 22, 8, 9, 11, 10,
-      -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1};
 
    static const veryshort fixer_2x8_2x16[24] = {
@@ -817,49 +788,22 @@ static void unpack_us(
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
       18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
 
-   static const veryshort lilstar1[8] = {6, 7, 1, 4, 0, 0, 0, 0};
-   static const veryshort lilstar2[8] = {2, 3, 5, 0, 0, 0, 0, 0};
-   static const veryshort lilstar3[8] = {0, 1, 4, 5, 0, 0, 0, 0};
-   static const veryshort lilstar4[8] = {6, 7, 2, 3, 0, 0, 0, 0};
 
    result->kind = map_ptr->outsetup;
    result->rotation = tandstuff->virtual_result.rotation - map_ptr->rot;
    result->result_flags = tandstuff->virtual_result.result_flags;
 
    const veryshort *my_huge_map = (const veryshort *) 0;
-   int rot = 0;
 
-   if (result->kind == shyper4x8a) {
+   if (result->kind == shyper4x8) {
       if ((hyperarrayoccupation & 0xC3C3C3C3) == 0) {
          result->kind = s4x4;
-         my_huge_map = fixer_4x8a_4x4;
+         my_huge_map = fixer_4x8_4x4;
       }
       else if ((hyperarrayoccupation & 0x00FF00FF) == 0) {
          result->kind = s2x8;
-         my_huge_map = fixer_4x8a_2x8;
+         my_huge_map = fixer_4x8_2x8;
       } 
-   }
-   else if (result->kind == shyper4x8b) {
-      if ((hyperarrayoccupation & 0x99FF99FF) == 0) {
-         result->kind = s2x4;
-         my_huge_map = fixer_4x8b_2x4h;
-      }
-      else if ((hyperarrayoccupation & 0xE7E7E7E7) == 0) {
-         result->kind = s2x4;
-         my_huge_map = fixer_4x8b_2x4v;
-         result->rotation++;
-         rot = 033;
-      }
-   }
-   else if (result->kind == shyper3x8) {
-      if ((hyperarrayoccupation & 0xFC3FC3) == 0) {
-         result->kind = s2x4;
-         my_huge_map = fixer_2x4_3x8;
-      }
-      else if ((hyperarrayoccupation & 0x0FF0FF) == 0) {
-         result->kind = s1x8;
-         my_huge_map = fixer_1x8_3x8;
-      }
    }
    else if (result->kind == shyper2x16) {
       if ((hyperarrayoccupation & 0xF00FF00F) == 0) {
@@ -871,28 +815,6 @@ static void unpack_us(
          my_huge_map = fixer_2x12_2x24;
       }
    }
-   else if (result->kind == slittlestars) {
-      if ((hyperarrayoccupation & 0xCC) == 0) {
-         result->kind = s2x2;
-         my_huge_map = lilstar3;
-      }
-      else if ((hyperarrayoccupation & 0x33) == 0) {
-         result->kind = s1x4;
-         my_huge_map = lilstar4;
-      }
-      else if ((hyperarrayoccupation & 0x2D) == 0) {
-         result->kind = s_trngl4;
-         my_huge_map = lilstar1;
-         result->rotation--;
-         rot = 011;
-      }
-      else if ((hyperarrayoccupation & 0xD2) == 0) {
-         result->kind = s_trngl4;
-         my_huge_map = lilstar2;
-         result->rotation++;
-         rot = 033;
-      }
-   }
    else
       my_huge_map = identity24;
 
@@ -902,7 +824,6 @@ static void unpack_us(
    for (i=0; i<MAX_PEOPLE; i++) {
       if (my_huge_map[i] >= 0)
          result->people[i] = hyperarray[my_huge_map[i]];
-         result->people[i].id1 = rotperson(hyperarray[my_huge_map[i]].id1, rot);
    }
 }
 
@@ -1501,8 +1422,8 @@ extern void tandem_couples_move(
    if (twosome >= 2) {
       fractional = true;
 
-      int num = (fraction_fields & NUMBER_FIELD_MASK) << 2;
-      int fractional_twosome_part_den = fraction_fields >> BITS_PER_NUMBER_FIELD;
+      int num = (fraction_fields & 0xF) << 2;
+      int fractional_twosome_part_den = fraction_fields >> 4;
 
       fraction_in_eighths =
          num / fractional_twosome_part_den;
@@ -1791,7 +1712,7 @@ extern void tandem_couples_move(
 
    // We allow pointless siamese if this is a part of a call that is being done
    // "piecewise" or "random" or whatever.
-   if (!(ss->cmd.cmd_fraction.flags & CMD_FRAC_BREAKING_UP))
+   if (!(ss->cmd.cmd_frac_flags & CMD_FRAC_BREAKING_UP))
       fail("Can't do Siamese in this setup.");
 
    nsmask = savens;
@@ -1913,8 +1834,10 @@ extern void tandem_couples_move(
       }
    }
 
-   uint32 orbitcomhigh = orbitmask3high ^ 0155555UL;
-   uint32 orbitcomlow = orbitmask3low ^ 026666666666UL;
+   uint32 orbitcomhigh = ~orbitmask3high;
+   uint32 orbitcomlow = ~orbitmask3low;
+   orbitcomhigh ^= 022222UL;
+   orbitcomlow ^= 011111111111UL;
    uint32 hmask3high = orbitcomhigh & livemask3high & ~sglmask3high;
    uint32 hmask3low = orbitcomlow & livemask3low & ~sglmask3low;
 
