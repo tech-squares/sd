@@ -1990,8 +1990,6 @@ extern void initialize_parse()
 
 static void do_change_outfile(bool signal)
 {
-   char *GodDamnedPieceOfShitToGetTheMicrosoftDebuggerToShowMeThisSymbol = outfile_string;
-
    char newfile_string[MAX_FILENAME_LENGTH];
    char buffer[MAX_TEXT_LINE_LENGTH];
    sprintf(buffer, "Current sequence output file is \"%s\".", outfile_string);
