@@ -3223,58 +3223,77 @@ static void do_concept_crazy(
    }
 
    tempsetup.cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_REVERSE);
+
    // We don't allow other flags, like "cross", but we do allow "MxN".
-   if ((tempsetup.cmd.cmd_final_flags.test_heritbits(~(INHERITFLAG_MXNMASK|
-                                                       INHERITFLAG_NXNMASK))) |
+   if ((tempsetup.cmd.cmd_final_flags.test_heritbits(~(INHERITFLAG_MXNMASK|INHERITFLAG_NXNMASK))) |
        tempsetup.cmd.cmd_final_flags.final)
       fail("Illegal modifier before \"crazy\".");
 
-   // We will modify these flags, and, in any case,
-   // we need to rematerialize them at each step.
+   // We will modify these flags, and, in any case, we need to rematerialize them at each step.
    setup_command cmd = tempsetup.cmd;
 
-   int craziness = 4;
-   int fractional_craziness_part_num = 0;
-   int fractional_craziness_part_den = 1;
+   int craziness_integer = 4;
+   int craziness_fraction_num = 0;
+   int craziness_fraction_den = 1;
 
    if (parseptr->concept->arg2 == 2) {
-      int num =
-         (parseptr->options.number_fields & NUMBER_FIELD_MASK) << 2;
-      fractional_craziness_part_den =
-         parseptr->options.number_fields >> BITS_PER_NUMBER_FIELD;
-      craziness = num/fractional_craziness_part_den;
-      fractional_craziness_part_num = num - craziness*fractional_craziness_part_den;
-      int fracgcd = gcd(fractional_craziness_part_num, fractional_craziness_part_den);
-      fractional_craziness_part_num /= fracgcd;
-      fractional_craziness_part_den /= fracgcd;
+      int num = (parseptr->options.number_fields & NUMBER_FIELD_MASK) << 2;
+      craziness_fraction_den = parseptr->options.number_fields >> BITS_PER_NUMBER_FIELD;
+      craziness_integer = num/craziness_fraction_den;
+      craziness_fraction_num = num - craziness_integer*craziness_fraction_den;
    }
    else if (parseptr->concept->arg2)
-      craziness = parseptr->options.number_fields & NUMBER_FIELD_MASK;
+      craziness_integer = parseptr->options.number_fields & NUMBER_FIELD_MASK;
 
    fraction_command incomingfracs = cmd.cmd_fraction;
    incomingfracs.flags &= ~CMD_FRAC_THISISLAST;
 
    if (incomingfracs.flags & CMD_FRAC_REVERSE)
-      reverseness ^= (craziness ^ 1);    // That's all it takes!
+      reverseness ^= (craziness_integer ^ 1);    // That's all it takes!
 
-   // Craziness that isn't integral multiple of 1/4 isn't allowed if reverse crazy.
-   if (fractional_craziness_part_num != 0 && reverseness != 0)
+   // We now have the overall number of crazy parts to do (that is, the fraction as a number of quarters)
+   // and an additional fraction of quarters in craziness_fraction.  Turn the whole thing into one
+   // big fraction, in quarters.  That is, "5/8 crazy" gives 5/2 here.  "Crazy" gives 4.
+
+   craziness_fraction_num += craziness_fraction_den*craziness_integer;
+
+   // Fraction that isn't integral number of quarters isn't allowed if reverse crazy.
+   if ((craziness_fraction_num % craziness_fraction_den) != 0 && reverseness != 0)
       fail("Illegal fraction for \"crazy\".");
-
-   // If craziness isn't an integral multiple of 1/4, bump the count.
-   if (fractional_craziness_part_num != 0) craziness++;
 
    int s_denom = (incomingfracs.fraction >> (BITS_PER_NUMBER_FIELD*3)) & NUMBER_FIELD_MASK;
    int s_numer = (incomingfracs.fraction >> (BITS_PER_NUMBER_FIELD*2)) & NUMBER_FIELD_MASK;
    int e_denom = (incomingfracs.fraction >> BITS_PER_NUMBER_FIELD) & NUMBER_FIELD_MASK;
    int e_numer = (incomingfracs.fraction & NUMBER_FIELD_MASK);
 
-   int ttt = craziness * s_numer;
-   int uuu = craziness * e_numer;
-   int i = ttt / s_denom;           // The start point.
-   int highlimit = uuu / e_denom;   // The end point.
+   s_numer *= craziness_fraction_num;
+   s_denom *= craziness_fraction_den;
+   e_numer *= craziness_fraction_num;
+   e_denom *= craziness_fraction_den;
 
-   if (i*s_denom != ttt || highlimit*e_denom != uuu || i >= highlimit)
+   // Now s_numer/s_denom give start point, calibrated in parts.
+   // and e_numer/e_denom give end point.
+
+   {
+      int fracgcd = gcd(s_numer, s_denom);
+      s_numer /= fracgcd;
+      s_denom /= fracgcd;
+      fracgcd = gcd(e_numer, e_denom);
+      e_numer /= fracgcd;
+      e_denom /= fracgcd;
+   }
+
+   int i = s_numer / s_denom;           // The start point.  It must be an integer.
+   int highlimit = e_numer / e_denom;   // The end point.
+   e_numer -= highlimit * e_denom;      // This now has just the fractional remainder.
+
+   // If end isn't an integral number of parts, bump the count.
+   // We will apply the fractional part to the last cycle.
+   if (e_numer != 0) highlimit++;
+   int craziness = highlimit;
+
+   // The start point must be an integral number of parts.
+   if (i*s_denom != s_numer || i >= highlimit)
       fail("Illegal fraction for \"crazy\".");
 
    // We have *not* checked for highlimit <= 4.  We allow 5/4 crazy.
@@ -3334,12 +3353,10 @@ static void do_concept_crazy(
 
       // If craziness isn't an integral multiple of 1/4 and this is the last time,
       // put in the fraction.
-      if (i == highlimit-1 && fractional_craziness_part_num != 0) {
+      if (i == highlimit-1 && e_numer != 0) {
          tempsetup.cmd.cmd_fraction.flags = 0;
          tempsetup.cmd.cmd_fraction.fraction =
-            (fractional_craziness_part_den << BITS_PER_NUMBER_FIELD) +
-            fractional_craziness_part_num +
-            NUMBER_FIELDS_1_0_0_0;
+            (e_denom << BITS_PER_NUMBER_FIELD) + e_numer + NUMBER_FIELDS_1_0_0_0;
       }
 
       if ((i ^ reverseness) & 1) {
@@ -3436,7 +3453,7 @@ static void do_concept_phan_crazy(
 
       // We have now processed any "standard" information to determine how to split the setup.
       // If this was done nontrivially, we now have to shut off the test that we will do in the
-      // divided setup -- that test would fail.  Also, we do not allow "waves", only "lines" or
+      // divided setup -- that test would fail.  Also, we do not allow "waves"; only "lines" or
       // "columns".
 
       if ((orig_tbonetest & 011) == 011) {
@@ -7906,9 +7923,11 @@ extern bool do_big_concept(
 }
 
 
-#define Standard_matrix_phantom (CONCPROP__SET_PHANTOMS | CONCPROP__PERMIT_MATRIX | CONCPROP__STANDARD)
-#define Nostandard_matrix_phantom (CONCPROP__SET_PHANTOMS | CONCPROP__PERMIT_MATRIX)
-#define Nostep_phantom (CONCPROP__NO_STEP | CONCPROP__SET_PHANTOMS)
+enum {
+   Standard_matrix_phantom = (CONCPROP__SET_PHANTOMS | CONCPROP__PERMIT_MATRIX | CONCPROP__STANDARD),
+   Nostandard_matrix_phantom = (CONCPROP__SET_PHANTOMS | CONCPROP__PERMIT_MATRIX),
+   Nostep_phantom = (CONCPROP__NO_STEP | CONCPROP__SET_PHANTOMS)
+};
 
 
 // Beware!!  This table must be keyed to definition of "concept_kind" in sd.h .

@@ -1032,7 +1032,7 @@ extern void normalize_concentric(
          result))
       goto anomalize_it;
 
-   if (table_synthesizer == schema_conc_o)
+   if (table_synthesizer == schema_conc_o || synthesizer == schema_in_out_triple_squash)
       normalize_setup(result, simple_normalize, false);
    if (table_synthesizer == schema_sgl_in_out_triple)
       normalize_setup(result, normalize_to_4, false);
@@ -1057,6 +1057,9 @@ extern void normalize_concentric(
 
    if (outer_elongation <= 0 || outer_elongation > 2)
       fail("Ends can't figure out what spots to finish on.");
+
+   if (attr::slimit(&inners[0])+1 >= MAX_PEOPLE/2 || attr::slimit(outers)+1 >= MAX_PEOPLE/2)
+      fail("Can't go into this result setup.");
 
    result->kind = s_normal_concentric;
    result->rotation = 0;
@@ -2937,7 +2940,10 @@ extern void concentric_move(
                   throw maybe_throw_this;
             }
          }
-         else if (doing_ends && analyzer_result == schema_concentric && begin_ptr->kind == s4x4) {
+         else if (doing_ends &&
+                  analyzer_result == schema_concentric &&
+                  begin_ptr->kind == s4x4 &&
+                  (little_endian_live_mask(begin_ptr) & 0x9999) == 0) {
             // Make two 2x4's.
             setup setup1 = *begin_ptr;
             setup setup2 = *begin_ptr;
@@ -3015,6 +3021,9 @@ extern void concentric_move(
             else
                impose_assumption_and_move(begin_ptr, result_ptr);
          }
+
+         if (modifiers1 & DFM1_SUPPRESS_ROLL)
+            result_ptr->suppress_all_rolls();
 
          if (demand_no_z_stuff && (result_ptr->result_flags.misc & RESULTFLAG__DID_Z_COMPRESSMASK))
             fail("Can't do this call from a \"Z\".");
@@ -3225,17 +3234,29 @@ extern void concentric_move(
 
    uint32 localmods1 = crossing ? localmodsin1 : localmodsout1;
 
+   // Will only be used if begin_outer_elongation = 1 or 2.
+   uint32 elongshift = 3*(begin_outer_elongation - 1);    // So this will be 0 or 3.
+   uint32 linesfailbit = 1 << elongshift;                 // And these will be 1 or 8.
+   uint32 columnsfailbit = 8 >> elongshift;
+
+   setup_command *outercmd = (inverting) ? cmdin : cmdout;
+
+   if (outercmd &&
+       (outercmd->cmd_final_flags.test_heritbit(INHERITFLAG_TWISTED) != 0 ||
+       outercmd->cmd_final_flags.test_heritbits(INHERITFLAG_REVERTMASK) == INHERITFLAGRVRTK_REFLECT)) {
+      columnsfailbit = 1 << elongshift;
+      linesfailbit = 8 >> elongshift;
+   }
+
    if (orig_outers_start_kind == s2x2) {
       switch (localmods1 & (DFM1_CONC_DEMAND_LINES | DFM1_CONC_DEMAND_COLUMNS)) {
       case DFM1_CONC_DEMAND_LINES:
          // We make use of the fact that the setup, being a 2x2, is canonicalized.
-         if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 ||
-             (orig_outers_start_dirs & (1 << 3*(begin_outer_elongation - 1))))
+         if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 || (orig_outers_start_dirs & linesfailbit) != 0)
             fail("Outsides must be as if in lines at start of this call.");
          break;
       case DFM1_CONC_DEMAND_COLUMNS:
-         if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 ||
-             (orig_outers_start_dirs & (8 >> 3*(begin_outer_elongation - 1))))
+         if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 || (orig_outers_start_dirs & columnsfailbit) != 0)
             fail("Outsides must be as if in columns at start of this call.");
          break;
       case DFM1_CONC_DEMAND_LINES | DFM1_CONC_DEMAND_COLUMNS:
@@ -3263,12 +3284,12 @@ extern void concentric_move(
          switch (mymods & (DFM1_CONC_DEMAND_LINES | DFM1_CONC_DEMAND_COLUMNS)) {
          case DFM1_CONC_DEMAND_LINES:
             if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 ||
-                (orig_inners_start_dirs & (1 << 3*(begin_outer_elongation - 1))))
+                (orig_inners_start_dirs & (1 << elongshift)))
                fail("Centers must be as if in lines at start of this call.");
             break;
          case DFM1_CONC_DEMAND_COLUMNS:
             if (begin_outer_elongation <= 0 || begin_outer_elongation > 2 ||
-                (orig_inners_start_dirs & (8 >> 3*(begin_outer_elongation - 1))))
+                (orig_inners_start_dirs & (8 >> elongshift)))
                fail("Centers must be as if in columns at start of this call.");
             break;
          case DFM1_CONC_DEMAND_LINES | DFM1_CONC_DEMAND_COLUMNS:
@@ -3728,6 +3749,20 @@ extern void merge_setups(setup *ss, merge_action action, setup *result) THROW_DE
       else if ((res1->kind == s2x4 && res2->kind == s_ptpd) ||
           (res1->kind == s_ptpd && res2->kind == s2x4))
          perp_2x4_ptp = true;  // Test for this is T-boned right wing follow to a diamond.
+   }
+   else {
+      // If similarly oriented 2x3 and qtag ends, move the qtag to a 2x4.  First, canonicalize.
+      if (res1->kind == s2x3 && res2->kind == s_qtag) {
+         setup *temp = res2;
+         res2 = res1;
+         res1 = temp;
+      }
+
+      uint32 mask = little_endian_live_mask(res1);
+
+      if (res1->kind == s_qtag && res2->kind == s2x3 && !(mask & 0xCC)) {
+         expand::compress_from_hash_table(res1, plain_normalize, mask, false);
+      }
    }
 
    canonicalize_rotation(res1);    // Do we really need to do this before normalize_setup?
@@ -4462,7 +4497,8 @@ extern void punt_centers_use_concept(setup *ss, setup *result) THROW_DECL
    selective_key_ignore                -  <> ignored
    selective_key_work_concept + others -  <> work <concept> (the others do the call,
                                            but without the concept)
-   selective_key_lead_for_a            -  <> lead for a .... (as in cast a shadow
+   selective_key_lead_for_a, selective_key_promenade_and_lead_for_a
+                                       -  <> lead for a .... (as in cast a shadow
                                            from a promenade)
    selective_key_work_no_concentric    -  like selective_key_work_concept, but don't
                                            use concentric_move
@@ -4761,10 +4797,9 @@ extern void inner_selective_move(
       force_matrix_merge = true;
    }
 
-   if (orig_indicator == selective_key_lead_for_a) {
+   if (orig_indicator == selective_key_lead_for_a || orig_indicator == selective_key_promenade_and_lead_for_a) {
       // This is "so-and-so lead for a cast a shadow".
 
-      const veryshort *map_prom;
       static const veryshort map_prom_1[16] =
       {6, 7, 1, 0, 2, 3, 5, 4, 011, 011, 022, 022, 011, 011, 022, 022};
       static const veryshort map_prom_2[16] =
@@ -4773,6 +4808,11 @@ extern void inner_selective_move(
       {0, 1, 3, 2, 4, 5, 7, 6, 000, 000, 011, 011, 000, 000, 011, 011};
       static const veryshort map_prom_4[16] =
       {6, 7, 1, 0, 2, 3, 5, 4, 011, 011, 022, 022, 011, 011, 022, 022};
+
+      static const veryshort map_2fl_1[16] =
+      {4, 5, 6, 7, 0, 1, 2, 3, 022, 022, 022, 022, 022, 022, 022, 022};
+      static const veryshort map_2fl_2[16] =
+      {7, 6, 1, 0, 3, 2, 5, 4, 000, 000, 022, 022, 000, 000, 022, 022};
 
       static const veryshort map_phan_1[16] =
       {13, 15, 3, 1, 5, 7, 11, 9, 000, 000, 011, 011, 000, 000, 011, 011};
@@ -4796,9 +4836,34 @@ extern void inner_selective_move(
       the_setups[0].clear_people();
       the_setups[0].kind = s2x4;
 
+      const veryshort *map_prom;
       uint32 dirmask, junk;
       big_endian_get_directions(ss, dirmask, junk);
 
+      if (ss->kind == s2x4 && orig_indicator == selective_key_promenade_and_lead_for_a) {
+         if (bigend_ssmask == 0xCC) {
+            if (dirmask == 0x0AA0) {
+               map_prom = map_2fl_1;
+               goto got_map;
+            }
+            else if (dirmask == 0xA00A) {
+               map_prom = map_2fl_2;
+               the_setups[0].rotation++;
+               goto got_map;
+            }
+         }
+         else if (bigend_ssmask == 0x33) {
+            if (dirmask == 0xA00A) {
+               map_prom = map_2fl_1;
+               goto got_map;
+            }
+            else if (dirmask == 0x0AA0) {
+               map_prom = map_2fl_2;
+               the_setups[0].rotation++;
+               goto got_map;
+            }
+         }
+      }
       if (ss->kind == s_crosswave || ss->kind == s_thar) {
          if (bigend_ssmask == 0xCC) {
             if (dirmask == 0xAF05) {

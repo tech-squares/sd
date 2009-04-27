@@ -87,6 +87,8 @@ int begin_sizes[] = {
    6,          /* b_p1x2dmd */
    6,          /* b_2x1dmd */
    6,          /* b_p2x1dmd */
+   6,          /* b_wingedstar6 */
+   6,          /* b_pwingedstar6 */
    8,          /* b_qtag */
    8,          /* b_pqtag */
    8,          /* b_bone */
@@ -481,6 +483,8 @@ char *sstab[] = {
    "p1x2dmd",
    "2x1dmd",
    "p2x1dmd",
+   "wingedstar6",
+   "pwingedstar6",
    "qtag",
    "pqtag",
    "bone",
@@ -665,6 +669,7 @@ char *estab[] = {
    "2x3",
    "1x2dmd",
    "2x1dmd",
+   "wingedstar6",
    "1x3p1dmd",
    "3p1x1dmd",
    "qtag",
@@ -1091,6 +1096,8 @@ char *defmodtab1[] = {
    "???",
    "???",
    "no_check_mod_level",
+   "???",
+   "suppress_roll",
    ""};
 
 // This table is keyed to the constants "DFM1_SEQ***".  These are the general
@@ -1378,6 +1385,10 @@ char *predtab[] = {
    "unselect_once_rem_from_select",
    "select_and_roll_is_cw",
    "select_and_roll_is_ccw",
+   "1x2_selectee_is_linelike_facing_cw",
+   "1x2_selectee_is_linelike_facing_ccw",
+   "1x4_selectee_of_far_side_is_linelike_facing_cw",
+   "1x4_selectee_of_far_side_is_linelike_facing_ccw",
    "always",
    "2x2_miniwave",
    "2x2_couple",
@@ -1387,6 +1398,14 @@ char *predtab[] = {
    "2x4_tandem_with_someone",
    "2x4_antitandem",
    "2x4_facing_someone",
+   "1x4_end_of_this_side_is_linelike_facing_cw",
+   "1x4_end_of_far_side_is_linelike_facing_cw",
+   "1x4_end_of_this_side_is_linelike_facing_ccw",
+   "1x4_end_of_far_side_is_linelike_facing_ccw",
+   "1x4_center_of_this_side_is_linelike_facing_cw",
+   "1x4_center_of_far_side_is_linelike_facing_cw",
+   "1x4_center_of_this_side_is_linelike_facing_ccw",
+   "1x4_center_of_far_side_is_linelike_facing_ccw",
    "columns_someone_in_front",
    "x14_once_rem_miniwave",
    "x14_once_rem_couple",
@@ -2509,8 +2528,6 @@ def2:
          callarray_flags1 |= CAF__NO_CUTTING_THROUGH;
       else if (!strcmp(tok_str, "no_facing_ends"))
          callarray_flags1 |= CAF__NO_FACING_ENDS;
-      else if (!strcmp(tok_str, "vacate_center"))
-         callarray_flags1 |= CAF__VACATE_CENTER;
       else if (!strcmp(tok_str, "other_elongate"))
          callarray_flags1 |= CAF__OTHER_ELONGATE;
       else if (!strcmp(tok_str, "really_want_diamond"))

@@ -1080,6 +1080,44 @@ static bool facing_test(setup *real_people, int real_index,
 }
 
 /* ARGSUSED */
+static bool x14_side_of_line_facing(setup *real_people, int real_index,
+   int real_direction, int northified_index, const long int *extra_stuff)
+{
+   int end_of_indicated_side = (real_index ^ (extra_stuff[0] << 1)) & 2;
+   int indicated_position = end_of_indicated_side + (extra_stuff[0] >> 2);
+
+   if (extra_stuff[0] & 8) {
+      // This is "1x4_selectee_of_ ..." rather than "1x4_end_of_ ..." or "1x4_center_of_ ..."
+      bool z0 = selectp(real_people, end_of_indicated_side);
+      bool z1 = selectp(real_people, end_of_indicated_side+1);
+      if (z0 && z1) return false;
+      if (!z0 && !z1) return false;
+      indicated_position = end_of_indicated_side + (z1 ? 1 : 0);
+   }
+
+   uint32 person_of_interest = real_people->people[indicated_position].id1;
+   if (!(person_of_interest & 8)) return false;
+
+   return ((indicated_position ^ person_of_interest ^ extra_stuff[0]) & 2) == 0;
+}
+
+/* ARGSUSED */
+static bool x12_side_of_line_facing(setup *real_people, int real_index,
+   int real_direction, int northified_index, const long int *extra_stuff)
+{
+   bool z0 = selectp(real_people, 0);
+   bool z1 = selectp(real_people, 1);
+   if (z0 && z1) return false;
+   if (!z0 && !z1) return false;
+   int selected_position = z1 ? 1 : 0;
+
+   uint32 selectee = real_people->people[selected_position].id1;
+   if (!(selectee & 8)) return false;
+
+   return (((selected_position << 1) ^ selectee ^ extra_stuff[0]) & 2) == 0;
+}
+
+/* ARGSUSED */
 static bool cols_someone_in_front(setup *real_people, int real_index,
    int real_direction, int northified_index, const long int *extra_stuff)
 {
@@ -1998,25 +2036,25 @@ enum inroll_assume_test {
 };
 
 
-typedef struct {
+struct inroll_action {
    veryshort *directions;
    long int code;
    inroll_assume_test ira;
-} inroll_action;
+};
 
 
-static inroll_action inroller_cw            = {inroll_directions,           0, ira__gen};
-static inroll_action outroller_cw           = {inroll_directions,           1, ira__gen};
-static inroll_action magic_inroller_cw      = {magic_inroll_directions,     2, ira__gen};
-static inroll_action magic_outroller_cw     = {magic_inroll_directions,     3, ira__gen};
-static inroll_action inroller_cw_2x3        = {inroll_directions_2x3,       0, ira__no_wave};
-static inroll_action outroller_cw_2x3       = {inroll_directions_2x3,       1, ira__no_wave};
-static inroll_action magic_inroller_cw_2x3  = {magic_inroll_directions_2x3, 2, ira__no_wave};
-static inroll_action magic_outroller_cw_2x3 = {magic_inroll_directions_2x3, 3, ira__no_wave};
-static inroll_action inroller_2x6           = {inroll_directions_2x6,       0, ira__sixes};
-static inroll_action outroller_2x6          = {inroll_directions_2x6,       1, ira__sixes};
-static inroll_action inroller_2x8           = {inroll_directions_2x8,       0, ira__eights};
-static inroll_action outroller_2x8          = {inroll_directions_2x8,       1, ira__eights};
+static const inroll_action inroller_cw            = {inroll_directions,           0, ira__gen};
+static const inroll_action outroller_cw           = {inroll_directions,           1, ira__gen};
+static const inroll_action magic_inroller_cw      = {magic_inroll_directions,     2, ira__gen};
+static const inroll_action magic_outroller_cw     = {magic_inroll_directions,     3, ira__gen};
+static const inroll_action inroller_cw_2x3        = {inroll_directions_2x3,       0, ira__no_wave};
+static const inroll_action outroller_cw_2x3       = {inroll_directions_2x3,       1, ira__no_wave};
+static const inroll_action magic_inroller_cw_2x3  = {magic_inroll_directions_2x3, 2, ira__no_wave};
+static const inroll_action magic_outroller_cw_2x3 = {magic_inroll_directions_2x3, 3, ira__no_wave};
+static const inroll_action inroller_2x6           = {inroll_directions_2x6,       0, ira__sixes};
+static const inroll_action outroller_2x6          = {inroll_directions_2x6,       1, ira__sixes};
+static const inroll_action inroller_2x8           = {inroll_directions_2x8,       0, ira__eights};
+static const inroll_action outroller_2x8          = {inroll_directions_2x8,       1, ira__eights};
 
 
 
@@ -2415,23 +2453,25 @@ static bool dmd_ctrs_rh(setup *real_people, int real_index,
 static bool trngl_pt_rh(setup *real_people, int real_index,
    int real_direction, int northified_index, const long int *extra_stuff) THROW_DECL
 {
-   if ((real_people->people[0].id1 & d_mask) == d_west)
+   switch (real_people->people[0].id1 & d_mask) {
+   case d_west:
       return true;
-   else if ((real_people->people[0].id1 & d_mask) == d_east)
+   case d_east:
       return false;
-
-   fail("Can't determine handedness of triangle point.");
-   return false;
+   default:
+      fail("Can't determine handedness of triangle point.");
+      return false;
+   }
 }
 
 
-typedef struct {
-   long int ctr_action;    /* -1 for true, -2 for false, else required direction xor. */
+struct simple_qtag_action {
+   long int ctr_action;    // -1 for true, -2 for false, else required direction xor.
    long int end_action;
    long int bbbbb;
-} simple_qtag_action;
+};
 
-typedef struct {
+struct full_qtag_action {
    simple_qtag_action if_jleft;
    simple_qtag_action if_jright;
    simple_qtag_action if_ijleft;
@@ -2439,62 +2479,62 @@ typedef struct {
    simple_qtag_action if_tag;
    simple_qtag_action if_line;
    simple_qtag_action none;
-} full_qtag_action;
+};
 
-static full_qtag_action q_tag_front_action = {
-   {-1,   1,  0},            /* if_jleft    */
-   {-1,   0,  1},            /* if_jright   */
-   {-2,  -1, 99},            /* if_ijleft   */
-   {-2,  -1, 99},            /* if_ijright  */
-   {-1,   0, 98},            /* if_tag    */
-   {-2,  -1, 99},            /* if_line   */
-   { 2, 010,  2}};           /* none        */
+static const full_qtag_action q_tag_front_action = {
+   {-1,   1,  0},       // if_jleft
+   {-1,   0,  1},       // if_jright
+   {-2,  -1, 99},       // if_ijleft
+   {-2,  -1, 99},       // if_ijright
+   {-1,   0, 98},       // if_tag
+   {-2,  -1, 99},       // if_line
+   { 2, 010,  2}};      // none
 
-static full_qtag_action q_tag_back_action = {
-   {-1,   0,  1},            /* if_jleft    */
-   {-1,   1,  0},            /* if_jright   */
-   {-2,  -1, 99},            /* if_ijleft   */
-   {-2,  -1, 99},            /* if_ijright  */
-   {-1,   2, 98},            /* if_tag    */
-   {-2,  -1, 99},            /* if_line   */
-   { 2, 012,  2}};           /* none        */
+static const full_qtag_action q_tag_back_action = {
+   {-1,   0,  1},       // if_jleft
+   {-1,   1,  0},       // if_jright
+   {-2,  -1, 99},       // if_ijleft
+   {-2,  -1, 99},       // if_ijright
+   {-1,   2, 98},       // if_tag
+   {-2,  -1, 99},       // if_line
+   { 2, 012,  2}};      // none
 
-static full_qtag_action q_line_front_action = {
-   {-2,  -1, 99},            /* if_jleft    */
-   {-2,  -1, 99},            /* if_jright   */
-   {-1,   1,  0},            /* if_ijleft   */
-   {-1,   0,  1},            /* if_ijright  */
-   {-2,  -1, 99},            /* if_tag    */
-   {-1,   0, 97},            /* if_line   */
-   { 0, 010,  0}};           /* none        */
+static const full_qtag_action q_line_front_action = {
+   {-2,  -1, 99},       // if_jleft
+   {-2,  -1, 99},       // if_jright
+   {-1,   1,  0},       // if_ijleft
+   {-1,   0,  1},       // if_ijright
+   {-2,  -1, 99},       // if_tag
+   {-1,   0, 97},       // if_line
+   { 0, 010,  0}};      // none
 
-static full_qtag_action q_line_back_action = {
-   {-2,  -1, 99},            /* if_jleft    */
-   {-2,  -1, 99},            /* if_jright   */
-   {-1,   0,  1},            /* if_ijleft   */
-   {-1,   1,  0},            /* if_ijright  */
-   {-2,  -1, 99},            /* if_tag    */
-   {-1,   2, 97},            /* if_line   */
-   { 0, 012,  0}};           /* none        */
+static const full_qtag_action q_line_back_action = {
+   {-2,  -1, 99},       // if_jleft
+   {-2,  -1, 99},       // if_jright
+   {-1,   0,  1},       // if_ijleft
+   {-1,   1,  0},       // if_ijright
+   {-2,  -1, 99},       // if_tag
+   {-1,   2, 97},       // if_line
+   { 0, 012,  0}};      // none
 
 /* ARGSUSED */
 static bool q_tag_check(setup *real_people, int real_index,
    int real_direction, int northified_index, const long int *extra_stuff)
 {
-   full_qtag_action *bigactionp = (full_qtag_action *) extra_stuff;
-   simple_qtag_action *actionp;
+   const full_qtag_action *bigactionp = (const full_qtag_action *) extra_stuff;
+   const simple_qtag_action *actionp;
    int both = real_people->cmd.cmd_assume.assump_both;
 
    switch (real_people->cmd.cmd_assume.assumption) {
-   case cr_jleft: actionp = (simple_qtag_action *) &(bigactionp->if_jleft); break;
-   case cr_jright: actionp = (simple_qtag_action *) &(bigactionp->if_jright); break;
-   case cr_ijleft: actionp = (simple_qtag_action *) &(bigactionp->if_ijleft); break;
-   case cr_ijright: actionp = (simple_qtag_action *) &(bigactionp->if_ijright); break;
-   case cr_real_1_4_tag: actionp = (simple_qtag_action *) &(bigactionp->if_tag); both = 2; break;
-   case cr_real_3_4_tag: actionp = (simple_qtag_action *) &(bigactionp->if_tag); both = 1; break;
-   case cr_real_1_4_line: actionp = (simple_qtag_action *) &(bigactionp->if_line); both = 2; break;
-   case cr_real_3_4_line: actionp = (simple_qtag_action *) &(bigactionp->if_line); both = 1; break;
-   default: actionp = (simple_qtag_action *) &(bigactionp->none); break;
+   case cr_jleft: actionp = (const simple_qtag_action *) &(bigactionp->if_jleft); break;
+   case cr_jright: actionp = (const simple_qtag_action *) &(bigactionp->if_jright); break;
+   case cr_ijleft: actionp = (const simple_qtag_action *) &(bigactionp->if_ijleft); break;
+   case cr_ijright: actionp = (const simple_qtag_action *) &(bigactionp->if_ijright); break;
+   case cr_real_1_4_tag: actionp = (const simple_qtag_action *) &(bigactionp->if_tag); both = 2; break;
+   case cr_real_3_4_tag: actionp = (const simple_qtag_action *) &(bigactionp->if_tag); both = 1; break;
+   case cr_real_1_4_line: actionp = (const simple_qtag_action *) &(bigactionp->if_line); both = 2; break;
+   case cr_real_3_4_line: actionp = (const simple_qtag_action *) &(bigactionp->if_line); both = 1; break;
+   default: actionp = (const simple_qtag_action *) &(bigactionp->none); break;
    }
 
    if (real_index & 2) {
@@ -2574,17 +2614,16 @@ static bool q_tag_check(setup *real_people, int real_index,
          // "q_line_front" are indistinguishable in an hourglass.
 
          return
-            ((real_people->people[z].id1 & 017) == ((uint32) actionp->end_action ^ (real_index >> 1)))
-                                       &&
-               (real_people->kind == s_hrglass
-                                 ||
-               (((real_people->people[z].id1 ^ real_people->people[z ^ 1].id1) & DIR_MASK) == (uint32) actionp->bbbbb));
+            ((real_people->people[z].id1 & 017) == ((uint32) actionp->end_action ^ (real_index >> 1))) &&
+            (real_people->kind == s_hrglass ||
+             (((real_people->people[z].id1 ^ real_people->people[z ^ 1].id1) & DIR_MASK) == (uint32) actionp->bbbbb));
       }
    }
 }
 
 
-// BEWARE!!  This list must track the array "predtab" in mkcalls.cpp
+// BEWARE!!  This list must track the array "predtab" in mkcalls.cpp.
+// BEWARE!!  Obey the correctness of SELECTOR_PREDS.
 
 // The first several of these take a predicate.
 // Any call that uses one of these predicates will have its "need_a_selector"
@@ -2634,8 +2673,12 @@ predicate_descriptor pred_table[] = {
       {unselect_once_rem_from_select,(const long int *) 0},      // "unselect_once_rem_from_select"
       {select_and_roll_is_cw,        (const long int *) 0},      // "select_and_roll_is_cw"
       {select_and_roll_is_ccw,       (const long int *) 0},      // "select_and_roll_is_ccw"
+      {x12_side_of_line_facing,       &iden_tab[0]},             // "1x2_selectee_is_linelike_facing_cw"
+      {x12_side_of_line_facing,       &iden_tab[2]},             // "1x2_selectee_is_linelike_facing_ccw"
+      {x14_side_of_line_facing,       &iden_tab[9]},             // "1x4_selectee_of_far_side_is_linelike_facing_cw"
+      {x14_side_of_line_facing,       &iden_tab[11]},            // "1x4_selectee_of_far_side_is_linelike_facing_ccw"
 // End of predicates that force use of selector.
-#define PREDS_BEFORE_THIS_POINT 23
+#define SELECTOR_PREDS 46
       {always,                       (const long int *) 0},      // "always"
       {x22_cpltest,                    dbl_tab21},               // "2x2_miniwave"
       {x22_cpltest,                    dbl_tab01},               // "2x2_couple"
@@ -2645,6 +2688,14 @@ predicate_descriptor pred_table[] = {
       {facing_test,                    x24tabtandem},            // "2x4_tandem_with_someone"
       {facing_test,                    x24tabantitandem},        // "2x4_antitandem"
       {facing_test,                    x24tabfacing},            // "2x4_facing_someone"
+      {x14_side_of_line_facing,       &iden_tab[0]},             // "1x4_end_of_this_side_is_linelike_facing_cw"
+      {x14_side_of_line_facing,       &iden_tab[1]},             // "1x4_end_of_far_side_is_linelike_facing_cw"
+      {x14_side_of_line_facing,       &iden_tab[2]},             // "1x4_end_of_this_side_is_linelike_facing_ccw"
+      {x14_side_of_line_facing,       &iden_tab[3]},             // "1x4_end_of_far_side_is_linelike_facing_ccw"
+      {x14_side_of_line_facing,       &iden_tab[4]},             // "1x4_center_of_this_side_is_linelike_facing_cw"
+      {x14_side_of_line_facing,       &iden_tab[5]},             // "1x4_center_of_far_side_is_linelike_facing_cw"
+      {x14_side_of_line_facing,       &iden_tab[6]},             // "1x4_center_of_this_side_is_linelike_facing_ccw"
+      {x14_side_of_line_facing,       &iden_tab[7]},             // "1x4_center_of_far_side_is_linelike_facing_ccw"
       {cols_someone_in_front,        (const long int *) 0},      // "columns_someone_in_front"
       {x14_once_rem_miniwave,         &iden_tab[1]},             // "x14_once_rem_miniwave"
       {x14_once_rem_couple,          (const long int *) 0},      // "x14_once_rem_couple"
@@ -2777,4 +2828,4 @@ predicate_descriptor pred_table[] = {
       {whos_on_base,                   &iden_tab[8]},            // "base_is_here"
       {whos_on_base,                   &iden_tab[12]}};          // "base_is_left"
 
-int selector_preds = PREDS_BEFORE_THIS_POINT;
+int selector_preds = SELECTOR_PREDS;

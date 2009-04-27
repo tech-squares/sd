@@ -3024,6 +3024,17 @@ static int divide_the_setup(
       // The only legal thing we can do here is split into two triangles.
       division_code = MAPCODE(s_trngl,2,MPKIND__OFFS_L_HALF,0);
       goto divide_us_no_recompute;
+   case s_wingedstar6:
+      // **** Not really right.  Ought to check facing directions of the people that will be
+      // involved in each 2-person subcall, with the appropriate definition for that subcall.
+      if (assoc(b_1x2, ss, calldeflist) || assoc(b_2x1, ss, calldeflist)) {
+         warn(warn__unusual);
+         warn(warn_controversial);
+         division_code = MAPCODE(s1x2,3,MPKIND_TRIPLETRADEINWINGEDSTAR6,0);
+         goto divide_us_no_recompute;
+      }
+
+      break;
    case s_qtag:
       if (assoc(b_dmd, ss, calldeflist) ||
           assoc(b_pmd, ss, calldeflist)) {
@@ -3976,9 +3987,10 @@ static veryshort s3dmntranslatev[32] = {
    -1, -1, 7, -1, -1, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1, -1,
    -1, -1, 3, -1, -1, -1, -1, -1, -1, 4, 5, 6, -1, -1, -1, -1};
 
-static veryshort s_vacate_star[32] = {
-   -1, 0, 1, 2, -1, -1, -1, -1, -1, -1, -1, 3, -1, -1, -1, -1,
-   -1, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, 7, -1, -1, -1, -1};
+static veryshort s_wingedstartranslate[40] = {
+   -1, -1, -1, 7, -1, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1, -1,
+   -1, -1, -1, 3, -1, -1, -1, -1, -1, 4, 5, 6, -1, -1, -1, -1,
+   -1, -1, -1, 7, -1, -1, -1, -1};
 
 static veryshort jqttranslateh[32] = {
    -1, 6, -1, 7, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1,
@@ -3988,13 +4000,10 @@ static veryshort jqttranslatev[32] = {
    -1, -1, -1, -1, -1, -1, 5, -1, -1, 6, -1, 7, -1, 0, -1, -1,
    -1, -1, -1, -1, -1, -1, 1, -1, -1, 2, -1, 3, -1, 4, -1, -1};
 
-static veryshort j23translateh[32] = {
-   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  2,  0,  0,
-   0,  0,  0,  0,  0,  0,  3,  0,  0,  0,  0,  4,  0,  5,  0,  0};
-
-static veryshort j23translatev[32] = {
+static veryshort j23translatev[40] = {
    0,  0,  0,  4,  0,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-   0,  0,  0,  1,  0,  2,  0,  0,  0,  0,  0,  0,  0,  0,  3,  0};
+   0,  0,  0,  1,  0,  2,  0,  0,  0,  0,  0,  0,  0,  0,  3,  0,
+   0,  0,  0,  4,  0,  5,  0,  0};
 
 static veryshort qdmtranslateh[32] = {
    12, 13, 14, 15,  0,  1,  0,  0,   0,  0,  0,  0,  3,  0,  2,  0,
@@ -4922,7 +4931,6 @@ foobar:
    else {
       uint32 lilresult_mask[2];
       setup_kind tempkind;
-      uint32 vacate = 0;
 
       result->rotation = goodies->callarray_flags & CAF__ROT;
       num = attr::slimit(ss)+1;
@@ -5021,7 +5029,6 @@ foobar:
                   result->kind = sx4dmd;
                   tempkind = sx4dmd;
                   final_translatec = ftcspn;
-                  vacate = linedefinition->callarray_flags & CAF__VACATE_CENTER;
 
                   if (goodies->callarray_flags & CAF__ROT) {
                      final_translatel = &ftlcwv[0];
@@ -5491,7 +5498,7 @@ foobar:
          case sx4dmd:
             if ((lilresult_mask[0] & 0xD7BFD7BFUL) == 0) {
                result->kind = s2x3;
-               permuter = j23translateh;
+               permuter = j23translatev+8;
             }
             else if ((lilresult_mask[0] & 0xBFD7BFD7UL) == 0) {
                result->kind = s2x3;
@@ -5560,16 +5567,14 @@ foobar:
                permuter = s3dmntranslatev;
                rotator = 1;
             }
-            else if (vacate &&
-                     (lilresult_mask[0] & 0xF7F1F7F1) == 0 &&
-                     (lilresult_mask[0] & 0x00080008) == 0x00080008) {
-               // Check for star in the middle that can be disambiguated
-               // by having someone vacate it.  We have to mark this
-               // as controversial -- the center star is actually isotropic,
-               // and we are fudging it so that T-boned coordinate will work.
-               warn(warn_controversial);
-               result->kind = s1x3dmd;
-               permuter = s_vacate_star;
+            else if ((lilresult_mask[0] & 0xF7F1F7F1) == 0) {
+               result->kind = s_wingedstar;
+               permuter = s_wingedstartranslate+8;
+            }
+            else if ((lilresult_mask[0] & 0xF1F7F1F7) == 0) {
+               result->kind = s_wingedstar;
+               permuter = s_wingedstartranslate;
+               rotator = 1;
             }
             else if ((lilresult_mask[0] & 0xAF50AF50UL) == 0) {
                result->kind = s4dmd;

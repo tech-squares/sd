@@ -4779,7 +4779,6 @@ static void do_sequential_call(
       current_options.howmanynumbers = saved_num_numbers;
 
       qtfudged = false;
-      fetching_remainder_for_this_cycle = true;
 
       new_final_concepts.clear_finalbits(
          FINAL__SPLIT | FINAL__SPLIT_SQUARE_APPROVED | FINAL__SPLIT_DIXIE_APPROVED);
@@ -4795,6 +4794,7 @@ static void do_sequential_call(
    go_to_next_cycle:
 
       // Increment for next cycle.
+      fetching_remainder_for_this_cycle = true;
       zzz.m_fetch_index += zzz.m_subcall_incr;
       zzz.m_client_index += zzz.m_subcall_incr;
    }
@@ -5515,6 +5515,9 @@ static void really_inner_move(setup *ss,
             ss->cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_12_MATRIX);
          }
          else if (ss->kind == s2x2 &&
+                  // The elongation field can contain spurious stuff.  It is only
+                  // meaningful if the setup is known to be distorted.
+                  (ss->cmd.cmd_misc_flags & CMD_MISC__DISTORTED) &&
                   (ss->cmd.prior_elongation_bits & 3) != 0 &&
                   the_schema != schema_partner_partial_matrix) {
             expanded = true;

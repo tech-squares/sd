@@ -2,7 +2,7 @@
 
 // SD -- square dance caller's helper.
 //
-//    Copyright (C) 1990-2008  William B. Ackerman.
+//    Copyright (C) 1990-2009  William B. Ackerman.
 //
 //    This file is part of "Sd".
 //
@@ -579,7 +579,7 @@ struct siamese_item {
    warning_index warning;
 };
 
-siamese_item siamese_table_of_2[] = {
+const siamese_item siamese_table_of_2[] = {
    {s2x4,        0x00FF0000UL, 0x99UL,   warn__ctrstand_endscpls},
    {s2x4,        0x00990066UL, 0x99UL,   warn__ctrstand_endscpls},
    {s2x4,        0x000000FFUL, 0x66UL,   warn__ctrscpls_endstand},
@@ -652,12 +652,12 @@ siamese_item siamese_table_of_2[] = {
    {sdeepbigqtg, 0x3A3AC5C5UL, 0xCACAUL, warn__none},
    {nothing,     0,            0,        warn__none}};
 
-siamese_item siamese_table_of_3[] = {
+const siamese_item siamese_table_of_3[] = {
    {s2x6,        0x01C70E38UL, 0xE38UL,  warn__none},
    {s2x6,        0x0E3801C7UL, 0x1C7UL,  warn__none},
    {nothing,     0,            0,        warn__none}};
 
-siamese_item siamese_table_of_4[] = {
+const siamese_item siamese_table_of_4[] = {
    {s2x8,        0x0F0FF0F0UL, 0xF0F0UL, warn__none},
    {s2x8,        0xF0F00F0FUL, 0x0F0FUL, warn__none},
    {nothing,     0,            0,        warn__none}};
@@ -1492,9 +1492,18 @@ extern void tandem_couples_move(
       people_per_group = 3;
       our_map_table = maps_isearch_threesome;
    }
-   else {
+   else {    // Includes tandem_key_localized.
       people_per_group = 2;
       our_map_table = maps_isearch_twosome;
+   }
+
+   if (key == tandem_key_localized) {
+      static const expand::thing localized_thing = {
+         {0, 5, 2, 7, 8, 13, 10, 15}, 8, s2x4, s2x8, 0};
+      if (ss->kind != s2x4 || phantom != 0)
+         fail("Need 2x4 for this concept.");
+      phantom = 1;
+      expand::expand_setup(localized_thing, ss);
    }
 
    if (attr::slimit(ss) < 0)
@@ -1574,9 +1583,7 @@ extern void tandem_couples_move(
          fail("Can't do fractional twosome more than 4/4.");
    }
 
-   uint32 siamese_fixup(0);
    warning_index siamese_warning = warn__none;
-   siamese_item *ptr;
    bool doing_siamese = false;
    uint32 saveew, savens;
 
@@ -1688,6 +1695,15 @@ extern void tandem_couples_move(
          nsmask = 0;
       }
    }
+   else if (key == tandem_key_localized) {
+      //      doing_siamese = true;
+      saveew = ewmask;
+      savens = nsmask;
+      ewmask = allmask;
+      nsmask = 0;
+      tandstuff.m_phantom_pairing_ok = true;
+      goto try_this;
+   }
    else if (key & 2) {
 
       // Siamese.  Usually, we will insist on a true siamese separation.
@@ -1695,6 +1711,7 @@ extern void tandem_couples_move(
       // siamese" or whatever.  In that case, we will allow a pure
       // couples or tandem separation.
 
+      const siamese_item *ptr;
       doing_siamese = true;
       saveew = ewmask;
       savens = nsmask;
@@ -1713,8 +1730,12 @@ extern void tandem_couples_move(
       for (; ptr->testkind != nothing; ptr++) {
          if (ptr->testkind == ss->kind && ((EN ^ ptr->testval) & AA) == 0) {
             siamese_warning = ptr->warning;
-            siamese_fixup = ptr->fixup & 0xFFFFFF;
-            goto try_siamese;   // We seem to have a match.  However, it still might be wrong.
+            uint32 siamese_fixup = ptr->fixup & 0xFFFFFF;
+            // We seem to have a match.  However, it still might be wrong.
+            ewmask ^= (siamese_fixup & allmask);
+            nsmask ^= (siamese_fixup & allmask);
+            if (ptr->fixup & 0x80000000UL) tandstuff.m_phantom_pairing_ok = true;
+            goto try_this;
          }
       }
 
@@ -1764,13 +1785,6 @@ extern void tandem_couples_move(
       fail("Can't do this tandem or couples call in this setup or with these people selected.");
 
    goto siamese_failed;
-
- try_siamese:
-
-   ewmask ^= (siamese_fixup & allmask);
-   nsmask ^= (siamese_fixup & allmask);
-   if (ptr->fixup & 0x80000000UL) tandstuff.m_phantom_pairing_ok = true;
-   goto try_this;
 
  fooy:
 
@@ -1868,7 +1882,18 @@ extern void tandem_couples_move(
       tandstuff.m_virtual_setup.cmd.cmd_misc_flags |= CMD_MISC__SAID_TRIANGLE;
 
    update_id_bits(&tandstuff.m_virtual_setup);
-   impose_assumption_and_move(&tandstuff.m_virtual_setup, &tandstuff.virtual_result);
+
+   if (key == tandem_key_localized) {
+      divided_setup_move(&tandstuff.m_virtual_setup,
+                         MAPCODE(s2x2,2,MPKIND__SPLIT,0),
+                         phantest_ok,
+                         true,
+                         &tandstuff.virtual_result);
+   }
+   else {
+      impose_assumption_and_move(&tandstuff.m_virtual_setup, &tandstuff.virtual_result);
+   }
+
    remove_mxn_spreading(&tandstuff.virtual_result);
    remove_tgl_distortion(&tandstuff.virtual_result);
 
@@ -2020,6 +2045,42 @@ extern void tandem_couples_move(
           (map_search->ilatmask3high & livemaskhigh) == hmaskhigh &&
           (map_search->ilatmask3low & livemasklow) == hmasklow) {
          tandstuff.unpack_us(map_search, orbitmask3high, orbitmask3low, result);
+
+         if (key == tandem_key_localized) {
+            if (result->kind == s2x8 && result->rotation == 0) {
+               static veryshort foo[16] = {0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 4, 5, 6, 7};
+               setup temp = *result;
+               result->kind = s2x4;
+               result->clear_people();
+               install_scatter(result, 16, foo, &temp, 0);
+            }
+            else if (result->kind == s4x4) {
+               static veryshort foo[16] = {0, 1, 2, 6, 3, 4, 3, 5, 4, 5, 6, 2, 7, 0, 7, 1};
+               setup temp = *result;
+               result->kind = s2x4;
+               result->clear_people();
+               install_scatter(result, 16, foo, &temp, 033);
+               result->rotation++;
+            }
+            else if (result->kind == s1x16 && result->rotation == 0) {
+               static veryshort foo[16] = {0, 1, 3, 2, 6, 7, 5, 4, 4, 5, 7, 6, 2, 3, 1, 0};
+               setup temp = *result;
+               result->kind = s1x8;
+               result->clear_people();
+               install_scatter(result, 16, foo, &temp, 0);
+            }
+            else if (result->kind == sdeepbigqtg && result->rotation == 1) {
+               static veryshort foo[16] = {-1, -1, 1, 2, 4, 5, 6, 7, -1, -1, 5, 6, 0, 1, 2, 3};
+               setup temp = *result;
+               result->kind = s2x4;
+               result->clear_people();
+               install_scatter(result, 16, foo, &temp, 0);
+
+            }
+            else
+               fail("Can't do this.");
+         }
+
          reinstate_rotation(ss, result);
 
          // When we fudge wrongly-oriented triangles to a 2x4, we need

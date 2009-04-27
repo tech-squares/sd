@@ -312,6 +312,7 @@ Cstring warning_strings[] = {
    /*  warn__check_butterfly     */   " Check a butterfly.",
    /*  warn__check_galaxy        */   " Check a galaxy.",
    /*  warn__some_rear_back      */   " Some people rear back.",
+   /*  warn__centers_rear_back_staying_in_center */   " Centers rear back, working in the center.",
    /*  warn__not_tbone_person    */   " Work with the person to whom you are not T-boned.",
    /*  warn__check_c1_phan       */   " Check a 'C1 phantom' setup.",
    /*  warn__check_dmd_qtag      */   " Fudge to a diamond/quarter-tag setup.",
@@ -2431,6 +2432,9 @@ map::map_thing map::map_init_table[] = {
    {{0,        1,        2},
     s1x1,3,MPKIND__SPLIT,1,       0,  s1x3,      0x015, 0},
 
+   {{0, 1,                  2, 5,                  4, 3},
+    s1x2,3,MPKIND_TRIPLETRADEINWINGEDSTAR6,0, 0,  s_wingedstar6,      0x004, 0},
+
    {{0}, nothing}};
 
 
@@ -2713,6 +2717,8 @@ static expand::thing rear_rig_stuffa = {{1, 2, 3, 4, 5, 6, 7, 0}, 8, s_rigger, s
 static expand::thing rear_rig_stuffb = {{3, 6, 4, 5, 7, 2, 0, 1}, 8, s_rigger, s1x8, 0};
 static expand::thing rear_rig_stuffc = {{6, 3, 1, 4, 2, 7, 5, 0}, 8, s_rigger, s_bone, 0};
 static expand::thing rear_funnydmd   = {{7, 0, 1, 2, 3, 4, 5, 6}, 8, s_qtag, s2x4, 1};
+static expand::thing rear_funny3x1   = {{5, 7, 6, 0, 1, 3, 2, 4}, 8, s2x4, s_qtag, 1};
+
 static expand::thing rear_tgl4a_stuff = {{2, 3, 0, 1}, 4, nothing, s2x2, 0};
 static expand::thing rear_tgl4b_stuff = {{2, 3, 1, 0}, 4, nothing, s1x4, 1};
 
@@ -2823,19 +2829,32 @@ full_expand::thing step_ptpd_pair     = {warn__some_touch, 0, &step_ptpd_stuff};
 full_expand::thing step_qtgctr_pair   = {warn__some_touch, 8, &step_qtctr_stuff};
 
 full_expand::thing touch_init_table1[] = {
-   {warn__rear_back,       8, &step_1x2_stuff,   s1x2,         0xFUL,        0x2UL, ~0UL},      /* Rear back from a miniwave to facing people. */
-   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xDAUL, ~0UL},      /* Rear back from a 4-person triangle to a "split square thru" setup. */
-   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xD2UL, ~0UL},      /* Two similar ones with miniwave base for funny square thru. */
-   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xD8UL, ~0UL},      /* (The base couldn't want to rear back -- result would be stupid.) */
-   {warn__awful_rear_back, 0, &rear_tgl4b_stuff, s_trngl4,    0xFFUL,       0x22UL, ~0UL},      /* Rear back from a 4-person triangle to a single 8 chain. */
-   {warn__rear_back,       8, &step_li_stuff,    s1x8,      0xFFFFUL,     0x2882UL, ~0UL},      /* Rear back from a tidal wave to facing lines. */
-   {warn__some_rear_back,  8, &rear_bone_stuffa, s_bone,    0xFFFFUL,     0x55F5UL, 0xF5F5UL},  /* Ends rear back from a "bone" to grand 8-chain or whatever. */
-   {warn__some_rear_back,  0, &rear_bone_stuffb, s_bone,    0xFFFFUL,     0x0802UL, 0x0F0FUL},  /* Centers rear back from a "bone" to lines facing or "split square thru" setup. */
-   {warn__rear_back,       0, &rear_bone_stuffc, s_bone,    0xFFFFUL,     0x58F2UL, 0xFFFFUL},  /* All rear back from a "bone" to a "rigger". */
-   {warn__rear_back,       0, &rear_ohh_stuff, s4x4,    0x3C3C3C3CUL, 0x1C203408UL, ~0UL},      /* Rear back from an alamo wave to crossed single 8-chains. */
-   {warn__rear_back,       8, &step_8ch_stuff, s2x4,        0xFFFFUL,     0x2288UL, ~0UL},      /* Rear back from parallel waves to an 8 chain. */
-   {warn__awful_rear_back, 8, &step_1x8_stuff, s2x4,        0xFFFFUL,     0x55FFUL, ~0UL},      /* Rear back from columns to end-to-end single 8-chains. */
-   {warn__some_rear_back,  8, &step_qbox_stuff, s2x4,       0xFFFFUL,     0x57FDUL, ~0UL},      /* Centers rear back from 1/4-box to triangles. */
+   // Rear back from a miniwave to facing people.
+   {warn__rear_back,       8, &step_1x2_stuff,   s1x2,         0xFUL,        0x2UL, ~0UL},
+   // Rear back from a 4-person triangle to a "split square thru" setup.
+   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xDAUL, ~0UL},
+   // Two similar ones with miniwave base for funny square thru.
+   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xD2UL, ~0UL},
+   // The base couldn't want to rear back -- result would be stupid.)
+   {warn__some_rear_back,  0, &rear_tgl4a_stuff, s_trngl4,    0xFFUL,       0xD8UL, ~0UL},
+   // Rear back from a 4-person triangle to a single 8 chain.
+   {warn__awful_rear_back, 0, &rear_tgl4b_stuff, s_trngl4,    0xFFUL,       0x22UL, ~0UL},
+   // Rear back from a tidal wave to facing lines.
+   {warn__rear_back,       8, &step_li_stuff,    s1x8,      0xFFFFUL,     0x2882UL, ~0UL},
+   // Ends rear back from a "bone" to grand 8-chain or whatever.
+   {warn__some_rear_back,  8, &rear_bone_stuffa, s_bone,    0xFFFFUL,     0x55F5UL, 0xF5F5UL},
+   // Centers rear back from a "bone" to lines facing or "split square thru" setup.
+   {warn__some_rear_back,  0, &rear_bone_stuffb, s_bone,    0xFFFFUL,     0x0802UL, 0x0F0FUL},
+   // All rear back from a "bone" to a "rigger".
+   {warn__rear_back,       0, &rear_bone_stuffc, s_bone,    0xFFFFUL,     0x58F2UL, 0xFFFFUL},
+   // Rear back from an alamo wave to crossed single 8-chains.
+   {warn__rear_back,       0, &rear_ohh_stuff, s4x4,    0x3C3C3C3CUL, 0x1C203408UL, ~0UL},
+   // Rear back from parallel waves to an 8 chain.
+   {warn__rear_back,       8, &step_8ch_stuff, s2x4,        0xFFFFUL,     0x2288UL, ~0UL},
+   // Rear back from columns to end-to-end single 8-chains.
+   {warn__awful_rear_back, 8, &step_1x8_stuff, s2x4,        0xFFFFUL,     0x55FFUL, ~0UL},
+   // Centers rear back from 1/4-box to triangles.
+   {warn__some_rear_back,  8, &step_qbox_stuff, s2x4,       0xFFFFUL,     0x57FDUL, ~0UL},
 
    // Some people rear back from 3&1 column to rigger.
    {warn__some_rear_back,  0, &rear_3n1c_stuff, s2x4,       0xFFFFUL,     0x5DF7UL, ~0UL},
@@ -2844,29 +2863,35 @@ full_expand::thing touch_init_table1[] = {
    {warn__some_rear_back,  0, &rear_3n1a_stuff, s2x4,       0xFFFFUL,     0x2A80UL, ~0UL},
    // Some people rear back from 3&1 line to triangles.
    {warn__some_rear_back,  0, &rear_3n1b_stuff, s2x4,       0xFFFFUL,     0xA208UL, ~0UL},
-   /* Rear back from a right-hand box to a single 8 chain. */
+   // Rear back from a right-hand box to a single 8 chain.
    {warn__awful_rear_back, 0, &rear_vrbox_stuff, s2x2,        0xFFUL,       0x28UL, ~0UL},
    {warn__awful_rear_back, 0, &rear_hrbox_stuff, s2x2,        0xFFUL,       0x5FUL, ~0UL},
 
-   /* Centers rear back from appropriate "diamonds" to T-boned pairs facing. */
+   // Centers rear back from appropriate "diamonds" to T-boned pairs facing.
    {warn__some_rear_back,  0, &rear_funnydmd,  s_qtag,    0xFFFFUL,     0x78D2UL, ~0UL},
+   // Centers rear back 3&1 lines, ends facing, centers have right hands.
+   {warn__centers_rear_back_staying_in_center, 0, &rear_funny3x1,  s2x4,      0xFFFFUL,     0x8A20UL, ~0UL},
 
-   /* Ends rear back from a "rigger" to lines facing or "split square thru" setup. */
+   // Ends rear back from a "rigger" to lines facing or "split square thru" setup.
    {warn__some_rear_back,  0, &rear_rig_stuffa,s_rigger,    0xFFFFUL,     0x0802UL, 0x0F0FUL},
-   /* Centers rear back from a "rigger" to grand 8-chain or whatever. */
+   // Centers rear back from a "rigger" to grand 8-chain or whatever.
    {warn__some_rear_back,  0, &rear_rig_stuffb,s_rigger,    0xFFFFUL,     0x55F5UL, 0xF5F5UL},
-   /* All rear back from a "rigger" to a "bone". */
+   // All rear back from a "rigger" to a "bone".
    {warn__rear_back,       0, &rear_rig_stuffc,s_rigger,    0xFFFFUL,     0x58F2UL, 0xFFFFUL},
-   /* Some people rear back from horrible "T"'s to couples facing or "split square thru" setup. */
+   // Some people rear back from horrible "T"'s to couples facing or "split square thru" setup.
    {warn__some_rear_back,  0, &rear_bigd_stuff1,sbigdmd,  0x0FF0FFUL,   0x0520F8UL, ~0UL},
    {warn__some_rear_back,  0, &rear_bigd_stuff1,sbigdmd,  0x0FF0FFUL,   0x082028UL, ~0UL},
-   {warn__some_rear_back,  0, &rear_bigd_stuff2,sbigdmd,  0xFF0FF0UL,   0x2F0850UL, ~0UL},      /* Some people rear back from horrible "T"'s to couples facing or "split square thru" setup. */
+   // Some people rear back from horrible "T"'s to couples facing or "split square thru" setup.
+   {warn__some_rear_back,  0, &rear_bigd_stuff2,sbigdmd,  0xFF0FF0UL,   0x2F0850UL, ~0UL},
    {warn__some_rear_back,  0, &rear_bigd_stuff2,sbigdmd,  0xFF0FF0UL,   0x280820UL, ~0UL},
-   {warn__rear_back,       0, &rear_thar_stuff, s_thar,     0xFFFFUL,     0x278DUL, ~0UL},      /* Rear back from thar to alamo 8-chain. */
+   // Rear back from thar to alamo 8-chain.
+   {warn__rear_back,       0, &rear_thar_stuff, s_thar,     0xFFFFUL,     0x278DUL, ~0UL},
 
-   {warn__some_rear_back,  0, &rear_c1a_stuff,s_c1phan, 0xCCCCCCCCUL, 0x884C00C4UL, ~0UL},      /* Check for certain people rearing back from C1 phantoms. */
+   // Check for certain people rearing back from C1 phantoms.
+   {warn__some_rear_back,  0, &rear_c1a_stuff,s_c1phan, 0xCCCCCCCCUL, 0x884C00C4UL, ~0UL},
    {warn__some_rear_back,  0, &rear_c1a_stuff,s_c1phan, 0xCCCCCCCCUL, 0x4C4CC4C4UL, ~0UL},
-   {warn__some_rear_back,  0, &rear_44a_stuff, s4x4,    0x0F0F0F0FUL, 0x030C0906UL, ~0UL},      /* Or from equivalent pinwheel. */
+   // Or from equivalent pinwheel.
+   {warn__some_rear_back,  0, &rear_44a_stuff, s4x4,    0x0F0F0F0FUL, 0x030C0906UL, ~0UL},
    {warn__some_rear_back,  0, &rear_44a_stuff, s4x4,    0x0F0F0F0FUL, 0x0F0D0507UL, ~0UL},
    {warn__some_rear_back,  0, &rear_c1b_stuff,s_c1phan, 0x33333333UL, 0x13223100UL, ~0UL},
    {warn__some_rear_back,  0, &rear_c1b_stuff,s_c1phan, 0x33333333UL, 0x13313113UL, ~0UL},
@@ -2883,7 +2908,9 @@ full_expand::thing touch_init_table1[] = {
 
    {warn__rear_back,       0, &rear_c1e_stuff,s_c1phan, 0xCCCCCCCCUL, 0x084C80C4UL, ~0UL},
    {warn__rear_back,       0, &rear_c1f_stuff,s_c1phan, 0x33333333UL, 0x13203102UL, ~0UL},
-   {warn__rear_back,     4+8, &step_2x2v_stuff, s1x4,         0xFFUL,       0x28UL, ~0UL},      /* Rear back from a wave to facing couples. */
+
+   // Rear back from a wave to facing couples.
+   {warn__rear_back,     4+8, &step_2x2v_stuff, s1x4,         0xFFUL,       0x28UL, ~0UL},
    {warn__none,            0, (expand::thing *) 0, nothing}
 };
 
@@ -3243,6 +3270,8 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x6,     s2x6,     0, 0, 1, 1,  0x2FB, schema_concentric},
    {s3x6,           schema_nothing, {12, 17, 2, 3, 8, 11,    15, 16, 6, 7},
              s2x3,     s1x4,     1, 0, 1, 1,  0x2DD, schema_concentric},
+   {s4x4,           schema_nothing, {10, 15, 3, 1, 2, 7, 11, 9,     13, 14, 5, 6},
+             s2x4,     s2x2,     0, 0, 2, 1,  0x2FB, schema_concentric},
    {s4x4,           schema_nothing, {11, 15, 3, 7,    12, 13, 14, 0, 4, 5, 6, 8},
              s2x2,     s2x4,     1, 0, 2, 1,  0x2F7, schema_concentric},
    {s4x4,           schema_nothing, {15, 3, 7, 11,     12, 13, 14, 0, 4, 5, 6, 8},
@@ -3675,7 +3704,9 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
    {s3x1dmd,        schema_concentric_6_2_line, {0, 1, 2, 4, 5, 6,    7, 3},
              s1x6,     s1x2,     0, 1, 1, 1,  0x0F5, schema_concentric},
    {s_wingedstar,   schema_concentric_6_2_line, {0, 1, 2, 4, 5, 6,    7, 3},
-             s1x6,     s1x2,     0, 1, 1, 1,  0x1F5, schema_concentric},
+             s1x6,     s1x2,     0, 1, 1, 1,  0x100, schema_concentric},
+   {s_wingedstar,   schema_concentric_6_2, {1, 2, 3, 5, 6, 7,    0, 4},
+             s_wingedstar6, s1x2,     0, 0, 0, 1,  0x0FA, schema_concentric},
    {s_crosswave,    schema_concentric_6_2, {6, 7, 1, 2, 3, 5,    0, 4},
              s_2x1dmd, s1x2,     1, 0, 1, 1,  0x0F5, schema_concentric},
    {s1x3dmd,        schema_concentric_6_2, {1, 2, 3, 5, 6, 7,    0, 4},
@@ -6983,6 +7014,16 @@ static const id_bit_table id_bit_table_splinedmd[] = {
    NOBIT(ID2_CTR1X6),
    NOBIT(ID2_NCTR1X6)};
 
+static const id_bit_table id_bit_table_swingedstar[] = {
+   NOBIT(ID2_OUTR2),
+   NOBIT(ID2_CTR6),
+   NOBIT(ID2_CTR6),
+   NOBIT(ID2_CTR6),
+   NOBIT(ID2_OUTR2),
+   NOBIT(ID2_CTR6),
+   NOBIT(ID2_CTR6),
+   NOBIT(ID2_CTR6)};
+
 static const id_bit_table id_bit_table_spindle[] = {
    NORTHBIT(ID2_CTR6 |ID2_OUTR6),
    NORTHBIT(ID2_CTR6 |ID2_CTR2),
@@ -7473,6 +7514,16 @@ const setup_attr setup_attrs[] = {
     id_bit_table_2x1dmd,
     {"6  5 c@@a  b  e  d@@6  5 f",
      "6  a@@6  b@7f  6  c@76  e@@6  d"}},
+   {5,                      // s_wingedstar6
+    (const coordrec *) 0,
+    (const coordrec *) 0,
+    {0, 0, 0, 0},
+    {b_wingedstar6, b_pwingedstar6},
+    {0, 0},
+    false, false,
+    (const id_bit_table *) 0,
+    {"6  5 c@7a  b  e  d@76  5 f@",
+     "5 a@@5 b@f  c@5 e@@5 d@"}},
    {5,                     // s1x3p1dmd
     &thing1x3p1dmd,
     &thing1x3p1dmd,
@@ -8176,11 +8227,11 @@ const setup_attr setup_attrs[] = {
    {7,                      // s_wingedstar
     (const coordrec *) 0,
     (const coordrec *) 0,
-    {0x33, 0, 0, 0},
+    {0x33, 0x77, 0, 0},
     {b_wingedstar, b_pwingedstar},
     {0, 0},
     false, false,
-    (const id_bit_table *) 0,
+    id_bit_table_swingedstar,
     {"665   d@a b c  g f e@665   h",
      "9a@@9b@@9c@h5d@9g@@9f@@9e"}},
    {11,                     // s_wingedstar12
@@ -9158,6 +9209,8 @@ int begin_sizes[] = {
    6,          /* b_p1x2dmd */
    6,          /* b_2x1dmd */
    6,          /* b_p2x1dmd */
+   6,          /* b_wingedstar6 */
+   6,          /* b_pwingedstar6 */
    8,          /* b_qtag */
    8,          /* b_pqtag */
    8,          /* b_bone */

@@ -29,7 +29,7 @@
 // database format version.
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 278
+#define DATABASE_FORMAT_VERSION 280
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -322,6 +322,7 @@ enum setup_kind {
    s2x3,
    s_1x2dmd,
    s_2x1dmd,
+   s_wingedstar6,
    s1x3p1dmd,
    s3p1x1dmd,
    s_qtag,
@@ -490,6 +491,8 @@ enum begin_kind {
    b_p1x2dmd,
    b_2x1dmd,
    b_p2x1dmd,
+   b_wingedstar6,
+   b_pwingedstar6,
    b_qtag,
    b_pqtag,
    b_bone,
@@ -681,12 +684,11 @@ enum {
    CAF__NO_CUTTING_THROUGH    = 0x100,
    CAF__NO_FACING_ENDS        = 0x200,
    CAF__LATERAL_TO_SELECTEES  = 0x400,
-   CAF__VACATE_CENTER         = 0x800,
-   CAF__OTHER_ELONGATE       = 0x1000,
-   CAF__SPLIT_TO_BOX         = 0x2000,
-   CAF__REALLY_WANT_DIAMOND  = 0x4000,
-   CAF__NO_COMPRESS          = 0x8000,
-   CAF__PLUSEIGHTH_ROTATION = 0x10000
+   CAF__OTHER_ELONGATE        = 0x800,
+   CAF__SPLIT_TO_BOX         = 0x1000,
+   CAF__REALLY_WANT_DIAMOND  = 0x2000,
+   CAF__NO_COMPRESS          = 0x4000,
+   CAF__PLUSEIGHTH_ROTATION  = 0x8000,
 };
 
 // BEWARE!!  This list must track the array "qualtab" in mkcalls.cpp
@@ -1104,7 +1106,8 @@ enum mods1_word {
    DFM1_NUM_INSERT_MASK              = 0x00700000UL,
    DFM1_NUM_INSERT_BIT               = 0x00100000UL,
    DFM1_NO_CHECK_MOD_LEVEL           = 0x00800000UL,
-   DFM1_FRACTAL_INSERT               = 0x01000000UL
+   DFM1_FRACTAL_INSERT               = 0x01000000UL,
+   DFM1_SUPPRESS_ROLL                = 0x02000000UL
 };
 
 enum  {

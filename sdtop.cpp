@@ -3352,6 +3352,9 @@ bool check_for_concept_group(
       // Look for combinations like "<anyone> work <concept>".
       skip_a_pair = parseptr_skip;
    }
+   else if (k == concept_matrix) {
+      skip_a_pair = parseptr_skip;
+   }
 
    if (skip_a_pair) {
       parseptrcopy = skip_a_pair;
@@ -5477,41 +5480,59 @@ extern void normalize_setup(setup *ss, normalize_action action, bool noqtagcompr
    }
 
    if (!did_something && ss->kind == s4x4 && action == normalize_after_exchange_boxes) {
+      // We have no idea how to deal with compression after exchange the boxes in a T-bone.
       if (!(tbonetest & 0x1)) {
-         if ((livemask & 0x0030) == 0x0010) ss->swap_people(4, 5);
-         if ((livemask & 0x0140) == 0x0100) ss->swap_people(6, 8);
-         if ((livemask & 0x0084) == 0x0004) ss->swap_people(2, 7);
-         if ((livemask & 0x0A00) == 0x0200) ss->swap_people(11, 9);
-         if ((livemask & 0x000A) == 0x0002) ss->swap_people(1, 3);
-         if ((livemask & 0x8400) == 0x0400) ss->swap_people(15, 10);
-         if ((livemask & 0x4001) == 0x0001) ss->swap_people(0, 14);
-         if ((livemask & 0x3000) == 0x1000) ss->swap_people(13, 12);
+         if ((livemask & 0x0030) == 0x0010 && (ss->people[4].id1 & 2) != 0) ss->swap_people(4, 5);
+         if ((livemask & 0x3000) == 0x1000 && (ss->people[12].id1 & 2) == 0) ss->swap_people(12, 13);
+         if ((livemask & 0x0140) == 0x0100 && (ss->people[8].id1 & 2) != 0) ss->swap_people(8, 6);
+         if ((livemask & 0x4001) == 0x0001 && (ss->people[0].id1 & 2) == 0) ss->swap_people(0, 14);
+         if ((livemask & 0x0084) == 0x0004 && (ss->people[2].id1 & 2) != 0) ss->swap_people(2, 7);
+         if ((livemask & 0x8400) == 0x0400 && (ss->people[10].id1 & 2) == 0) ss->swap_people(10, 15);
+         if ((livemask & 0x0A00) == 0x0200 && (ss->people[9].id1 & 2) != 0) ss->swap_people(9, 11);
+         if ((livemask & 0x000A) == 0x0002 && (ss->people[1].id1 & 2) == 0) ss->swap_people(1, 3);
          action = simple_normalize;
          goto startover;
       }
       else if (!(tbonetest & 0x8)) {
-         if ((livemask & 0x0003) == 0x0001) ss->swap_people(0, 1);
-         if ((livemask & 0x0014) == 0x0010) ss->swap_people(2, 4);
-         if ((livemask & 0x4008) == 0x4000) ss->swap_people(14, 3);
-         if ((livemask & 0x00A0) == 0x0020) ss->swap_people(7, 5);
-         if ((livemask & 0xA000) == 0x2000) ss->swap_people(13, 15);
-         if ((livemask & 0x0840) == 0x0040) ss->swap_people(11, 6);
-         if ((livemask & 0x1400) == 0x1000) ss->swap_people(12, 10);
-         if ((livemask & 0x0300) == 0x0100) ss->swap_people(9, 8);
+         if ((livemask & 0x0003) == 0x0001 && (ss->people[0].id1 & 2) == 0) ss->swap_people(0, 1);
+         if ((livemask & 0x0300) == 0x0100 && (ss->people[8].id1 & 2) != 0) ss->swap_people(8, 9);
+         if ((livemask & 0x0014) == 0x0010 && (ss->people[4].id1 & 2) == 0) ss->swap_people(4, 2);
+         if ((livemask & 0x1400) == 0x1000 && (ss->people[12].id1 & 2) != 0) ss->swap_people(12, 10);
+         if ((livemask & 0x4008) == 0x4000 && (ss->people[14].id1 & 2) == 0) ss->swap_people(14, 3);
+         if ((livemask & 0x0840) == 0x0040 && (ss->people[6].id1 & 2) != 0) ss->swap_people(6, 11);
+         if ((livemask & 0x00A0) == 0x0020 && (ss->people[5].id1 & 2) == 0) ss->swap_people(5, 7);
+         if ((livemask & 0xA000) == 0x2000 && (ss->people[13].id1 & 2) != 0) ss->swap_people(13, 15);
          action = simple_normalize;
          goto startover;
       }
    }
    else if (!did_something && ss->kind == s2x6 && action == normalize_after_exchange_boxes) {
-      if ((livemask & 0xC00) == 0x800 && !(ss->people[11].id1 & 0x1)) ss->swap_people(11, 10);
-      if ((livemask & 0x0C0) == 0x040 && !(ss->people[ 6].id1 & 0x1)) ss->swap_people(6, 7);
-      if ((livemask & 0x030) == 0x020 && !(ss->people[ 5].id1 & 0x1)) ss->swap_people(4, 5);
-      if ((livemask & 0x003) == 0x001 && !(ss->people[ 0].id1 & 0x1)) ss->swap_people(0, 1);
+      if ((livemask & 0xC00) == 0x800 && !(ss->people[11].id1 & 1)) ss->swap_people(11, 10);
+      if ((livemask & 0x0C0) == 0x040 && !(ss->people[ 6].id1 & 1)) ss->swap_people(6, 7);
+      if ((livemask & 0x030) == 0x020 && !(ss->people[ 5].id1 & 1)) ss->swap_people(4, 5);
+      if ((livemask & 0x003) == 0x001 && !(ss->people[ 0].id1 & 1)) ss->swap_people(0, 1);
       action = simple_normalize;
       goto startover;
    }
-
-   if (!did_something && ss->kind == s3x4 &&
+   else if (!did_something && ss->kind == s4x6 && action == normalize_after_exchange_boxes) {
+      // Any line-like people that were way out get pulled in.
+      if ((livemask & 0xC00000) == 0x800000 && !(ss->people[11].id1 & 1)) ss->swap_people(11, 10);
+      if ((livemask & 0x0C0000) == 0x040000 && !(ss->people[ 6].id1 & 1)) ss->swap_people(6, 7);
+      if ((livemask & 0xC00000) == 0x800000 && !(ss->people[23].id1 & 1)) ss->swap_people(23, 22);
+      if ((livemask & 0x0C0000) == 0x040000 && !(ss->people[18].id1 & 1)) ss->swap_people(18, 19);
+      // Any column-like people that were past the exchange point get pulled in.
+      if ((livemask & 0x000090) == 0x000010 && (ss->people[4].id1 & 0xA) == 0) ss->swap_people(4, 7);
+      if ((livemask & 0x090000) == 0x010000 && (ss->people[16].id1 & 0xA) == 2) ss->swap_people(16, 19);
+      if ((livemask & 0x402000) == 0x002000 && (ss->people[13].id1 & 0xA) == 0) ss->swap_people(13, 22);
+      if ((livemask & 0x000402) == 0x000002 && (ss->people[1].id1 & 0xA) == 2) ss->swap_people(1, 10);
+      if ((livemask & 0x000108) == 0x000008 && (ss->people[3].id1 & 0xA) == 0) ss->swap_people(3, 8);
+      if ((livemask & 0x108000) == 0x008000 && (ss->people[15].id1 & 0xA) == 2) ss->swap_people(15, 20);
+      if ((livemask & 0x204000) == 0x004000 && (ss->people[14].id1 & 0xA) == 0) ss->swap_people(14, 21);
+      if ((livemask & 0x000204) == 0x000004 && (ss->people[2].id1 & 0xA) == 2) ss->swap_people(2, 9);
+      action = simple_normalize;
+      goto startover;
+   }
+   else if (!did_something && ss->kind == s3x4 &&
        !(ss->people[0].id1 | ss->people[3].id1 |
          ss->people[6].id1 | ss->people[9].id1)) {
       expand::compress_setup(s_qtg_3x4, ss);

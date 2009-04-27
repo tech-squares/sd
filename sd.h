@@ -2,7 +2,7 @@
 
 // SD -- square dance caller's helper.
 //
-//    Copyright (C) 1990-2007  William B. Ackerman.
+//    Copyright (C) 1990-2009  William B. Ackerman.
 //
 //    This file is part of "Sd".
 //
@@ -1029,6 +1029,13 @@ class final_and_herit_flags {
 
 // The following enumeration and struct encode the fraction/parts information
 // about a call to be executed.
+
+// For the meaning of this, see the long block of comments before
+// "process_stupendously_new_fractions" in sdmoves.cpp.
+// But note that much of that (the bit layout) is out of date.
+// The documentation of the codes is correct, but the "N" and "K" fields
+// are now 6 bits, in the "flags" word.  The fraction info has been moved
+// to another word, and all fields are 6 bits.
 
 enum {
    // These refer to the "fraction" field.
@@ -2387,6 +2394,7 @@ enum warning_index {
    warn__check_butterfly,
    warn__check_galaxy,
    warn__some_rear_back,
+   warn__centers_rear_back_staying_in_center,
    warn__not_tbone_person,
    warn__check_c1_phan,
    warn__check_dmd_qtag,
@@ -3921,6 +3929,7 @@ enum selective_key {
    selective_key_ignore,
    selective_key_work_concept,
    selective_key_lead_for_a,
+   selective_key_promenade_and_lead_for_a,
    selective_key_work_no_concentric,
    selective_key_snag_anyone,
    selective_key_plain_from_id_bits,
@@ -3931,6 +3940,7 @@ enum tandem_key {
    tandem_key_tand = 0,
    tandem_key_cpls = 1,
    tandem_key_siam = 2,
+   tandem_key_localized = 3,
    tandem_key_tand3 = 4,
    tandem_key_cpls3 = 5,
    tandem_key_siam3 = 6,
@@ -4442,6 +4452,7 @@ enum mpkind {
    MPKIND__BENT8NW,
    MPKIND__SPEC_ONCEREM,
    MPKIND__SPEC_TWICEREM,
+   MPKIND_TRIPLETRADEINWINGEDSTAR6,
    NUM_PLAINMAP_KINDS   // End mark; not really in the enumeration.
 };
 
