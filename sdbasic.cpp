@@ -3030,7 +3030,7 @@ static int divide_the_setup(
       if (assoc(b_1x2, ss, calldeflist) || assoc(b_2x1, ss, calldeflist)) {
          warn(warn__unusual);
          warn(warn_controversial);
-         division_code = MAPCODE(s1x2,3,MPKIND_TRIPLETRADEINWINGEDSTAR6,0);
+         division_code = MAPCODE(s1x2,3,MPKIND__TRIPLETRADEINWINGEDSTAR6,0);
          goto divide_us_no_recompute;
       }
 

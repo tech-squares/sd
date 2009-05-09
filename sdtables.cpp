@@ -2433,7 +2433,7 @@ map::map_thing map::map_init_table[] = {
     s1x1,3,MPKIND__SPLIT,1,       0,  s1x3,      0x015, 0},
 
    {{0, 1,                  2, 5,                  4, 3},
-    s1x2,3,MPKIND_TRIPLETRADEINWINGEDSTAR6,0, 0,  s_wingedstar6,      0x004, 0},
+    s1x2,3,MPKIND__TRIPLETRADEINWINGEDSTAR6,0, 0,  s_wingedstar6,      0x004, 0},
 
    {{0}, nothing}};
 

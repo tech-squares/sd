@@ -1492,14 +1492,15 @@ extern void tandem_couples_move(
       people_per_group = 3;
       our_map_table = maps_isearch_threesome;
    }
-   else {    // Includes tandem_key_localized.
+   else {    // Includes tandem_key_overlap_siam.
       people_per_group = 2;
       our_map_table = maps_isearch_twosome;
    }
 
-   if (key == tandem_key_localized) {
+   if (key == tandem_key_overlap_siam) {
       static const expand::thing localized_thing = {
-         {0, 5, 2, 7, 8, 13, 10, 15}, 8, s2x4, s2x8, 0};
+         {0, 3, 4, 7, 8, 11, 12, 15}, 8, s2x4, s2x8, 0};
+      // old:         {0, 5, 2, 7, 8, 13, 10, 15}, 8, s2x4, s2x8, 0};
       if (ss->kind != s2x4 || phantom != 0)
          fail("Need 2x4 for this concept.");
       phantom = 1;
@@ -1695,7 +1696,7 @@ extern void tandem_couples_move(
          nsmask = 0;
       }
    }
-   else if (key == tandem_key_localized) {
+   else if (key == tandem_key_overlap_siam) {
       //      doing_siamese = true;
       saveew = ewmask;
       savens = nsmask;
@@ -1763,8 +1764,8 @@ extern void tandem_couples_move(
       }
    }
 
-   /* Now ewmask and nsmask have the info about who is paired with whom. */
-   ewmask &= ~tandstuff.single_mask;         /* Clear out unpaired people. */
+   // Now ewmask and nsmask have the info about who is paired with whom.
+   ewmask &= ~tandstuff.single_mask;         // Clear out unpaired people.
    nsmask &= ~tandstuff.single_mask;
 
    map_search = our_map_table;
@@ -1883,239 +1884,261 @@ extern void tandem_couples_move(
 
    update_id_bits(&tandstuff.m_virtual_setup);
 
-   if (key == tandem_key_localized) {
-      divided_setup_move(&tandstuff.m_virtual_setup,
-                         MAPCODE(s2x2,2,MPKIND__SPLIT,0),
-                         phantest_ok,
-                         true,
-                         &tandstuff.virtual_result);
+   setup siamese_setup1, siamese_setup2;
+
+   if (key == tandem_key_overlap_siam) {
+      siamese_setup1.kind = s2x2;
+      siamese_setup1.rotation = 0;
+      siamese_setup1.clear_people();
+      clear_result_flags(&siamese_setup1);
+      siamese_setup2.kind = s2x2;
+      siamese_setup2.rotation = 0;
+      siamese_setup2.clear_people();
+      clear_result_flags(&siamese_setup2);
+
+      int j;
+      setup ttt[8];
+      uint32 rotstate, pointclip;
+
+      for (j=0 ; j<8 ; j++) {
+         setup sss = tandstuff.m_virtual_setup;
+         sss.kind = s2x2;
+         sss.rotation = 0;
+         sss.clear_people();
+         copy_person(&sss, j >> 1, &tandstuff.m_virtual_setup, j);
+         impose_assumption_and_move(&sss, &ttt[j]);
+      }
+
+      if (fix_n_results(8, -1, false, ttt, rotstate, pointclip, 0) || !(rotstate & 0xF03))
+         fail("Can't do this.");
+
+      // Might need something much more sophisticated than this.
+      result->result_flags = get_multiple_parallel_resultflags(ttt, 8);
+
+      if (ttt[0].kind != s2x2)
+         fail("Can't do this.");    // Probably need to look harder at this case.
+
+      for (j=0 ; j<8 ; j++) {
+         setup *dest = (j & 1) ? &siamese_setup2 : &siamese_setup1;
+         install_person(dest, 0, &ttt[j], 0);
+         install_person(dest, 1, &ttt[j], 1);
+         install_person(dest, 2, &ttt[j], 2);
+         install_person(dest, 3, &ttt[j], 3);
+      }
+
+      tandstuff.virtual_result = siamese_setup1;   // prepare for first of two final cycles.
    }
    else {
       impose_assumption_and_move(&tandstuff.m_virtual_setup, &tandstuff.virtual_result);
    }
 
-   remove_mxn_spreading(&tandstuff.virtual_result);
-   remove_tgl_distortion(&tandstuff.virtual_result);
+   setup extra_siamese_result[2];
 
-   // If this is a concentric setup with dead ends or centers, we can still handle it.
-   // We have to remember to put dead folks back when we are done, in order
-   // to make gluing illegal.
+   // This loop runs only once, unless overlapped siamese, in which case it runs twice.
+   for (int finalcount = 0 ; finalcount < 2 ; finalcount++) {
+      remove_mxn_spreading(&tandstuff.virtual_result);
+      remove_tgl_distortion(&tandstuff.virtual_result);
 
-   if (tandstuff.virtual_result.kind == s_dead_concentric) {
-      if (fraction_eighth_part) fail("Fraction is too complicated.");
-      dead_conc = true;
-      tandstuff.virtual_result.kind = tandstuff.virtual_result.inner.skind;
-      tandstuff.virtual_result.rotation += tandstuff.virtual_result.inner.srotation;
-   }
-   else if (tandstuff.virtual_result.kind == s_normal_concentric &&
-            tandstuff.virtual_result.inner.skind == nothing &&
-            tandstuff.virtual_result.outer.skind == s1x2) {
-      if (fraction_eighth_part) fail("Fraction is too complicated.");
-      dead_xconc = true;
-      tandstuff.virtual_result.kind = tandstuff.virtual_result.outer.skind;
-      tandstuff.virtual_result.rotation += tandstuff.virtual_result.outer.srotation;
-   }
+      // If this is a concentric setup with dead ends or centers, we can still handle it.
+      // We have to remember to put dead folks back when we are done, in order
+      // to make gluing illegal.
 
-   if (attr::slimit(&tandstuff.virtual_result) < 0)
-      fail("Don't recognize ending position from this tandem or as couples call.");
+      if (tandstuff.virtual_result.kind == s_dead_concentric) {
+         if (fraction_eighth_part) fail("Fraction is too complicated.");
+         dead_conc = true;
+         tandstuff.virtual_result.kind = tandstuff.virtual_result.inner.skind;
+         tandstuff.virtual_result.rotation += tandstuff.virtual_result.inner.srotation;
+      }
+      else if (tandstuff.virtual_result.kind == s_normal_concentric &&
+               tandstuff.virtual_result.inner.skind == nothing &&
+               tandstuff.virtual_result.outer.skind == s1x2) {
+         if (fraction_eighth_part) fail("Fraction is too complicated.");
+         dead_xconc = true;
+         tandstuff.virtual_result.kind = tandstuff.virtual_result.outer.skind;
+         tandstuff.virtual_result.rotation += tandstuff.virtual_result.outer.srotation;
+      }
 
-   // Bits appear in this 64-bit item in triples!  All 3 bits are the same.
-   uint32 sglmask3high = 0;
-   uint32 sglmask3low = 0;
+      if (attr::slimit(&tandstuff.virtual_result) < 0)
+         fail("Don't recognize ending position from this tandem or as couples call.");
 
-   // Bits appear in this 64-bit item in triples!  All 3 bits are the same.
-   uint32 livemask3high = 0;
-   uint32 livemask3low = 0;
+      // Bits appear in this 64-bit item in triples!  All 3 bits are the same.
+      uint32 sglmask3high = 0;
+      uint32 sglmask3low = 0;
 
-   // Bits appear in this 64-bit item in triples!  The 3 bits give the orbit in eighths.
-   uint32 orbitmask3high = 0;
-   uint32 orbitmask3low = 0;
+      // Bits appear in this 64-bit item in triples!  All 3 bits are the same.
+      uint32 livemask3high = 0;
+      uint32 livemask3low = 0;
 
-   // Compute orbitmask3, livemask3, and sglmask3.
-   // Since we are synthesizing bit masks, we scan in reverse order to make things easier.
-   // The resultant masks will be little-endian.
+      // Bits appear in this 64-bit item in triples!  The 3 bits give the orbit in eighths.
+      uint32 orbitmask3high = 0;
+      uint32 orbitmask3low = 0;
 
-   for (i=attr::slimit(&tandstuff.virtual_result); i>=0; i--) {
-      sglmask3high <<= 3;
-      sglmask3high |= sglmask3low >> 29;
-      sglmask3low <<= 3;
+      // Compute orbitmask3, livemask3, and sglmask3.
+      // Since we are synthesizing bit masks, we scan in reverse order to make things easier.
+      // The resultant masks will be little-endian.
 
-      livemask3high <<= 3;
-      livemask3high |= livemask3low >> 29;
-      livemask3low <<= 3;
+      for (i=attr::slimit(&tandstuff.virtual_result); i>=0; i--) {
+         sglmask3high <<= 3;
+         sglmask3high |= sglmask3low >> 29;
+         sglmask3low <<= 3;
 
-      orbitmask3high <<= 3;
-      orbitmask3high |= orbitmask3low >> 29;
-      orbitmask3low <<= 3;
+         livemask3high <<= 3;
+         livemask3high |= livemask3low >> 29;
+         livemask3low <<= 3;
 
-      uint32 p = tandstuff.virtual_result.people[i].id1;
+         orbitmask3high <<= 3;
+         orbitmask3high |= orbitmask3low >> 29;
+         orbitmask3low <<= 3;
 
-      if (p) {
-         int vpi = (p >> 6) & 7;
-         livemask3low |= 7;
+         uint32 p = tandstuff.virtual_result.people[i].id1;
 
-         if (tandstuff.m_real_saved_people[1].people[vpi].id1 == ~0UL) {
-            sglmask3low |= 7;
-         }
-         else {
-            if (fractional || dynamic != 0) {
-               if (!(p & STABLE_ENAB))
-                  fail("fractional twosome not supported for this call.");
+         if (p) {
+            int vpi = (p >> 6) & 7;
+            livemask3low |= 7;
+
+            if (tandstuff.m_real_saved_people[1].people[vpi].id1 == ~0UL) {
+               sglmask3low |= 7;
             }
+            else {
+               if (fractional || dynamic != 0) {
+                  if (!(p & STABLE_ENAB))
+                     fail("fractional twosome not supported for this call.");
+               }
 
-            int orbit_in_eighths =
-               (p + tandstuff.virtual_result.rotation - tandstuff.saved_originals[vpi]) << 1;
+               int orbit_in_eighths =
+                  (p + tandstuff.virtual_result.rotation - tandstuff.saved_originals[vpi]) << 1;
 
-            uint32 stable_stuff_in_eighths = ((p & STABLE_VRMASK) / STABLE_VRBIT) - ((p & STABLE_VLMASK) / STABLE_VLBIT);
+               uint32 stable_stuff_in_eighths = ((p & STABLE_VRMASK) / STABLE_VRBIT) - ((p & STABLE_VLMASK) / STABLE_VLBIT);
 
-            if (twosome == 3) {
-               // This is "twosome to solid" -- they orbit by whatever the excess is after the stability expires.
-               orbit_in_eighths = 0;
-               if (fractional) {
+               if (twosome == 3) {
+                  // This is "twosome to solid" -- they orbit by whatever the excess is after the stability expires.
+                  orbit_in_eighths = 0;
+                  if (fractional) {
+                     if (dynamic == 1)
+                        orbit_in_eighths += (p & STABLE_VRMASK) / STABLE_VRBIT;
+                     else if (dynamic == 2)
+                        orbit_in_eighths -= (p & STABLE_VLMASK) / STABLE_VLBIT;
+                     else
+                        orbit_in_eighths = stable_stuff_in_eighths;
+                  }
+               }
+               else if (twosome == 2) {
+                  // This is "solid to twosome" -- they orbit by whatever happened before the stability expired.
+                  if (fractional) {
+                     if (dynamic == 1)
+                        orbit_in_eighths += (p & STABLE_VLMASK) / STABLE_VLBIT;
+                     else if (dynamic == 2)
+                        orbit_in_eighths -= (p & STABLE_VRMASK) / STABLE_VRBIT;
+                     else
+                        orbit_in_eighths -= stable_stuff_in_eighths;
+                  }
+               }
+               else if (twosome == 1) {
+                  // This is "twosome" -- they don't orbit (unless "dynamic" is on).
+                  orbit_in_eighths = 0;
                   if (dynamic == 1)
                      orbit_in_eighths += (p & STABLE_VRMASK) / STABLE_VRBIT;
                   else if (dynamic == 2)
                      orbit_in_eighths -= (p & STABLE_VLMASK) / STABLE_VLBIT;
-                  else
-                     orbit_in_eighths = stable_stuff_in_eighths;
                }
-            }
-            else if (twosome == 2) {
-               // This is "solid to twosome" -- they orbit by whatever happened before the stability expired.
-               if (fractional) {
-                  if (dynamic == 1)
-                     orbit_in_eighths += (p & STABLE_VLMASK) / STABLE_VLBIT;
-                  else if (dynamic == 2)
-                     orbit_in_eighths -= (p & STABLE_VRMASK) / STABLE_VRBIT;
-                  else
-                     orbit_in_eighths -= stable_stuff_in_eighths;
-               }
-            }
-            else if (twosome == 1) {
-               // This is "twosome" -- they don't orbit (unless "dynamic" is on).
-               orbit_in_eighths = 0;
-               if (dynamic == 1)
-                  orbit_in_eighths += (p & STABLE_VRMASK) / STABLE_VRBIT;
-               else if (dynamic == 2)
-                  orbit_in_eighths -= (p & STABLE_VLMASK) / STABLE_VLBIT;
+
+               orbitmask3low |=
+                  (orbit_in_eighths - ((tandstuff.virtual_result.rotation + tandstuff.vertical_people[vpi]) << 1)) & 7;
             }
 
-            orbitmask3low |=
-               (orbit_in_eighths - ((tandstuff.virtual_result.rotation + tandstuff.vertical_people[vpi]) << 1)) & 7;
+            if (fractional || dynamic != 0)
+               tandstuff.virtual_result.people[i].id1 &= ~STABLE_ALL_MASK;
          }
-
-         if (fractional || dynamic != 0)
-            tandstuff.virtual_result.people[i].id1 &= ~STABLE_ALL_MASK;
       }
-   }
 
-   uint32 orbitcomhigh = orbitmask3high ^ 0155555UL;
-   uint32 orbitcomlow = orbitmask3low ^ 026666666666UL;
-   uint32 hmask3high = orbitcomhigh & livemask3high & ~sglmask3high;
-   uint32 hmask3low = orbitcomlow & livemask3low & ~sglmask3low;
+      uint32 orbitcomhigh = orbitmask3high ^ 0155555UL;
+      uint32 orbitcomlow = orbitmask3low ^ 026666666666UL;
+      uint32 hmask3high = orbitcomhigh & livemask3high & ~sglmask3high;
+      uint32 hmask3low = orbitcomlow & livemask3low & ~sglmask3low;
 
-   // Bits appear here in triples!  Only low bit of each triple is used.
-   uint32 sglmaskhigh = sglmask3high & 022222UL;
-   uint32 sglmasklow = sglmask3low & 011111111111UL;
+      // Bits appear here in triples!  Only low bit of each triple is used.
+      uint32 sglmaskhigh = sglmask3high & 022222UL;
+      uint32 sglmasklow = sglmask3low & 011111111111UL;
 
-   // Bits appear here in triples!  Only low two bits of each triple are used.
-   uint32 livemaskhigh = livemask3high & 066666UL;
-   uint32 livemasklow = livemask3low & 033333333333UL;
+      // Bits appear here in triples!  Only low two bits of each triple are used.
+      uint32 livemaskhigh = livemask3high & 066666UL;
+      uint32 livemasklow = livemask3low & 033333333333UL;
 
-   // Pick out only low two bits for map search, and only bits of live paired people.
-   uint32 hmaskhigh = hmask3high & 066666UL;
-   uint32 hmasklow = hmask3low & 033333333333UL;
+      // Pick out only low two bits for map search, and only bits of live paired people.
+      uint32 hmaskhigh = hmask3high & 066666UL;
+      uint32 hmasklow = hmask3low & 033333333333UL;
 
-   if (tandstuff.m_no_unit_symmetry) {
-      livemaskhigh = livemask3high;
-      livemasklow = livemask3low;
-      hmaskhigh = hmask3high;
-      hmasklow = hmask3low;
-   }
-
-   map_search = our_map_table;
-   // We don't accept the special 1/8-twosome maps from the "maps_isearch_boxsome"
-   // table unless we are doing "skew".  If we are doing "box" (the only other
-   // possibility) the mapes are not used.
-   while (map_search->outsetup != nothing) {
-      if ((map_search->insetup == tandstuff.virtual_result.kind) &&
-          (!map_search->map_is_eighth_twosome || key != tandem_key_box) &&
-          map_search->insinglemaskhigh == sglmaskhigh &&
-          map_search->insinglemasklow == sglmasklow &&
-          (map_search->ilatmask3high & livemaskhigh) == hmaskhigh &&
-          (map_search->ilatmask3low & livemasklow) == hmasklow) {
-         tandstuff.unpack_us(map_search, orbitmask3high, orbitmask3low, result);
-
-         if (key == tandem_key_localized) {
-            if (result->kind == s2x8 && result->rotation == 0) {
-               static veryshort foo[16] = {0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 4, 5, 6, 7};
-               setup temp = *result;
-               result->kind = s2x4;
-               result->clear_people();
-               install_scatter(result, 16, foo, &temp, 0);
-            }
-            else if (result->kind == s4x4) {
-               static veryshort foo[16] = {0, 1, 2, 6, 3, 4, 3, 5, 4, 5, 6, 2, 7, 0, 7, 1};
-               setup temp = *result;
-               result->kind = s2x4;
-               result->clear_people();
-               install_scatter(result, 16, foo, &temp, 033);
-               result->rotation++;
-            }
-            else if (result->kind == s1x16 && result->rotation == 0) {
-               static veryshort foo[16] = {0, 1, 3, 2, 6, 7, 5, 4, 4, 5, 7, 6, 2, 3, 1, 0};
-               setup temp = *result;
-               result->kind = s1x8;
-               result->clear_people();
-               install_scatter(result, 16, foo, &temp, 0);
-            }
-            else if (result->kind == sdeepbigqtg && result->rotation == 1) {
-               static veryshort foo[16] = {-1, -1, 1, 2, 4, 5, 6, 7, -1, -1, 5, 6, 0, 1, 2, 3};
-               setup temp = *result;
-               result->kind = s2x4;
-               result->clear_people();
-               install_scatter(result, 16, foo, &temp, 0);
-
-            }
-            else
-               fail("Can't do this.");
-         }
-
-         reinstate_rotation(ss, result);
-
-         // When we fudge wrongly-oriented triangles to a 2x4, we need
-         // to say something.
-         if (our_map_table == maps_isearch_tglsome && result->kind == s2x4)
-            warn(warn__check_hokey_2x4);
-
-         if (dead_conc) {
-            result->inner.skind = result->kind;
-            result->inner.srotation = result->rotation;
-            result->rotation = 0;
-            result->kind = s_dead_concentric;
-         }
-         else if (dead_xconc) {
-            result->outer.skind = result->kind;
-            result->outer.srotation = result->rotation;
-            result->concsetup_outer_elongation = tandstuff.virtual_result.outer.srotation+1;
-            result->rotation = 0;
-            result->inner.skind = nothing;
-            result->kind = s_normal_concentric;
-            for (i=0 ; i<12 ; i++) result->swap_people(i, i+12);
-         }
-         else if (ss->kind == s1x4 && result->kind == s2x2) {
-            result->result_flags.misc &= ~3;
-            result->result_flags.misc |= (ss->rotation & 1) + 1;
-         }
-
-         return;
+      if (tandstuff.m_no_unit_symmetry) {
+         livemaskhigh = livemask3high;
+         livemasklow = livemask3low;
+         hmaskhigh = hmask3high;
+         hmasklow = hmask3low;
       }
-      map_search++;
+
+      map_search = our_map_table;
+      // We don't accept the special 1/8-twosome maps from the "maps_isearch_boxsome"
+      // table unless we are doing "skew".  If we are doing "box" (the only other
+      // possibility) the maps are not used.
+      while (map_search->outsetup != nothing) {
+         if ((map_search->insetup == tandstuff.virtual_result.kind) &&
+             (!map_search->map_is_eighth_twosome || key != tandem_key_box) &&
+             map_search->insinglemaskhigh == sglmaskhigh &&
+             map_search->insinglemasklow == sglmasklow &&
+             (map_search->ilatmask3high & livemaskhigh) == hmaskhigh &&
+             (map_search->ilatmask3low & livemasklow) == hmasklow) {
+            break;
+         }
+         map_search++;
+      }
+
+      if (map_search->outsetup == nothing)
+         fail("Don't recognize ending position from this tandem or as couples call.");
+
+      tandstuff.unpack_us(map_search, orbitmask3high, orbitmask3low, result);
+
+      reinstate_rotation(ss, result);
+
+      // When we fudge wrongly-oriented triangles to a 2x4, we need
+      // to say something.
+      if (our_map_table == maps_isearch_tglsome && result->kind == s2x4)
+         warn(warn__check_hokey_2x4);
+
+      if (dead_conc) {
+         result->inner.skind = result->kind;
+         result->inner.srotation = result->rotation;
+         result->rotation = 0;
+         result->kind = s_dead_concentric;
+      }
+      else if (dead_xconc) {
+         result->outer.skind = result->kind;
+         result->outer.srotation = result->rotation;
+         result->concsetup_outer_elongation = tandstuff.virtual_result.outer.srotation+1;
+         result->rotation = 0;
+         result->inner.skind = nothing;
+         result->kind = s_normal_concentric;
+         for (i=0 ; i<MAX_PEOPLE/2 ; i++) result->swap_people(i, i+MAX_PEOPLE/2);
+      }
+      else if (ss->kind == s1x4 && result->kind == s2x2) {
+         result->result_flags.misc &= ~3;
+         result->result_flags.misc |= (ss->rotation & 1) + 1;
+      }
+
+      // In the usual case (not overlapped siamese) we just exit from the whole thing after one iteration.
+      if (key != tandem_key_overlap_siam)
+         break;
+
+      // If overlapped siamese, we do everything twice.
+      extra_siamese_result[finalcount] = *result;   // Save the result of this run
+      tandstuff.virtual_result = siamese_setup2;    // Prepare for the second run.
    }
 
-   fail("Don't recognize ending position from this tandem or as couples call.");
+   // If overlapped siamese, we have two setups to merge.
+
+   if (key == tandem_key_overlap_siam) {
+      *result = extra_siamese_result[1];
+      merge_setups(&extra_siamese_result[0], merge_strict_matrix, result);
+   }
 }
-
 
 // Forward decl!
 void recursively_fix(setup *result, const uint16 split_info[2], const setup *orig_before_press) THROW_DECL;

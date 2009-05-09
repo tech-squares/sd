@@ -3940,7 +3940,7 @@ enum tandem_key {
    tandem_key_tand = 0,
    tandem_key_cpls = 1,
    tandem_key_siam = 2,
-   tandem_key_localized = 3,
+   tandem_key_overlap_siam = 3,
    tandem_key_tand3 = 4,
    tandem_key_cpls3 = 5,
    tandem_key_siam3 = 6,
@@ -4452,7 +4452,7 @@ enum mpkind {
    MPKIND__BENT8NW,
    MPKIND__SPEC_ONCEREM,
    MPKIND__SPEC_TWICEREM,
-   MPKIND_TRIPLETRADEINWINGEDSTAR6,
+   MPKIND__TRIPLETRADEINWINGEDSTAR6,
    NUM_PLAINMAP_KINDS   // End mark; not really in the enumeration.
 };
 
