@@ -29,7 +29,7 @@
 // database format version.
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 282
+#define DATABASE_FORMAT_VERSION 285
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -419,6 +419,7 @@ enum setup_kind {
    sx4dmd,    // These are too big to actually represent --
    sx4dmdbone,// we don't let them out of their cage.
    s_hyperbone, // Ditto.
+   s_hyper3x4,  // Ditto.
    s_tinyhyperbone, // Ditto.
    s8x8,      // Ditto.
    sxequlize, // Ditto.
@@ -925,6 +926,8 @@ enum calldef_schema {
    schema_rev_checkpoint,
    schema_rev_checkpoint_concept,
    schema_ckpt_star,
+   schema_maybe_in_out_triple_dyp_squash,
+   schema_in_out_triple_dyp_squash,
    schema_maybe_in_out_triple_squash,
    schema_in_out_triple_squash,
    schema_sgl_in_out_triple_squash,
@@ -1131,20 +1134,21 @@ enum  {
    STB_REVERSE = 8
 };
 
-/* These define the format of the short int (16 bits, presumably) items emitted
-   for each person in a by-array call definition.  These will get read into the
-   "arr" array of a predptr_pair or the "stuff.def" array of a callarray.
+// These define the format of the short int (16 bits, presumably) items emitted
+// for each person in a by-array call definition.  These will get read into the
+// "arr" array of a predptr_pair or the "stuff.def" array of a callarray.
+//
+// The format of this item is:
+//     stability info   slide and roll info         where to go     direction to face
+//                   (2 for slide, 3 for roll)     (compressed!)
+//         4 bits            5 bits                   5 bits            2 bits
+//
+// The compressed location is arranged so that it will never be zero.  A word of
+// zero in the database has a different meaning -- this person has no legal action.
 
-   The format of this item is:
-       stability info   slide and roll info         where to go     direction to face
-                     (2 for slide, 3 for roll)     (compressed!)
-           4 bits            5 bits                   5 bits            2 bits
-
-   The direction is 4 plus the two-bit code.  The 4 is to make sure that the word is never zero.
-*/
-
+// These help with the identification of the above fields.
 enum {
-   DBSLIDEROLL_BIT = 0x0080,
+   DBSTAB_BIT      = 0x1000,
    DBSLIDE_BIT     = 0x0400,
-   DBSTAB_BIT      = 0x1000
+   DBSLIDEROLL_BIT = 0x0080
 };

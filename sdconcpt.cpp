@@ -226,7 +226,7 @@ static void do_c1_phantom_move(
                                                                INHERITFLAG_MXNMASK |
                                                                INHERITFLAG_NXNMASK);
 
-      if (junk_concepts.test_herit_and_final_bits())
+      if (junk_concepts.test_for_any_herit_or_final_bit())
          fail("Phantom couples/tandem must not have intervening concepts.");
 
       // "Phantom tandem" has a higher level than either "phantom" or "tandem".
@@ -1072,7 +1072,7 @@ static void do_concept_parallelogram(
 
    // But skip over "standard"
    if (next_parseptr->concept->kind == concept_standard &&
-       junk_concepts.test_herit_and_final_bits() == 0) {
+       !junk_concepts.test_for_any_herit_or_final_bit()) {
       standard_concept = next_parseptr;
       junk_concepts.clear_all_herit_and_final_bits();
       next_parseptr = process_final_concepts(next_parseptr->next, false, &junk_concepts,
@@ -1085,7 +1085,7 @@ static void do_concept_parallelogram(
 
    concept_kind kk = next_parseptr->concept->kind;
 
-   if (junk_concepts.test_herit_and_final_bits() != 0)
+   if (junk_concepts.test_for_any_herit_or_final_bit())
       kk = concept_comment;
 
    mpkind mk, mkbox;
@@ -2779,7 +2779,7 @@ static void do_concept_new_stretch(
 
       if ((next_parseptr->concept->kind == concept_randomtrngl ||
           next_parseptr->concept->kind == concept_selbasedtrngl) &&
-          junk_concepts.test_herit_and_final_bits() == 0) {
+          !junk_concepts.test_for_any_herit_or_final_bit()) {
          if (tempsetup.kind == s_hrglass) {
             tempsetup.swap_people(3, 7);
          }
@@ -2794,7 +2794,7 @@ static void do_concept_new_stretch(
       }
       else if (next_parseptr->concept->kind == concept_do_phantom_2x4 &&
                next_parseptr->concept->arg3 == MPKIND__SPLIT &&
-               junk_concepts.test_herit_and_final_bits() == 0) {
+               !junk_concepts.test_for_any_herit_or_final_bit()) {
          if (tempsetup.kind == s4x4 && ((global_tbonetest & 011) != 011)) {
             if ((global_tbonetest ^ next_parseptr->concept->arg2) & 1) {
                tempsetup.swap_people(1, 2);
@@ -3415,6 +3415,8 @@ static void do_concept_phan_crazy(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
+   if (process_brute_force_mxn(ss, parseptr, do_concept_phan_crazy, result)) return;
+
    int i;
    setup tempsetup;
    setup_command cmd;
@@ -3428,7 +3430,7 @@ static void do_concept_phan_crazy(
    }
    ss->cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_REVERSE);
    // We don't allow other flags, like "cross".
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"crazy\".");
 
    int craziness = (parseptr->concept->arg1 & 16) ?
@@ -3598,7 +3600,7 @@ static void do_concept_fan(
 
    parseptrcopy = process_final_concepts(parseptr->next, true, &new_final_concepts, true, false);
 
-   if (new_final_concepts.test_herit_and_final_bits() ||
+   if (new_final_concepts.test_for_any_herit_or_final_bit() ||
        parseptrcopy->concept->kind > marker_end_of_list)
       fail("Can't do \"fan\" followed by another concept or modifier.");
 
@@ -3804,7 +3806,9 @@ static void do_concept_nose(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (process_brute_force_mxn(ss, parseptr, do_concept_nose, result)) return;
+
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"nose\".");
 
    nose_move(ss,
@@ -3820,7 +3824,9 @@ static void do_concept_stable(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (process_brute_force_mxn(ss, parseptr, do_concept_stable, result)) return;
+
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"stable\".");
 
    stable_move(ss,
@@ -4201,6 +4207,8 @@ static void do_concept_checkpoint(
    parse_block *parseptr,
    setup *result)
 {
+   if (process_brute_force_mxn(ss, parseptr, do_concept_checkpoint, result)) return;
+
    int reverseness = parseptr->concept->arg1;
 
    if (ss->cmd.cmd_final_flags.test_heritbit(INHERITFLAG_REVERSE)) {
@@ -4210,7 +4218,7 @@ static void do_concept_checkpoint(
 
    ss->cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_REVERSE);
    // We don't allow other flags, like "cross".
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"checkpoint\".");
 
    if (ss->cmd.cmd_misc3_flags & CMD_MISC3__META_NOCMD)
@@ -4653,11 +4661,13 @@ static void do_concept_trace(
    parse_block *parseptr,
    setup *result) THROW_DECL
 {
+   if (process_brute_force_mxn(ss, parseptr, do_concept_trace, result)) return;
+
    int interlock = ss->cmd.cmd_final_flags.test_heritbit(INHERITFLAG_INTLK);
 
    ss->cmd.cmd_final_flags.clear_heritbit(INHERITFLAG_INTLK);
    // We don't allow other flags, like "cross".
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"trace\".");
 
    int i, r[4], rot[4];
@@ -4817,7 +4827,7 @@ static void do_concept_trace(
       }
    }
 
-   normalize_concentric(schema_concentric, 1, outer_inners,
+   normalize_concentric(ss, schema_concentric, 1, outer_inners,
                         ((~outer_inners[0].rotation) & 1) + 1, 0, result);
    result->result_flags = finalresultflags;
 
@@ -5675,10 +5685,10 @@ static void do_concept_ferris(
    if (parseptr->concept->arg1) {
       // This is "release".
 
-      static const expand::thing mapr1 = {{10, 2, 3, 5, 4,  8, 9, 11}, 8, s_qtag, s3x4, 0};
-      static const expand::thing mapr2 = {{1,  4, 6, 5, 7, 10, 0, 11}, 8, s_qtag, s3x4, 0};
-      static const expand::thing mapr3 = {{1, 10, 0, 5, 7,  4, 6, 11}, 8, s_qtag, s3x4, 0};
-      static const expand::thing mapr4 = {{4,  2, 9, 5,10,  8, 3, 11}, 8, s_qtag, s3x4, 0};
+      static const expand::thing mapr1 = {{10, 2, 3, 5, 4,  8, 9, 11}, s_qtag, s3x4, 0};
+      static const expand::thing mapr2 = {{1,  4, 6, 5, 7, 10, 0, 11}, s_qtag, s3x4, 0};
+      static const expand::thing mapr3 = {{1, 10, 0, 5, 7,  4, 6, 11}, s_qtag, s3x4, 0};
+      static const expand::thing mapr4 = {{4,  2, 9, 5,10,  8, 3, 11}, s_qtag, s3x4, 0};
 
       if ((ss->kind != s_qtag) || ((global_tbonetest & 1) != 0))
          fail("Must have quarter-tag to do this concept.");
@@ -5719,8 +5729,8 @@ static void do_concept_ferris(
    else {
       // This is "ferris".
 
-      static const expand::thing mapf1 = {{0, 1, 5, 4, 6, 7, 11, 10}, 8, s2x4, s3x4, 0};
-      static const expand::thing mapf2 = {{10, 11, 2, 3, 4, 5, 8, 9}, 8, s2x4, s3x4, 0};
+      static const expand::thing mapf1 = {{0, 1, 5, 4, 6, 7, 11, 10}, s2x4, s3x4, 0};
+      static const expand::thing mapf2 = {{10, 11, 2, 3, 4, 5, 8, 9}, s2x4, s3x4, 0};
 
       if ((ss->kind != s2x4) || ((global_tbonetest & 1) != 0))
          fail("Must have lines to do this concept.");
@@ -5746,7 +5756,7 @@ static void do_concept_ferris(
    if (!map_ptr) fail("Incorrect facing directions.");
 
    // Be sure there aren't any modifiers other than "magic release".
-   if (ss->cmd.cmd_final_flags.test_herit_and_final_bits())
+   if (ss->cmd.cmd_final_flags.test_for_any_herit_or_final_bit())
       fail("Illegal modifier before \"ferris\" or \"release\".");
 
    expand::expand_setup(*map_ptr, ss);
@@ -5761,10 +5771,10 @@ static void do_concept_overlapped_diamond(
 {
    uint32 mapcode;
    const expand::thing *scatterlist;
-   static const expand::thing list1x4    = {{0, 1, 4, 5}, 4, s1x4, s_thar, 0};
-   static const expand::thing list1x4rot = {{2, 3, 6, 7}, 4, s1x4, s_thar, 3};
-   static const expand::thing listdmd    = {{0, 3, 4, 7}, 4, sdmd, s_thar, 0};
-   static const expand::thing listdmdrot = {{2, 5, 6, 1}, 4, sdmd, s_thar, 3};
+   static const expand::thing list1x4    = {{0, 1, 4, 5}, s1x4, s_thar, 0};
+   static const expand::thing list1x4rot = {{2, 3, 6, 7}, s1x4, s_thar, 3};
+   static const expand::thing listdmd    = {{0, 3, 4, 7}, sdmd, s_thar, 0};
+   static const expand::thing listdmdrot = {{2, 5, 6, 1}, sdmd, s_thar, 3};
 
    // Split an 8 person setup.
    if (attr::slimit(ss) == 7) {
@@ -7836,7 +7846,7 @@ extern bool do_big_concept(
 
       // If we hit "matrix", do a little extra stuff and continue.
 
-      if (junk_concepts.test_herit_and_final_bits() == 0 &&
+      if (!junk_concepts.test_for_any_herit_or_final_bit() &&
           substandard_concptptr->concept->kind == concept_matrix) {
          ss->cmd.cmd_misc_flags |= CMD_MISC__MATRIX_CONCEPT;
          substandard_concptptr = process_final_concepts(substandard_concptptr->next,
@@ -7854,7 +7864,7 @@ extern bool do_big_concept(
       if (sub_prop_bits & CONCPROP__NEED_ARG2_MATRIX)
          sub_prop_bits_for_expansion |= substandard_concptptr->concept->arg2;
 
-      if (junk_concepts.test_herit_and_final_bits() != 0 ||
+      if (junk_concepts.test_for_any_herit_or_final_bit() ||
           (!(sub_prop_bits & CONCPROP__STANDARD)))
          fail("This concept must be used with some offset/distorted/phantom concept.");
 

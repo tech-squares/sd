@@ -842,6 +842,7 @@ static const veryshort qtlrig[12] = {6, 7, -1, -1, 2, 3, -1, -1, 6, 7, -1, -1};
 static const veryshort qtlgls[12] = {2, 5, 6, 7, 8, 11, 0, 1, 2, 5, 6, 7};
 static const veryshort ft4x4bh[16] = {9, 8, 7, -1, 6, -1, -1, -1, 3, 2, 1, -1, 0, -1, -1, -1};
 static const veryshort ftqtgbh[8] = {-1, -1, 10, 11, -1, -1, 4, 5};
+static const veryshort ft3x4bb[12] = {-1, -1, -1, -1, 8, 9, -1, -1, -1, -1, 2, 3};
 static const veryshort ft4x446[16] = {4, 7, 22, 8, 13, 14, 15, 21, 16, 19, 10, 20, 1, 2, 3, 9};
 static const veryshort ft2646[12] = {11, 10, 9, 8, 7, 6, 23, 22, 21, 20, 19, 18};
 static const veryshort galtranslateh[16]  = {-1,  3,  4,  2, -1, -1, -1,  5,
@@ -911,6 +912,10 @@ static const veryshort linehyperv[12] = {0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 3, 0};
 static const veryshort hyperbonev[20] = {5, 0, 6, 7, -1, -1, -1, -1,
                                          1, 4, 2, 3, -1, -1, -1, -1,
                                          5, 0, 6, 7};
+
+static const veryshort hyper3x4v[30] = {3, 2, 1, 0, 4, 5, -1, -1, -1, -1, -1, -1,
+                                        9, 8, 7, 6, 10, 11, -1, -1, -1, -1, -1, -1,
+                                        3, 2, 1, 0, 4, 5};
 
 static const veryshort tinyhyperbonet[20] = {-1, -1, -1, -1, -1, -1, -1, -1, 
                                              -1, -1, -1, -1,  2,  3,  1,  0,
@@ -1281,6 +1286,25 @@ extern bool check_restriction(
 }
 
 
+// The 32 bit word returned by this is an unpacked/uncompressed version of the 16 bit
+// word in the database.  See comments at the end of database.h of a description of the latter.
+
+// Left half:
+//       unused         slide and roll info          unused
+//                   (2 for slide, 3 for roll)
+//       2 bits              5 bits                   9 bits
+//
+// The slide and roll info are in the proper position for the "id1" field of a person.
+// See NSLIDE_MASK, NSLIDE_BIT, SLIDE_IS_L, SLIDE_IS_R,
+//    NROLL_MASK, NROLL_BIT, PERSON_MOVED, ROLL_IS_L, and ROLL_IS_R.
+
+// Right half:
+//     stability info        unused         where to go     direction to face
+//                                        (uncompressed!)
+//         4 bits            4 bits            6 bits            2 bits
+//
+// The stability info is in the same location as in the 16 bit word from the database,
+// and is also indicated by DBSTAB_BIT.  The location might be zero.
 
 static uint32 find_calldef(
    callarray *tdef,
@@ -1368,21 +1392,21 @@ static void special_4_way_symm(
        0,  1,  2,  3,  4,  5,  6,  7,
       16, 17, 18, 19, 20, 21, 22, 23};
 
-   static const veryshort table_1x6_from_xwv[8] = {
-      0, 1, 4, 5, 6, 7, 10, 11};
+   static const veryshort table_1x6_from_xwv[8] = {0, 1, 4, 5, 6, 7, 10, 11};
 
    static const veryshort table_4dmd[16] = {
       7, 5, 14, 12, 16, 17, 18, 19,
       23, 21, 30, 28, 0, 1, 2, 3};
 
-   static const veryshort table_hyperbone[8] = {
-      13, 4, 6, 7, 5, 12, 14, 15};
+   static const veryshort table_hyperbone[8] = {13, 4, 6, 7, 5, 12, 14, 15};
 
-   static const veryshort table_tinyhyperbone[8] = {
-      3, 2, 0, 1, 11, 10, 8, 9};
+   static const veryshort table_hyper3x4[12] = {0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 22, 23};
 
-   static const veryshort table_2x3_4dmd[6] = {
-      6, 11, 13, 22, 27, 29};
+   static const veryshort table_tinyhyperbone[8] = {3, 2, 0, 1, 11, 10, 8, 9};
+
+   static const veryshort table_2x3_4dmd[6] = {6, 11, 13, 22, 27, 29};
+
+   static const veryshort table_bigd_x4dmd[12] = {7, 5, 10, 11, 14, 12, 23, 21, 26, 27, 30, 28};
 
    static const veryshort line_table[4] = {0, 1, 6, 7};
 
@@ -1443,6 +1467,10 @@ static void special_4_way_symm(
       result->kind = s_hyperbone;
       the_table = table_hyperbone;
       break;
+   case s3x4:
+      result->kind = s_hyper3x4;
+      the_table = table_hyper3x4;
+      break;
    case s_trngl4:
       result->kind = s_tinyhyperbone;
       the_table = table_tinyhyperbone;
@@ -1450,6 +1478,10 @@ static void special_4_way_symm(
    case s2x3:
       result->kind = sx4dmd;
       the_table = table_2x3_4dmd;
+      break;
+   case sbigdmd:
+      result->kind = sx4dmd;
+      the_table = table_bigd_x4dmd;
       break;
    default:
       fail("Don't recognize ending setup for this call.");
@@ -3837,22 +3869,22 @@ static int divide_the_setup(
    // in which it makes a difference.
 
    if (result->result_flags.misc & RESULTFLAG__EXPAND_TO_2X3) {
-      static const expand::thing inner_2x6 = {{0, 1, 4, 5, 6, 7, 10, 11}, 8, s2x4, s2x6, 0};
-      static const expand::thing inner_dblbone6 = {{1, 9, 11, 8, 7, 3, 5, 2}, 8, s_rigger, sdblbone6, 0};
-      static const expand::thing outer_dblbone6 = {{0, 10, 11, 8, 6, 4, 5, 2}, 8, s_bone, sdblbone6, 0};
-      static const expand::thing inner8_2x10 = {{0, 1, 2, 7, 8, 9, 10, 11, 12, 17, 18, 19}, 12, s2x6, s2x10, 0};
+      static const expand::thing inner_2x6 = {{0, 1, 4, 5, 6, 7, 10, 11}, s2x4, s2x6, 0};
+      static const expand::thing inner_dblbone6 = {{1, 9, 11, 8, 7, 3, 5, 2}, s_rigger, sdblbone6, 0};
+      static const expand::thing outer_dblbone6 = {{0, 10, 11, 8, 6, 4, 5, 2}, s_bone, sdblbone6, 0};
+      static const expand::thing inner8_2x10 = {{0, 1, 2, 7, 8, 9, 10, 11, 12, 17, 18, 19}, s2x6, s2x10, 0};
       static const expand::thing inner_2x10 = {
-         {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19}, 16, s2x8, s2x10, 0};
-      static const expand::thing outer8_2x10 = {{2, 3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17}, 12, s2x6, s2x10, 0};
+         {0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19}, s2x8, s2x10, 0};
+      static const expand::thing outer8_2x10 = {{2, 3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17}, s2x6, s2x10, 0};
       static const expand::thing outer_2x10 = {
-         {1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18}, 16, s2x8, s2x10, 0};
-      static const expand::thing inner_rig = {{6, 7, -1, 2, 3, -1}, 6, s1x6, s_rigger, 0};
+         {1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18}, s2x8, s2x10, 0};
+      static const expand::thing inner_rig = {{6, 7, -1, 2, 3, -1}, s1x6, s_rigger, 0};
       static const expand::thing inner_4x6 = {{4, 7, 22, 8, 13, 14, 15, 21, 16, 19, 10, 20, 1, 2, 3, 9},
-                                              16, s4x4, s4x6, 0};
+                                              s4x4, s4x6, 0};
       static const expand::thing outer_4x6 = {{5, 6, 23, 7, 12, 13, 16, 22, 17, 18, 11, 19, 0, 1, 4, 10},
-                                              16, s4x4, s4x6, 0};
-      static const expand::thing inner_3x6 = {{0, 1, 4, 5, 6, 7, 9, 10, 13, 14, 15, 16}, 12, s3x4, s3x6, 0};
-      static const expand::thing outer_3x6 = {{1, 2, 3, 4, 7, 8, 10, 11, 12, 13, 16, 17}, 12, s3x4, s3x6, 0};
+                                              s4x4, s4x6, 0};
+      static const expand::thing inner_3x6 = {{0, 1, 4, 5, 6, 7, 9, 10, 13, 14, 15, 16}, s3x4, s3x6, 0};
+      static const expand::thing outer_3x6 = {{1, 2, 3, 4, 7, 8, 10, 11, 12, 13, 16, 17}, s3x4, s3x6, 0};
 
       const expand::thing *expand_ptr = (const expand::thing *) 0;
 
@@ -4040,62 +4072,55 @@ static veryshort s_wingedstartranslate[40] = {
    -1, -1, -1, 3, -1, -1, -1, -1, -1, 4, 5, 6, -1, -1, -1, -1,
    -1, -1, -1, 7, -1, -1, -1, -1};
 
-static veryshort jqttranslateh[32] = {
-   -1, 6, -1, 7, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1,
-   -1, 2, -1, 3, -1, 4, -1, -1, -1, -1, -1, -1, -1, -1, 5, -1};
-
-static veryshort jqttranslatev[32] = {
+static veryshort jqttranslatev[40] = {
    -1, -1, -1, -1, -1, -1, 5, -1, -1, 6, -1, 7, -1, 0, -1, -1,
-   -1, -1, -1, -1, -1, -1, 1, -1, -1, 2, -1, 3, -1, 4, -1, -1};
+   -1, -1, -1, -1, -1, -1, 1, -1, -1, 2, -1, 3, -1, 4, -1, -1,
+   -1, -1, -1, -1, -1, -1, 5, -1};
+
+static veryshort bigdtranslatev[40] = {
+   -1, -1, 8, 9, 11, -1, 10, -1, -1, -1, -1, -1, -1, 1, -1, 0,
+   -1, -1, 2, 3,  5, -1,  4, -1, -1, -1, -1, -1, -1, 7, -1, 6,
+   -1, -1, 8, 9, 11, -1, 10, -1};
 
 static veryshort j23translatev[40] = {
    0,  0,  0,  4,  0,  5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
    0,  0,  0,  1,  0,  2,  0,  0,  0,  0,  0,  0,  0,  0,  3,  0,
    0,  0,  0,  4,  0,  5,  0,  0};
 
-static veryshort qdmtranslateh[32] = {
-   12, 13, 14, 15,  0,  1,  0,  0,   0,  0,  0,  0,  3,  0,  2,  0,
-   4,   5,  6,  7,  0,  9,  0,  8,   0,  0,  0,  0, 11,  0, 10,  0};
+static veryshort qdmtranslatev[40] = {
+   0,  0,  0,  0,  11, 0,  10, 0,   12, 13, 14, 15,  0,  1,  0,  0,
+   0,  0,  0,  0,  3,  0,  2,  0,    4,  5,  6,  7,  0,  9,  0,  8,
+   0,  0,  0,  0, 11,  0, 10,  0};
 
-static veryshort qdmtranslatev[32] = {
-   0,  0,  0,  0,  11, 0,  10, 0,    12, 13, 14, 15, 0,  1,  0,  0,
-   0,  0,  0,  0,  3,  0,  2,  0,     4,  5,  6,  7,  0,  9,  0,  8};
-
-static veryshort bonetranslateh[32] = {
-   0,  0,  6,  7,  0,  0,  0,  0,   0,  0,  0,  0,  1,  0,  0,  0,
-   0,  0,  2,  3,  0,  0,  0,  4,   0,  0,  0,  0,  5,  0, 10,  0};
-
-static veryshort bonetranslatev[32] = {
+static veryshort bonetranslatev[40] = {
    0,  0,  0,  0,  5,  0, 10,  0,   0,  0,  6,  7,  0,  0,  0,  0,
-   0,  0,  0,  0,  1,  0,  0,  0,   0,  0,  2,  3,  0,  0,  0,  4};
+   0,  0,  0,  0,  1,  0,  0,  0,   0,  0,  2,  3,  0,  0,  0,  4,
+   0,  0,  0,  0,  5,  0, 10,  0};
 
 static veryshort qtgtranslateh[40] = {
-   -1, -1, -1, -1, -1, -1, 5, -1, -1, -1, 6, 7, -1, 0, -1, -1,
-   -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, 2, 3, -1, 4, -1, -1,
+   -1, -1, -1, -1, -1, -1, 5, -1,   -1, -1, 6, 7, -1, 0, -1, -1,
+   -1, -1, -1, -1, -1, -1, 1, -1,   -1, -1, 2, 3, -1, 4, -1, -1,
    -1, -1, -1, -1, -1, -1, 5, -1};
 
 static veryshort shrgltranseqlh[40] = {
-   7, -1, -1, -1, -1, -1, 5, -1, 3, -1, 6, -1, -1, 0, -1, -1,
-   3, -1, -1, -1, -1, -1, 1, -1, 7, -1, 2, -1, -1, 4, -1, -1,
+   7, -1, -1, -1, -1, -1, 5, -1,   3, -1, 6, -1, -1, 0, -1, -1,
+   3, -1, -1, -1, -1, -1, 1, -1,   7, -1, 2, -1, -1, 4, -1, -1,
    7, -1, -1, -1, -1, -1, 5, -1};
 
 static veryshort eqlizr[40] = {
-   6, -1, -1, 5, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, 0, -1,
-   2, -1, -1, 1, -1, 3, -1, -1, -1, -1, -1, -1, -1, -1, 4, -1,
+   6, -1, -1, 5, -1, 7, -1, -1,   -1, -1, -1, -1, -1, -1, 0, -1,
+   2, -1, -1, 1, -1, 3, -1, -1,   -1, -1, -1, -1, -1, -1, 4, -1,
    6, -1, -1, 5, -1, 7, -1, -1};
 
 static veryshort eqlizl[40] = {
-   -1, -1, -1, 6, -1, 7, -1, -1, 1, -1, -1, -1, -1, -1, 0, -1,
-   -1, -1, -1, 2, -1, 3, -1, -1, 5, -1, -1, -1, -1, -1, 4, -1,
+   -1, -1, -1, 6, -1, 7, -1, -1,   1, -1, -1, -1, -1, -1, 0, -1,
+   -1, -1, -1, 2, -1, 3, -1, -1,   5, -1, -1, -1, -1, -1, 4, -1,
    -1, -1, -1, 6, -1, 7, -1, -1};
 
-static veryshort starstranslateh[32] = {
-   -1, -1, 6, 7, -1, -1, 0, -1, -1, -1, -1, -1, -1, 1, -1, -1,
-   -1, -1, 2, 3, -1, -1, 4, -1, -1, -1, -1, -1, -1, 5, -1, -1};
-
-static veryshort starstranslatev[32] = {
-   -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, 6, 7, -1, -1, 0, -1,
-   -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 2, 3, -1, -1, 4, -1};
+static veryshort starstranslatev[40] = {
+   -1, -1, -1, -1, -1, 5, -1, -1,   -1, -1, 6, 7, -1, -1, 0, -1,
+   -1, -1, -1, -1, -1, 1, -1, -1,   -1, -1, 2, 3, -1, -1, 4, -1,
+   -1, -1, -1, -1, -1, 5, -1, -1};
 
 
 /* For this routine, we know that callspec is a real call, with an array definition schema.
@@ -4137,6 +4162,7 @@ extern void basic_move(
    const calldefn *callspec = the_calldefn;
 
    bool check_peeloff_migration = false;
+   newpersonlist.clear_people();
 
    // We don't allow "central" or "invert" with array-defined calls.
    // We might allow "snag" or "mystic".
@@ -4971,7 +4997,7 @@ foobar:
       outer_elongation = outer_inners[0].rotation;
       if (other_elongate) outer_elongation ^= 1;
 
-      normalize_concentric(schema_concentric, 1, outer_inners,
+      normalize_concentric(ss, schema_concentric, 1, outer_inners,
                            (outer_elongation & 1) + 1, 0, result);
 
       goto fixup;
@@ -5172,6 +5198,10 @@ foobar:
                   tempkind = s4x6;
                   final_translatec = ft4x446;
                   final_translatel = ft2646;
+               }
+               else if (result->kind == sbigbone && other_kind == s3x4) {
+                  tempkind = result->kind;
+                  final_translatel = ft3x4bb;
                }
                else if (result->kind == s2x4 && other_kind == s2x6) {
                   numoutl = attr::klimit(other_kind)+1;
@@ -5566,7 +5596,7 @@ foobar:
             }
             else if ((lilresult_mask[0] & 0xBFD5BFD5UL) == 0) {
                result->kind = s_qtag;
-               permuter = jqttranslateh;
+               permuter = jqttranslatev+8;
             }
             else if ((lilresult_mask[0] & 0xD5BFD5BFUL) == 0) {
                result->kind = s_qtag;
@@ -5582,6 +5612,25 @@ foobar:
                permuter = qtgtranslateh;
                rotator = 1;
             }
+            else if ((lilresult_mask[0] & ~0x204C204CUL) == 0) {
+               result->kind = s_2stars;
+               permuter = starstranslatev+8;
+            }
+            else if ((lilresult_mask[0] & ~0x4C204C20UL) == 0) {
+               result->kind = s_2stars;
+               permuter = starstranslatev;
+               rotator = 1;
+            }
+            else if ((lilresult_mask[0] & ~0xA05CA05CUL) == 0) {
+               result->kind = sbigdmd;
+               permuter = bigdtranslatev;
+               rotator = 1;
+            }
+            else if ((lilresult_mask[0] & ~0x5CA05CA0UL) == 0) {
+               result->kind = sbigdmd;
+               permuter = bigdtranslatev+8;
+            }
+
             else if ((lilresult_mask[0] & 0xF3F9F3F9) == 0) {
                // Check horiz xwv spots.
                result->kind = s_crosswave;
@@ -5626,22 +5675,11 @@ foobar:
             }
             else if ((lilresult_mask[0] & 0xAF50AF50UL) == 0) {
                result->kind = s4dmd;
-               permuter = qdmtranslateh;
+               permuter = qdmtranslatev+8;
             }
             else if ((lilresult_mask[0] & 0x50AF50AFUL) == 0) {
                result->kind = s4dmd;
                permuter = qdmtranslatev;
-               rotator = 1;
-            }
-            else if ((lilresult_mask[0] & 0xDFB3DFB3UL) == 0) {
-               result->kind = s_2stars;
-               // result->kind = s_bone;
-               permuter = starstranslateh;
-            }
-            else if ((lilresult_mask[0] & 0xB3DFB3DFUL) == 0) {
-               result->kind = s_2stars;
-               // result->kind = s_bone;
-               permuter = starstranslatev;
                rotator = 1;
             }
             else if ((lilresult_mask[0] & 0xB7DBB7DB) == 0) {
@@ -5661,7 +5699,7 @@ foobar:
          case sx4dmdbone:
             if ((lilresult_mask[0] & 0xEF73EF73UL) == 0) {
                result->kind = s_bone;
-               permuter = bonetranslateh;
+               permuter = bonetranslatev+8;
             }
             else if ((lilresult_mask[0] & 0x73EF73EFUL) == 0) {
                result->kind = s_bone;
@@ -5674,7 +5712,7 @@ foobar:
          case shypergal:
             if ((lilresult_mask[0] & 0xFFFF7474) == 0) {
                result->kind = s2x4;
-               permuter = &shypergalv[4];
+               permuter = shypergalv+4;
             }
             else if ((lilresult_mask[0] & 0xFFFF4747) == 0) {
                result->kind = s2x4;
@@ -5797,6 +5835,19 @@ foobar:
             else if ((lilresult_mask[0] & 0xF0F0) == 0) {
                result->kind = s_bone;
                permuter = hyperbonev;
+               rotator = 1;
+            }
+            else
+               fail("Call went to improperly-formed setup.");
+            break;
+         case s_hyper3x4:
+            if ((lilresult_mask[0] & ~0xFC0FC0) == 0) {
+               result->kind = sbigh;
+               permuter = hyper3x4v+6;
+            }
+            else if ((lilresult_mask[0] & ~0x03F03F) == 0) {
+               result->kind = sbigh;
+               permuter = hyper3x4v;
                rotator = 1;
             }
             else
