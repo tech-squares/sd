@@ -1382,6 +1382,21 @@ extern void do_matrix_expansion(
 #endif
          }
       }
+      if (ss->kind == s_23232) {
+         if (needpropbits & NEEDMASK(CONCPROP__NEEDK_4X5)) {
+            // Have to figure out where to move the people in the lines of 3.
+            if ((livemask & 04343) == 04242) {
+               warn(warn__check_hokey_4x5);
+               expand::expand_setup(s_23232_4x5a, ss);
+               goto expanded;
+            }
+            else if ((livemask & 04343) == 04141) {
+               warn(warn__check_hokey_4x5);
+               expand::expand_setup(s_23232_4x5b, ss);
+               goto expanded;
+            }
+         }
+      }
 
       // If get here, we did NOT see any concept that requires a setup expansion.
 

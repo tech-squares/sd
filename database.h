@@ -29,7 +29,7 @@
 // database format version.
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 285
+#define DATABASE_FORMAT_VERSION 286
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -437,6 +437,7 @@ enum setup_kind {
    s_525,
    s_545,
    sh545,
+   s_23232,
    s_3mdmd,
    s_3mptpd,
    s_4mdmd,
@@ -610,6 +611,8 @@ enum begin_kind {
    b_p545,
    bh545,
    bhp545,
+   b_23232,
+   b_p23232,
    b_3mdmd,
    b_p3mdmd,
    b_3mptpd,

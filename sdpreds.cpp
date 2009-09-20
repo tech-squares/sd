@@ -251,7 +251,7 @@ extern bool selectp(setup *ss, int place, int allow_some /*= 0*/) THROW_DECL
          else if (p2 == ID2_OUTRPAIRS) s = selector_outerpairs;
          else break;
       }
-      else if (ss->kind == s2x7 || ss->kind == sdblspindle) {
+      else if (ss->kind == s2x7 || ss->kind == s_23232 || ss->kind == sdblspindle) {
          if (current_options.who == selector_center2)
             return (pid2 & ID2_CTR2) != 0;
          else break;

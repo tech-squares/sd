@@ -1538,6 +1538,7 @@ static const checkitem checktable[] = {
     {2, 2, 11, 4, -2, -2, -10, -7, 127}},
    {0x00F700E7, 0x25019000, s_c1phan, 0, warn__none, (const coordrec *) 0,
     {-2, 2, -3, 9, 2, -2, 4, -10, 127}},
+   {0x00840046, 0x42021210, s_23232, 0, warn__none, (const coordrec *) 0, {127}},
    {0}};
 
 

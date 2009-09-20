@@ -2138,6 +2138,15 @@ class select {
       fxboxpdmdc,
       fxlinboxa,
       fxlinboxb,
+      fx23232a,
+      fx23232b,
+      fx23232c,
+      fx23232d,
+      fx23232e,
+      fx23232u,
+      fx23232v,
+      fx23232w,
+      fx23232x,
       fx_f1x8lowf,
       fx_f1x8hif,
       fx_f1x8low6,
@@ -2460,6 +2469,7 @@ enum warning_index {
    warn__check_2x4,
    warn__check_hokey_2x4,
    warn__check_4x4,
+   warn__check_hokey_4x5,
    warn__check_4x6,
    warn__check_hokey_4x4,
    warn__check_4x4_start,
@@ -4413,6 +4423,8 @@ extern const expand::thing s_4x4_4x6a;
 extern const expand::thing s_4x4_4x6b;
 extern const expand::thing s_4x4_4dma;
 extern const expand::thing s_4x4_4dmb;
+extern const expand::thing s_23232_4x5a;
+extern const expand::thing s_23232_4x5b;
 extern const expand::thing s_c1phan_4x4a;
 extern const expand::thing s_c1phan_4x4b;
 extern const expand::thing s_1x4_dmd;
