@@ -380,7 +380,7 @@ static int canonicalize(char * & cp)
             return 500;   // <ATC>
          case 'h':
             return 501;   // <DIRECTION>
-         case '6': case 'k': case 'K':
+         case '6': case 'k': case 'K': case 'V':
             return 502;   // <ANYONE>
          case 'N':
             return 503;   // <ANYCIRC>
@@ -605,7 +605,7 @@ static void read_fullword()
 // Should take the call as an argument, but since this entire file uses global variables,
 // we will, too.
 
-static void database_error_exit(char *message)
+static void database_error_exit(const char *message)
 {
    if (call_root)
       gg->fatal_error_exit(1, message, call_root->name);
@@ -795,7 +795,7 @@ static void read_in_call_definition(calldefn *root_to_use, int char_count)
       while ((c = *np++)) {
          if (c == '@') {
             switch ((c = *np++)) {
-            case '6': case 'k': case 'K':
+            case '6': case 'k': case 'K': case 'V':
                root_to_use->callflagsf |= CFLAGH__REQUIRES_SELECTOR;
                break;
             case 'h':
@@ -2285,7 +2285,7 @@ bool open_session(int argc, char **argv)
    // Must do before telling the uims so any open failure messages
    // come out first.
 
-   char *sourcenames[2] = {database_filename, abridge_filename};
+   const char *sourcenames[2] = {database_filename, abridge_filename};
    bool binaryfileflags[2] = {true, false};
    FILE *database_input_files[2];
 

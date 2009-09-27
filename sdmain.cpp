@@ -33,8 +33,8 @@
 //    string is also required by paragraphs 2(a) and 2(c) of the GNU
 //    General Public License if you distribute the file.
 
-#define VERSION_STRING "38.01"
-#define TIME_STAMP "wba@alum.mit.edu  19 September 2009 $"
+#define VERSION_STRING "38.02"
+#define TIME_STAMP "wba@alum.mit.edu  25 September 2009 $"
 
 /* This defines the following functions:
    sd_version_string
@@ -95,7 +95,7 @@ and the following external variables:
 static const char id[] = "@(#)$He" "ader: Sd: version " VERSION_STRING "  " TIME_STAMP;
 
 
-extern char *sd_version_string()
+extern const char *sd_version_string()
 {
    return VERSION_STRING;
 }

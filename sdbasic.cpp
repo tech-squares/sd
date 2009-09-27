@@ -1749,7 +1749,7 @@ static bool handle_3x4_division(
    // But that's a pretty ambitious change.
 
    if (assoc(b_1x1, ss, calldeflist) ||
-       (!forbid_little_stuff &&
+       ((!forbid_little_stuff &&
         (((ss->cmd.cmd_misc_flags & CMD_MISC__EXPLICIT_MATRIX) ||
           (calldeflist->callarray_flags & CAF__LATERAL_TO_SELECTEES)) &&
          ((!(newtb & 010) ||
@@ -1757,7 +1757,7 @@ static bool handle_3x4_division(
            assoc(b_1x4, ss, calldeflist)) &&
           (!(newtb & 001) ||
            assoc(b_2x1, ss, calldeflist) ||
-           assoc(b_4x1, ss, calldeflist)))) ||
+           assoc(b_4x1, ss, calldeflist))))) ||
         (matrix_aware &&
          (assoc(b_1x2, ss, calldeflist) ||
           assoc(b_2x1, ss, calldeflist))))) {

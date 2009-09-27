@@ -44,7 +44,7 @@
 //    string is also required by paragraphs 2(a) and 2(c) of the GNU
 //    General Public License if you distribute the file.
 
-version "38.01"
+version "38.02"
 
 call "nothing" mainstream tag nullcall
             dont_use_in_resolve
@@ -5953,6 +5953,106 @@ call "1/4 @h" mainstream tag quarter_dir
 
 call "quarter @h" mainstream
    alias quarter_dir
+
+call "@V 1/4 in" mainstream tag anyonequarterin
+            dont_use_in_nice_resolve
+   setup 2x2 2x2
+      preds "???"
+         if select   [CR0E AL1W AL2W CR3E]
+         if unselect [ZM0N ZM1N ZM2N ZM3N]
+   setup 1x2 1x2
+      preds "???"
+         if select   [CR0E AL1W]
+         if unselect [ZM0N ZM1N]
+   setup 2x1 1x2
+      preds "???"
+         if select   [0    0]
+         if unselect [ZM0N ZM1N]
+   setup dmd dmd
+      preds "???"
+         if select   [CR0E 0 AL2W 0]
+         if unselect [ZM0N 0 ZM2N 0]
+   setup pmd dmd
+      preds "???"
+         if select   [0 CR1E 0 AL3W]
+         if unselect [0 ZM1N 0 ZM3N]
+   setup star star
+      preds "???"
+         if select   [CR0E    0 AL2W    0]
+         if unselect [ZM0N    0 ZM2N    0]
+   setup galaxy galaxy
+      preds "???"
+         if select   [CR0E CR1E    0 AL3W AL4W AL5W    0 CR7E]
+         if unselect [ZM0N ZM1N    0 ZM3N ZM4N ZM5N    0 ZM7N]
+   setup hrglass hrglass
+      preds "???"
+         if select   [CR0E AL1W AL2W    0 AL4W CR5E CR6E 0]
+         if unselect [ZM0N ZM1N ZM2N    0 ZM4N ZM5N ZM6N 0]
+   setup phrglass hrglass
+      preds "???"
+         if select   [CR0E CR1E    0 CR3E AL4W AL5W    0 AL7W]
+         if unselect [ZM0N ZM1N    0 ZM3N ZM4N ZM5N    0 ZM7N]
+   setup short6 short6
+      preds "???"
+         if select   [CR0E    0 AL2W AL3W    0 CR5E]
+         if unselect [ZM0N    0 ZM2N ZM3N    0 ZM5N]
+   setup pshort6 short6
+      preds "???"
+         if select   [CR0E CR1E CR2E AL3W AL4W AL5W]
+         if unselect [ZM0N ZM1N ZM2N ZM3N ZM4N ZM5N]
+
+call "@V quarter in" mainstream
+   alias anyonequarterin
+
+call "@V 1/4 out" mainstream tag anyonequarterout
+            dont_use_in_nice_resolve
+   setup 2x2 2x2
+      preds "???"
+         if select   [AL0W CR1E CR2E AL3W]
+         if unselect [ZM0N ZM1N ZM2N ZM3N]
+   setup 1x2 1x2
+      preds "???"
+         if select   [AL0W CR1E]
+         if unselect [ZM0N ZM1N]
+   setup 2x1 1x2
+      preds "???"
+         if select   [0    0]
+         if unselect [ZM0N ZM1N]
+   setup dmd dmd
+      preds "???"
+         if select   [AL0W 0 CR2E 0]
+         if unselect [ZM0N 0 ZM2N 0]
+   setup pmd dmd
+      preds "???"
+         if select   [0 AL1W 0 CR3E]
+         if unselect [0 ZM1N 0 ZM3N]
+   setup star star
+      preds "???"
+         if select   [AL0W    0 CR2E    0]
+         if unselect [ZM0N    0 ZM2N    0]
+   setup galaxy galaxy
+      preds "???"
+         if select   [AL0W AL1W    0 CR3E CR4E CR5E    0 AL7W]
+         if unselect [ZM0N ZM1N    0 ZM3N ZM4N ZM5N    0 ZM7N]
+   setup hrglass hrglass
+      preds "???"
+         if select   [AL0W CR1E CR2E    0 CR4E AL5W AL6W 0]
+         if unselect [ZM0N ZM1N ZM2N    0 ZM4N ZM5N ZM6N 0]
+   setup phrglass hrglass
+      preds "???"
+         if select   [AL0W AL1W    0 AL3W CR4E CR5E    0 CR7E]
+         if unselect [ZM0N ZM1N    0 ZM3N ZM4N ZM5N    0 ZM7N]
+   setup short6 short6
+      preds "???"
+         if select   [AL0W    0 CR2E CR3E    0 AL5W]
+         if unselect [ZM0N    0 ZM2N ZM3N    0 ZM5N]
+   setup pshort6 short6
+      preds "???"
+         if select   [AL0W AL1W AL2W CR3E CR4E CR5E]
+         if unselect [ZM0N ZM1N ZM2N ZM3N ZM4N ZM5N]
+
+call "@V quarter out" mainstream
+   alias anyonequarterout
 
 call "1/8 @h" c1
             dont_use_in_nice_resolve one_person_call

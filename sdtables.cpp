@@ -4094,6 +4094,8 @@ merge_table::concmerge_thing merge_table::merge_init_table[] = {
    {s_trngl8,    sboxdmd, 0x0F, 0x0F, 0x0B, 0x0, schema_matrix,             s4x4,    nothing,  warn__none, 0, 0, {-1, -1, -1, -1, 2, 7, 11, 9}, {-1, -1, -1, -1, 13, 14, 3, 15}},
    {s_ptpd,     slinebox, 0xF0, 0x0F, 0x0E, 0x0, schema_matrix,         sboxpdmd,    nothing,  warn__none, 0, 1, {0, 1, 2, 3, -1, -1, -1, -1}, {-1, -1, -1, -1, 7, 4, 5, 6}},
 
+   {s2x4,       s_23232,  0x33, 06363, 0x0E, 0x1, schema_nothing,        nothing,    nothing,  warn__may_be_fudgy, 0, 0, {-1, -1, 0, 1, -1, -1, -1, -1, 4, 5, -1, -1}, {0}},
+   {s2x4,       s_23232,  0xCC, 04747, 0x0E, 0x1, schema_nothing,        nothing,    nothing,  warn__may_be_fudgy, 0, 0, {-1, -1, -1, 2, 3, -1, -1, -1, -1, 6, 7, -1}, {0}},
    {s2x4,       s_23232,  0xCC, 03535, 0x0E, 0x0, schema_matrix,        s_c1phan,    nothing,  warn__may_be_fudgy, 0, 0, {0, 2, -1, -1, 8, 10, -1, -1}, {-1, 4, -1, -1, -1, 6, -1, 12, -1, -1, -1, 14}},
    {s2x4,       s_23232,  0x33, 03636, 0x0E, 0x0, schema_matrix,        s_c1phan,    nothing,  warn__may_be_fudgy, 0, 0, {-1, -1, 7, 5, -1, -1, 15, 13}, {1, -1, -1, -1, -1, 11, 9, -1, -1, -1, -1, 3}},
    {s2x4,       s_23232,  0x33, 03535, 0x0D, 0x0, schema_matrix,        s_c1phan,    nothing,  warn__may_be_fudgy, 0, 0, {-1, -1, 11, 9, -1, -1, 3, 1}, {-1, 4, -1, -1, -1, 6, -1, 12, -1, -1, -1, 14}},
@@ -10265,10 +10267,10 @@ select::fixer select::fixer_init_table[] = {
    {fxlinboxb,  s2x2, slinebox,     1, 0, 1, {5, 6, 7, 4},
     fx0, fx0,                   fx0, fx0,                   fx0, fx0,                   fx0, fx0},
 
-   {fx23232a,   s1x2, s_23232,     1, 0, 2, {1, 5, 7, 11},
-    fx0, fx0,                   fx0, fx0,                   fx0, fx0,                   fx0, fx0},
+   {fx23232a,   s1x2, s_23232,     1, 0, 2, {1, 5, 11, 7},
+    fx0, fx_foocc,              fx0, fx0,                   fx0, fx0,                   fx0, fx0},
    {fx23232b,   s1x2, s_23232,     1, 0, 2, {0, 11, 5, 6},
-    fx0, fx0,                   fx0, fx0,                   fx0, fx0,                   fx0, fx0},
+    fx0, fx_foo33,              fx0, fx0,                   fx0, fx0,                   fx0, fx0},
    {fx23232c,   s1x2, s_23232,     1, 0, 1, {3, 9},
     fx0, fx0,                   fx0, fx0,                   fx0, fx0,                   fx0, fx0},
 
@@ -10947,15 +10949,22 @@ const tglmap::map tglmap::init_table[] = {
     {1, 2, 3, 7, 8, 9, 0, 6}},
 
    // Interlocked triangles in quarter-tag:
-   {tglmap1j, s_qtag, nothing, tglmap2j, 1, 1,
+   {tglmap1j, s_qtag, nothing, tglmap2j, 1, 1,   // In/out point.
     {4, 7, 2,   0, 3, 6,   1, 5},
     {0, 0, 0,   0, 0, 0,   0, 0},
     {0, 0, 0,   0, 0, 0,   0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0}},
 
-   {tglmap2j, s_qtag, nothing, tglmap1j, 1, 1,
+   {tglmap2j, s_qtag, nothing, tglmap1j, 1, 1,   // In/out point.
     {5, 6, 3,   1, 2, 7,   0, 4},
+    {0, 0, 0,   0, 0, 0,   0, 0},
+    {0, 0, 0,   0, 0, 0,   0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0}},
+
+   {tglmap3j, s_qtag, nothing, tglmap3j, 1, 17,   // Inside.
+    {7, 1, 4,   3, 5, 0,   2, 6},
     {0, 0, 0,   0, 0, 0,   0, 0},
     {0, 0, 0,   0, 0, 0,   0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
@@ -11101,6 +11110,7 @@ const tglmap::tglmapkey tglmap::qttglmap2[4] = {tglmap2b, tglmap2j, tglmap2x, tg
 const tglmap::tglmapkey tglmap::bdtglmap1[2] = {tglmap1b, tglmap1k};
 const tglmap::tglmapkey tglmap::bdtglmap2[2] = {tglmap2b, tglmap2k};
 const tglmap::tglmapkey tglmap::rgtglmap1[2] = {tglmap2r, tglmap2r};
+const tglmap::tglmapkey tglmap::rgtglmap3[2] = {tglmap3j, tglmap3j};
 
 const tglmap::tglmapkey tglmap::d7tglmap1[4] = {tglmapd71};
 const tglmap::tglmapkey tglmap::d7tglmap2[4] = {tglmapd72};

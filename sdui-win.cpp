@@ -2606,7 +2606,7 @@ void iofull::display_help() {}
 
 
 
-char *iofull::version_string ()
+const char *iofull::version_string ()
 {
    return UI_VERSION_STRING "win";
 }

@@ -6300,7 +6300,7 @@ extern bool do_subcall_query(
          "turn the star @b" : orig_call->name,
          pretty_call_name, &current_options);
 
-      char *line_format;
+      const char *line_format;
 
       if (this_is_tagger)
          line_format = "The \"%s\" can be replaced with a tagging call.";

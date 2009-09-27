@@ -262,7 +262,7 @@ const char *get_escape_string(char c)
       return "<ANYTHING>";
    case 'N':
       return "<ANYCIRC>";
-   case '6': case 'k': case 'K':
+   case '6': case 'k': case 'K': case 'V':
       return "<ANYONE>";
    case 'h':
       return "<DIRECTION>";
@@ -342,7 +342,7 @@ static void writestuff_with_decorations(call_conc_option_state *cptr, Cstring f,
          case 'h':
             writestuff(is_concept ? direction_names[cptr->where].name_uc : direction_names[cptr->where].name);
             break;
-         case '6': case 'K':
+         case '6': case 'K': case 'V':
             writestuff(selector_list[cptr->who].name_uc);
             break;
          case 'k':
@@ -1468,7 +1468,7 @@ void print_recurse(parse_block *thing, int print_recurse_arg)
                   char savec = *np++;
 
                   switch (savec) {
-                  case '6': case 'k': case 'K':
+                  case '6': case 'k': case 'K': case 'V':
                      write_blank_if_needed();
                      if (savec == 'k')
                         writestuff(selector_list[i16junk].sing_name);
@@ -2275,7 +2275,7 @@ static void do_change_outfile(bool signal)
                            "Enter new file name (or '+' to base it on today's date):",
                            outfile_string, newfile_string) == POPUP_ACCEPT_WITH_STRING && newfile_string[0]) {
       char confirm_message[MAX_FILENAME_LENGTH+25];
-      char *final_message;
+      const char *final_message;
 
       if (install_outfile_string(newfile_string)) {
          strncpy(confirm_message, "Output file changed to \"", 25);

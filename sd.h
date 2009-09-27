@@ -2321,8 +2321,9 @@ class tglmap {
       tglmap2d,
       tglmap1m,
       tglmap2m,
-      tglmap1j,
-      tglmap2j,
+      tglmap1j,   // In/out point interlocked, in qtag.
+      tglmap2j,   // In/out point interlocked, in qtag.
+      tglmap3j,   // Inside interlocked, in qtag.
       tglmap1x,
       tglmap2x,
       tglmap1y,
@@ -2397,13 +2398,14 @@ class tglmap {
    static const tglmapkey bdtglmap1[];
    static const tglmapkey bdtglmap2[];
    static const tglmapkey rgtglmap1[];
+   static const tglmapkey rgtglmap3[];
    static const tglmapkey d7tglmap1[];
    static const tglmapkey d7tglmap2[];
 };
 
 
 struct startinfo {
-   char *name;
+   const char *name;
    bool into_the_middle;
    setup the_setup;
 };
@@ -3400,7 +3402,7 @@ class configuration {
    int text_line;          // How many lines of text existed after this item was written,
                            // only meaningful if "written_history_items" is >= this index.
 
-   static const resolve_tester *configuration::null_resolve_ptr;    /* in SDTOP */
+   static const resolve_tester *null_resolve_ptr;    /* in SDTOP */
 
  private:
    resolve_indicator resolve_flag;
@@ -4098,8 +4100,8 @@ enum split_command_kind {
 extern SDLIB_API int session_index;                           // in SDSI
 extern SDLIB_API bool rewrite_with_new_style_filename;        // in SDSI
 extern int random_number;                                     // in SDSI
-extern SDLIB_API char *database_filename;                     // in SDSI
-extern SDLIB_API char *new_outfile_string;                    // in SDSI
+extern SDLIB_API const char *database_filename;               // in SDSI
+extern SDLIB_API const char *new_outfile_string;              // in SDSI
 extern SDLIB_API char abridge_filename[MAX_TEXT_LINE_LENGTH]; // in SDSI
 
 extern SDLIB_API bool showing_has_stopped;                    // in SDMATCH
@@ -4134,7 +4136,7 @@ extern SDLIB_API command_list_menu_item command_menu[];             /* in SDMAIN
 extern SDLIB_API resolve_list_menu_item resolve_menu[];             /* in SDMAIN */
 extern SDLIB_API startup_list_menu_item startup_menu[];             /* in SDMAIN */
 extern int last_file_position;                                      /* in SDMAIN */
-extern SDLIB_API char *sd_version_string();                         /* In SDMAIN */
+extern SDLIB_API const char *sd_version_string();                   /* In SDMAIN */
 extern SDLIB_API bool query_for_call();                             /* In SDMAIN */
 
 extern int sdtty_screen_height;                                     /* in SDUI-TTY */
@@ -4174,7 +4176,7 @@ class iobase {
    virtual void update_resolve_menu(command_kind goal, int cur, int max,
                                     resolver_display_state state) = 0;
    virtual void show_match(int frequency_to_show) = 0;
-   virtual char *version_string() = 0;
+   virtual const char *version_string() = 0;
    virtual uims_reply get_resolve_command() = 0;
    virtual bool choose_font() = 0;
    virtual bool print_this() = 0;
@@ -4214,7 +4216,7 @@ class iofull : public iobase {
    void update_resolve_menu(command_kind goal, int cur, int max,
                             resolver_display_state state);
    void show_match(int frequency_to_show);
-   char *version_string();
+   const char *version_string();
    uims_reply get_resolve_command();
    bool choose_font();
    bool print_this();
@@ -5568,7 +5570,7 @@ SDLIB_API void get_date(char dest[]);
 extern char *get_errstring();
 SDLIB_API void open_file();
 SDLIB_API void close_file();
-SDLIB_API void write_file(char line[]);
+SDLIB_API void write_file(const char line[]);
 
 /* in SDMAIN */
 
