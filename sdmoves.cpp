@@ -6962,6 +6962,13 @@ extern void move(
       }
    }
 
+   if (ss->cmd.cmd_misc3_flags & CMD_MISC3__IMPOSE_Z_CONCEPT) {
+      distorted_2x2s_move(ss, (parse_block *) 0, result);   // It will see the flag, do the right thing, and clear it.
+      canonicalize_rotation(result);
+      saved_magic_diamond = (parse_block *) 0;
+      goto getout;
+   }
+
    if (parseptrcopy->concept->kind <= marker_end_of_list) {
       call_conc_option_state saved_options = current_options;
       call_with_name *this_call = parseptrcopy->call;

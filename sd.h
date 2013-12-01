@@ -247,7 +247,8 @@ enum color_scheme_type {
    color_by_couple,
    color_by_corner,
    color_by_couple_rgyb,
-   color_by_couple_ygrb
+   color_by_couple_ygrb,
+   color_by_couple_random
 };
 
 class ui_option_type {
@@ -267,6 +268,7 @@ class ui_option_type {
    bool nowarn_mode;
    bool keep_all_pictures;
    bool accept_single_click;
+   bool hide_glyph_numbers;
    bool diagnostic_mode;
    bool no_sound;
    bool tab_changes_focus;
@@ -624,6 +626,7 @@ class SDLIB_API conzept {
    static const concept_descriptor marker_concept_comment;
    static const concept_descriptor marker_concept_supercall;
    static const concept_descriptor special_piecewise;
+   static const concept_descriptor special_z;
 
    // We want the concept list, as used by the main program, to be
    // constant.  But we can't literally make it constant, because
@@ -1203,6 +1206,7 @@ enum command_kind {
    command_erase,
    command_abort,
    command_create_comment,
+   command_randomize_couple_colors,
    command_change_outfile,
    command_change_title,
    command_getout,
@@ -1307,6 +1311,7 @@ enum start_select_kind {
    start_select_print_any,
    start_select_init_session_file,
    start_select_change_to_new_style_filename,
+   start_select_randomize_couple_colors,
    start_select_change_outfile,
    start_select_change_title,
 
@@ -2530,6 +2535,7 @@ enum warning_index {
    warn__unusual,
    warn_controversial,
    warn_serious_violation,
+   warn__4_circ_tracks,
    warn__assume_dpt,
    warn_bogus_yoyo_rims_hubs,
    warn__centers_are_diamond,
@@ -3806,7 +3812,8 @@ enum {
                                                       // This is what makes "ends detour" work.
    CMD_MISC3__TWO_FACED_CONCEPT    = 0x00000200UL,
    CMD_MISC3__NO_ANYTHINGERS_SUBST = 0x00000400UL,    // Treat "<anything> motivate" as plain motivate.
-   CMD_MISC3__PARENT_COUNT_IS_ONE  = 0x00000800UL
+   CMD_MISC3__PARENT_COUNT_IS_ONE  = 0x00000800UL,
+   CMD_MISC3__IMPOSE_Z_CONCEPT     = 0x000001000UL
 };
 
 enum normalize_action {
@@ -4315,6 +4322,7 @@ extern selector_kind selector_for_initialize;                       /* in SDINIT
 extern direction_kind direction_for_initialize;                     /* in SDINIT */
 extern int number_for_initialize;                                   /* in SDINIT */
 extern SDLIB_API int *color_index_list;                             /* in SDINIT */
+extern SDLIB_API int color_randomizer[4];                           /* in SDINIT */
 
 extern SDLIB_API error_flag_type global_error_flag;                 /* in SDUTIL */
 extern SDLIB_API bool global_cache_failed_flag;                     /* in SDUTIL */
@@ -5429,20 +5437,21 @@ void write_history_line(int history_index,
 void unparse_call_name(Cstring name, char *s, call_conc_option_state *options);
 void print_recurse(parse_block *thing, int print_recurse_arg);
 void clear_screen();
-extern void writechar(char src);
+SDLIB_API extern void writechar(char src);
 SDLIB_API void newline();
-void doublespace_file();
+SDLIB_API void doublespace_file();
 SDLIB_API void writestuff(const char *s);
-extern parse_block *copy_parse_tree(parse_block *original_tree);
-extern void reset_parse_tree(parse_block *original_tree, parse_block *final_head);
-extern void save_parse_state();
-extern void restore_parse_state();
-void string_copy(char **dest, Cstring src);
-void display_initial_history(int upper_limit, int num_pics);
-extern void initialize_parse();
-extern uint32 translate_selector_fields(parse_block *xx, uint32 mask);
-extern bool fix_up_call_for_fidelity_test(const setup *old, const setup *nuu, uint32 &global_status);
-void run_program();
+SDLIB_API extern parse_block *copy_parse_tree(parse_block *original_tree);
+SDLIB_API extern void reset_parse_tree(parse_block *original_tree, parse_block *final_head);
+SDLIB_API extern void save_parse_state();
+SDLIB_API extern void restore_parse_state();
+SDLIB_API void randomize_couple_colors();
+SDLIB_API void string_copy(char **dest, Cstring src);
+SDLIB_API void display_initial_history(int upper_limit, int num_pics);
+SDLIB_API extern void initialize_parse();
+SDLIB_API extern uint32 translate_selector_fields(parse_block *xx, uint32 mask);
+SDLIB_API extern bool fix_up_call_for_fidelity_test(const setup *old, const setup *nuu, uint32 &global_status);
+SDLIB_API void run_program();
 
 /* In SDINIT */
 

@@ -18,7 +18,7 @@
 //    along with Sd; if not, write to the Free Software Foundation, Inc.,
 //    59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 //
-//    This is for version 37.
+//    This is for version 38.
 
 // These are written as the first two halfwords of the binary database file.
 // The format version is not related to the version of the program or database.
@@ -29,7 +29,7 @@
 // database format version.
 
 #define DATABASE_MAGIC_NUM 21316
-#define DATABASE_FORMAT_VERSION 286
+#define DATABASE_FORMAT_VERSION 288
 
 // BEWARE!!  These must track the items in "tagtabinit" in mkcalls.cpp .
 enum base_call_index {
@@ -424,6 +424,7 @@ enum setup_kind {
    s8x8,      // Ditto.
    sxequlize, // Ditto.
    sx1x6,     // Ditto.
+   sx1x8,     // Ditto.
    sx1x16,    // Ditto.
    shypergal, // Ditto.
    shyper4x8a,// Ditto.
@@ -920,6 +921,8 @@ enum calldef_schema {
    schema_conc_bar12,
    schema_conc_bar16,
    schema_conc_o,
+   schema_intermediate_diamond,
+   schema_outside_diamond,
    schema_maybe_matrix_conc,
    schema_maybe_matrix_conc_star,
    schema_maybe_matrix_conc_bar,

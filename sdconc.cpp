@@ -1390,6 +1390,8 @@ extern void normalize_concentric(
           table_synthesizer != schema_3x3k_cross_concentric &&
           table_synthesizer != schema_4x4k_concentric &&
           table_synthesizer != schema_4x4k_cross_concentric &&
+          table_synthesizer != schema_intermediate_diamond &&
+          table_synthesizer != schema_outside_diamond &&
           table_synthesizer != schema_conc_o) {
          // Nonexistent center or ends have been taken care of.
          // Now figure out how to put the setups together.
@@ -1449,6 +1451,8 @@ extern void normalize_concentric(
       fail("Can't figure out this single concentric result.");
    case schema_grand_single_concentric:
       fail("Can't figure out this grand single concentric result.");
+   case schema_intermediate_diamond: case schema_outside_diamond:
+      fail("Can't figure out how diamond should be considered to have been oriented.");
    case schema_concentric:
       break;
    default:
@@ -1732,6 +1736,8 @@ static calldef_schema concentrify(
    case schema_intlk_vertical_6:
    case schema_checkpoint:
    case schema_ckpt_star:
+   case schema_intermediate_diamond:
+   case schema_outside_diamond:
    case schema_conc_12:
    case schema_conc_16:
    case schema_conc_star12:
@@ -2464,6 +2470,7 @@ static bool this_call_preserves_shape(const setup *begin,
 static bool fix_empty_inners(
    setup_kind orig_inners_start_kind,
    int center_arity,
+   int begin_outer_elongation,
    calldef_schema analyzer,
    calldef_schema analyzer_result,
    setup *begin_inner,
@@ -2477,20 +2484,40 @@ static bool fix_empty_inners(
       clear_result_flags(&result_inner[i]);
    }
 
-   // If the schema is one of the special ones, we will know what to do.
-   if (analyzer == schema_conc_star ||
-       analyzer == schema_ckpt_star ||
-       analyzer == schema_conc_star12 ||
-       analyzer == schema_conc_star16 ||
-       analyzer == schema_in_out_triple ||
-       analyzer == schema_sgl_in_out_triple_squash ||
-       analyzer == schema_sgl_in_out_triple ||
-       analyzer == schema_3x3_in_out_triple_squash ||
-       analyzer == schema_3x3_in_out_triple ||
-       analyzer == schema_4x4_in_out_triple_squash ||
-       analyzer == schema_4x4_in_out_triple ||
-       analyzer == schema_in_out_quad ||
-       analyzer == schema_in_out_12mquad) {
+   if (analyzer == schema_conc_star &&
+       analyzer_result == schema_concentric &&
+       result_outer->kind == sdmd &&
+       center_arity == 1 && 
+       begin_outer_elongation == 1 &&
+       begin_inner->kind == s2x2 &&
+       begin_inner->cmd.callspec &&
+       begin_inner->cmd.callspec == base_calls[base_call_armturn_n4] &&
+       (call_options.number_fields & 1) != 0) {
+
+      // This is the "centers cast 3/4" as the second part of relay the top.
+      // This isn't really correct, because we don't know that the center phantom 2x2
+      // isn't T-boned to the others except by virtue of the trade that preceded.
+      // But it's good enough--the human outsides will assume that they are facing appropriately.
+
+      // Restore the original bunch of phantoms.
+      *result_inner = *begin_inner;
+      result_inner->kind = s1x4;
+      result_inner->rotation = 1;
+      clear_result_flags(result_inner);
+   }
+   else if (analyzer == schema_conc_star ||   // If the schema is one of the special ones, we will know what to do.
+            analyzer == schema_ckpt_star ||
+            analyzer == schema_conc_star12 ||
+            analyzer == schema_conc_star16 ||
+            analyzer == schema_in_out_triple ||
+            analyzer == schema_sgl_in_out_triple_squash ||
+            analyzer == schema_sgl_in_out_triple ||
+            analyzer == schema_3x3_in_out_triple_squash ||
+            analyzer == schema_3x3_in_out_triple ||
+            analyzer == schema_4x4_in_out_triple_squash ||
+            analyzer == schema_4x4_in_out_triple ||
+            analyzer == schema_in_out_quad ||
+            analyzer == schema_in_out_12mquad) {
       // Take no action.
    }
    else if (analyzer == schema_in_out_triple_squash && center_arity == 2) {
@@ -3773,7 +3800,7 @@ extern void concentric_move(
       }
    }
    else if (outer_inners[1].kind == nothing) {
-      if (fix_empty_inners(orig_inners_start_kind, center_arity,
+      if (fix_empty_inners(orig_inners_start_kind, center_arity, begin_outer_elongation,
                            analyzer, analyzer_result, &begin_inner[0],
                            &outer_inners[0], &outer_inners[1],
                            outer_inner_options[1],
@@ -3827,6 +3854,8 @@ extern void concentric_move(
        analyzer != schema_4x4_in_out_triple &&
        analyzer != schema_in_out_quad &&
        analyzer != schema_in_out_12mquad &&
+       analyzer != schema_intermediate_diamond &&
+       analyzer != schema_outside_diamond &&
        analyzer != schema_conc_o &&
        analyzer != schema_conc_bar12 &&
        analyzer != schema_conc_bar16) {

@@ -1887,7 +1887,10 @@ extern void distorted_2x2s_move(
    uint32 directions, livemask, misc2_zflag;
    const veryshort *map_ptr = 0;
 
-   const conzept::concept_descriptor *this_concept = parseptr->concept;
+   const conzept::concept_descriptor *this_concept =
+      (ss->cmd.cmd_misc3_flags & CMD_MISC3__IMPOSE_Z_CONCEPT) ? &conzept::special_z : parseptr->concept;
+
+   ss->cmd.cmd_misc3_flags &= ~CMD_MISC3__IMPOSE_Z_CONCEPT;
 
    // Check for special case of "interlocked parallelogram",
    // which doesn't look like the kind of concept we are expecting.
@@ -1935,6 +1938,7 @@ extern void distorted_2x2s_move(
       if (p) livemask |= 1;
    }
 
+   result->clear_people();
    setup_kind inner_kind = s2x2;
 
    switch (misc_indicator) {

@@ -41,6 +41,7 @@
    reset_parse_tree
    save_parse_state
    restore_parse_state
+   randomize_couple_colors
    string_copy
    display_initial_history
    initialize_parse
@@ -2164,6 +2165,30 @@ extern void restore_parse_state()
 }
 
 
+void randomize_couple_colors()
+{
+   color_randomizer[0] = 0;
+   color_randomizer[1] = 1;
+   color_randomizer[2] = 2;
+   color_randomizer[3] = 3;
+
+   int i = generate_random_number(4);
+   int t = color_randomizer[0];
+   color_randomizer[0] = color_randomizer[i];
+   color_randomizer[i] = t;
+
+   i = generate_random_number(3)+1;
+   t = color_randomizer[1];
+   color_randomizer[1] = color_randomizer[i];
+   color_randomizer[i] = t;
+
+   i = generate_random_number(2)+2;
+   t = color_randomizer[2];
+   color_randomizer[2] = color_randomizer[i];
+   color_randomizer[i] = t;
+}
+
+
 void string_copy(char **dest, Cstring src)
 {
    Cstring f = src;
@@ -2864,6 +2889,9 @@ void run_program()
       newline();
    }
 
+   if (ui_options.color_scheme == color_by_couple_random)
+      randomize_couple_colors();
+
    // If anything in the "try" block throws an exception, we will get here
    // with error_flag nonzero.
 
@@ -3116,6 +3144,10 @@ void run_program()
             newline();
             goto new_sequence;
          }
+
+      case start_select_randomize_couple_colors:
+         randomize_couple_colors();
+         goto new_sequence;
       case start_select_change_outfile:
          do_change_outfile(false);
          goto new_sequence;
@@ -3517,6 +3549,9 @@ void run_program()
                help_string[MAX_ERR_LENGTH-1] = '\0';
                specialfail(help_string);
             }
+         case command_randomize_couple_colors:
+            randomize_couple_colors();
+            goto start_cycle;
          case command_change_outfile:
             do_change_outfile(true);
             goto start_cycle;

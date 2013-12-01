@@ -43,6 +43,7 @@ and the following external variables:
    direction_for_initialize
    number_for_initialize
    color_index_list
+   color_randomizer
 */
 
 #include <stdlib.h>
@@ -61,6 +62,7 @@ selector_kind selector_for_initialize;
 direction_kind direction_for_initialize;
 int number_for_initialize;
 int *color_index_list;
+int color_randomizer[4];
 
 
 // This gets temporarily allocated.  It persists through the entire initialization.
@@ -1952,7 +1954,7 @@ static int couple_colors_ygrb[8] = {4, 4, 3, 3, 2, 2, 5, 5};
 int useful_concept_indices[UC_extent];
 
 
-extern void start_stats_file_from_GLOB_stats_filename()
+void start_stats_file_from_GLOB_stats_filename()
 {
    GLOB_doing_frequency = true;
    strncpy(GLOB_decorated_stats_filename, GLOB_stats_filename, MAX_TEXT_LINE_LENGTH);
@@ -2103,6 +2105,8 @@ bool open_session(int argc, char **argv)
             { ui_options.use_magenta = true; continue; }
          else if (strcmp(&args[argno][1], "use_cyan") == 0)
             { ui_options.use_cyan = true; continue; }
+         else if (strcmp(&args[argno][1], "hide_couple_numbers") == 0)
+            { ui_options.hide_glyph_numbers = true; ui_options.color_scheme = color_by_couple_random; continue; }
          else if (strcmp(&args[argno][1], "color_by_couple") == 0)
             { ui_options.color_scheme = color_by_couple; continue; }
          else if (strcmp(&args[argno][1], "color_by_couple_rgyb") == 0)

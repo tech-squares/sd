@@ -4980,8 +4980,6 @@ skipped_concept_info::skipped_concept_info(parse_block *incoming) THROW_DECL
 // diamond points, and changes the diamond points to ends of lines.
 // It's not clear that this is the wisest way to do this.
 
-// "fudgystupidthing" defaults to null.
-
 extern bool fix_n_results(int arity,
                           int goal,
                           bool reorder_setups_2_and_3,
@@ -5002,6 +5000,30 @@ extern bool fix_n_results(int arity,
    rotstates = 0xFFF;
    if (goal == 7) rotstates = 0x030;
    pointclip = 0;
+
+   // The "rotstates" word collects information about the rotations
+   // of the various setups.  The individual bits correspond to various
+   // theories about what the rotations are.  The word starts out with
+   // lots of bits set, and bits are cleared as the theories are rejected.
+   // At the end of the scan there should still be one (or more) bits set.
+   //
+   // The meaning is (sort of) as follows.
+   //
+   //      even setups (we start counting with 0,
+   //            which is even) have rot=1,
+   //              odd ones have rot=0
+   //                             |
+   //                             |   even have rot=0, odd have rot=1
+   //                             |   |
+   //                             |   |           all have rot=1
+   //                             |   |           |
+   //                             |   |           |   all have rot=0
+   //                             |   |           |   |
+   //                             V   V           V   V
+   //    <for triangles>
+   //   | ?   ?   ?   ? | ?   ?         | ?   ?         |
+   //   |___|___|___|___|___|___|___|___|___|___|___|___|
+
    static uint16 rotstate_table[8] = {
       0x111, 0x222, 0x404, 0x808,
       0x421, 0x812, 0x104, 0x208};
@@ -5251,12 +5273,8 @@ extern bool fix_n_results(int arity,
          pointclip |= 1 << i;
       }
       else if (boxrectflag && z[i].kind == s2x2) {
-         if (rotstates & 2) {
-            //            z[i].rotation--;
-            canonicalize_rotation(&z[i]);
-         }
-
-         expand::expand_setup(s_2x2_2x4, &z[i]);
+         canonicalize_rotation(&z[i]);
+         expand::expand_setup(((rotstates & ~0x30) == 0) ? s_2x2_2x4b : s_2x2_2x4, &z[i]);
       }
 
       canonicalize_rotation(&z[i]);

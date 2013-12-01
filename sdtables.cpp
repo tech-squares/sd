@@ -389,6 +389,7 @@ Cstring warning_strings[] = {
    /*  warn__unusual             */   "*This is an unusual setup for this call.",
    /*  warn_controversial        */   "*This may be controversial.",
    /*  warn_serious_violation    */   "*This appears to be a serious violation of the definition.",
+   /*  warn__4_circ_tracks       */   "*Original ends of lines stay outside of the others.",
    /*  warn__assume_dpt          */   "*Assume a starting DPT.",
    /*  warn_bogus_yoyo_rims_hubs */   "*Using incorrect definition of rims/hubs trade.",
    /*  warn__centers_are_diamond */   "*The centers are the diamond.",
@@ -3229,6 +3230,29 @@ conc_tables::cm_thing conc_tables::conc_init_table[] = {
              s1x4,     sdmd,     0, 1, 1, 2,  0x2F7, schema_in_out_triple},
    {s3x1dmd,        schema_nothing, {-1, -1, 1, 0, 5, 4, -1, -1,         7, 2, 3, 6},
              s1x4,     sdmd,     0, 1, 1, 2,  0x2F7, schema_in_out_triple},
+
+   {s3x1dmd,        schema_intermediate_diamond, {7, 1, 3, 5,         0, 2, 4, 6},
+             sdmd,     s1x4,     1, 0, 1, 1,  0x0FD, schema_intermediate_diamond},
+   {s3x1dmd,        schema_outside_diamond, {7, 0, 3, 4,         1, 2, 5, 6},
+             sdmd,     s1x4,     1, 0, 1, 1,  0x0FD, schema_outside_diamond},
+   // For putting back shape-changers.
+   {s1x3dmd,        schema_intermediate_diamond, {1, 3, 5, 7,         0, 2, 4, 6},
+             sdmd,     s1x4,     0, 0, 1, 1,  0x0FE, schema_intermediate_diamond},
+   {s1x3dmd,        schema_outside_diamond, {0, 3, 4, 7,         1, 2, 5, 6},
+             sdmd,     s1x4,     0, 0, 1, 1,  0x0FE, schema_outside_diamond},
+   {s_crosswave,    schema_nothing, {6, 7, 2, 3,         0, 1, 4, 5},
+             s1x4,     s1x4,     1, 0, 1, 1,  0x0FD, schema_intermediate_diamond},
+   {s_crosswave,    schema_nothing, {6, 7, 2, 3,         0, 1, 4, 5},
+             s1x4,     s1x4,     1, 0, 1, 1,  0x0FD, schema_outside_diamond},
+   {s_ptpd,         schema_nothing, {1, 7, 5, 3,         0, 2, 4, 6},
+             s2x2,     s1x4,     0, 0, 1, 1,  0x2FE, schema_intermediate_diamond},
+   {s_bone,         schema_nothing, {0, 1, 4, 5,         6, 7, 2, 3},
+             s2x2,     s1x4,     0, 0, 1, 1,  0x2FE, schema_outside_diamond},
+   {s1x8,           schema_nothing, {1, 3, 5, 7,         0, 2, 4, 6},
+             s1x4,     s1x4,     0, 0, 1, 1,  0x2FE, schema_intermediate_diamond},
+   {s1x8,           schema_nothing, {0, 1, 4, 5,         3, 2, 7, 6},
+             s1x4,     s1x4,     0, 0, 1, 1,  0x2FE, schema_outside_diamond},
+
    {s3ptpd,         schema_nothing, {9, -1, 10, -1, 4, -1, 3, -1,        11, 1, 5, 7},
              s1x4,     sdmd,     0, 0, 1, 2,  0x2FE, schema_in_out_triple},
    {s3dmd,          schema_in_out_triple, {8, 9, 0, 10, 6, 4, 2, 3,         7, 11, 1, 5},
@@ -8634,6 +8658,16 @@ const setup_attr setup_attrs[] = {
     (const id_bit_table *) 0,
     {(Cstring) 0,
      (Cstring) 0}},
+   {15,                     // sx1x8
+    (const coordrec *) 0,
+    (const coordrec *) 0,
+    {0, 0, 0, 0},
+    {b_nothing, b_nothing},
+    {0, 0},
+    false, false,
+    (const id_bit_table *) 0,
+    {(Cstring) 0,
+     (Cstring) 0}},
    {31,                     // sx1x16
     (const coordrec *) 0,
     (const coordrec *) 0,
@@ -9158,6 +9192,10 @@ const schema_attr schema_attrs[] = {
     schema_nothing},                     // schema_conc_bar16
    {SCA_SNAGOK | SCA_DETOUR | SCA_INV_SUP_ELWARN,
     schema_nothing},                     // schema_conc_o
+   {0,
+    schema_nothing},                     // schema_intermediate_diamond
+   {0,
+    schema_nothing},                     // schema_outside_diamond
    {0,
     schema_nothing},                     // schema_maybe_matrix_conc
    {0,
