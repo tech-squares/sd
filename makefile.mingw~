@@ -121,7 +121,7 @@ sdprint.o: sdprint.cpp
 
 # Miscellaneous file dependencies.
 
-sd.h sdui.h: sdbase.h database.h
+sd.h sdui.h: sdui.h database.h
 
 mkcalls.o sdmain.o sdsi.o: paths.h
 
