@@ -108,9 +108,8 @@ deploy.o: deploy.cpp
 sdui-tty.o: sdui-tty.cpp
 	$(CC) $(CFLAGS) -c $<
 
-# There's a scan of "dialog_help_list" that gcc gets cranky about.  I'm too lazy to change it.
 sdui-win.o: sdui-win.cpp
-	$(CC) $(CFLAGS) -Wno-array-bounds -c $<
+	$(CC) $(CFLAGS) -c $<
 
 sdui-wincon.o: sdui-wincon.cpp
 	$(CC) $(CFLAGS) -c $<
